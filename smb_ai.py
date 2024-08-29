@@ -4,7 +4,6 @@ from PyQt5.QtGui import QPainter, QBrush, QPen, QPolygonF, QColor, QImage, QPixm
 from PyQt5.QtCore import Qt, QPointF, QTimer, QRect
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel
 from PIL import Image
-from PIL.ImageQt import ImageQt
 from typing import Tuple, List, Optional
 import random
 import sys
