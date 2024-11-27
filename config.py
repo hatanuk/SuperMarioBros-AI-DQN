@@ -171,3 +171,4 @@ class Config(object):
             return True
         except ValueError:
             return False
+        

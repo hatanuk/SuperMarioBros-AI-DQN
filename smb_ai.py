@@ -122,34 +122,22 @@ class GameWindow(QtWidgets.QWidget):
         self.layout.addWidget(self.img_label)
         self.setLayout(self.layout)
         
-
+ 
     def paintEvent(self, event):
-        painter = QPainter()
-        painter.begin(self)
-        if self._should_update:
-            draw_border(painter, self.size)
-            if not self.screen is None:
-                # self.img_label = QtWidgets.QLabel(self.centralWidget)
-                # screen = self.env.reset()
-    
-                width = self.screen.shape[0] * 3 
-                height = int(self.screen.shape[1] * 2)
-                resized = self.screen
-                original = QImage(self.screen, self.screen.shape[1], self.screen.shape[0], QImage.Format_RGB888)
-                # Create the image and label
-                qimage = QImage(original)
-                # Center where the image will go
-                x = (self.screen.shape[0] - width) // 2
-                y = (self.screen.shape[1] - height) // 2
-                self.img_label.setGeometry(0, 0, width, height)
-                # Add image
-                pixmap = QPixmap(qimage)
-                pixmap = pixmap.scaled(width, height, Qt.KeepAspectRatio)
-                self.img_label.setPixmap(pixmap)
+
+        if self._should_update and self.screen is not None:
+            #`self.screen` is a NumPy array with shape (height, width, 3)
+            height, width, channels = self.screen.shape
+            bytes_per_line = channels * width
+            if not self.screen.flags['C_CONTIGUOUS']:
+                self.screen = np.ascontiguousarray(self.screen)
+
+            qimage = QImage(self.screen.data, width, height, bytes_per_line, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(qimage)
+            self.img_label.setPixmap(pixmap)
         else:
             self.img_label.clear()
-            # draw_border(painter, self.size)
-        painter.end()
+
 
     def _update(self):
         self.update()

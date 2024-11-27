@@ -24,6 +24,7 @@ class Mario(Individual):
                  debug: Optional[bool] = False,
                  ):
         
+
         self.config = config
 
         self.lifespan = lifespan
