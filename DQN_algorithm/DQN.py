@@ -219,7 +219,9 @@ class DQNAgent():
             actions = torch.LongTensor(actions).unsqueeze(1) 
             next_states = torch.FloatTensor(next_states)
             rewards = torch.FloatTensor(rewards).unsqueeze(1)  
-            dones = torch.FloatTensor(dones).unsqueeze(1)  
+            dones = torch.FloatTensor(dones).unsqueeze(1) 
+
+            print(f"states shape: {states.shape}, actions shape: {actions.shape}, next states shape: {next_states.shape}, rewards shape: {rewards.shape}, dones shape : {dones.shape}") 
 
             predicted_values = self.network.forward(states).gather(1, actions)  # Q(s, a)
 
