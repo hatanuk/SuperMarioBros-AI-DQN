@@ -804,7 +804,7 @@ def _crossover_and_mutate(p1, p2, config, current_generation):
 def get_state(ram, mario):
     tiles = SMB.get_tiles(ram)
     mario.set_input_as_array(ram, tiles)
-    return mario.input_as_array
+    return mario.inputs_as_array
 
 if __name__ == "__main__":
 
