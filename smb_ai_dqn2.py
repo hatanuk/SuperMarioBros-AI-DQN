@@ -810,6 +810,7 @@ if __name__ == "__main__":
 
     multiprocessing.set_start_method("fork", force=True)
     sys.stdout = sys.stderr
+    print("test")
 
     global args
     args = parse_args()
