@@ -148,7 +148,7 @@ class DotNotation(object):
         return str(self.__dict__)
 
     def __repr__(self) -> str:
-        return str(self)
+        return str(self.__dict__)
 
 
 class Config(object):
@@ -172,6 +172,31 @@ class Config(object):
         dot_notation = DotNotation(self._config_dict)
         self.__dict__.update(dot_notation.__dict__)
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Remove unpickleable attributes
+        state.pop('get_fitness_func', None)
+        state.pop('get_reward_func', None)
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.get_fitness_func = self._create_fitness_func()
+        self.get_reward_func = self._create_reward_func()
+
+    def _create_fitness_func(self):
+        expr = self._config_dict['GeneticAlgorithm']['fitness_func']
+        def fitness_func(**variables):
+            safe_vars = {'max': max, 'min': min, 'int': int, **variables}
+            return safe_eval(expr, safe_vars)
+        return fitness_func
+
+    def _create_reward_func(self):
+        expr = self._config_dict['DQN']['reward_func']
+        def reward_func(**variables):
+            safe_vars = {'max': max, 'min': min, 'int': int, **variables}
+            return safe_eval(expr, safe_vars)
+        return reward_func
 
     def _create_dict_from_config(self) -> None:
         d = {}
@@ -256,29 +281,3 @@ class Config(object):
             }
             return safe_eval(expr, safe_vars)
         return fitness_func
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        # Remove unpickleable attributes
-        del state['get_fitness_func']
-        del state['get_reward_func']
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.get_fitness_func = self._create_fitness_func()
-        self.get_reward_func = self._create_reward_func()
-
-    def _create_fitness_func(self):
-        expr = self._config_dict['GeneticAlgorithm']['fitness_func']
-        def fitness_func(**variables):
-            safe_vars = {'max': max, 'min': min, 'int': int, **variables}
-            return safe_eval(expr, safe_vars)
-        return fitness_func
-
-    def _create_reward_func(self):
-        expr = self._config_dict['DQN']['reward_func']
-        def reward_func(**variables):
-            safe_vars = {'max': max, 'min': min, 'int': int, **variables}
-            return safe_eval(expr, safe_vars)
-        return reward_func
