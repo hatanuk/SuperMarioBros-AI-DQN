@@ -3,6 +3,19 @@ import os
 from typing import Any, Dict
 
 
+## For multithreading, lambda functions need to be named ie. serializable
+## This is used for the fitness function
+class SerializableFunction:
+    def __init__(self, func):
+        self.func = func
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+    
+    def __repr__(self):
+        return f"SerializableFunction({self.func})"
+
+
 # A mapping from parameters name -> final type
 _params = {
     # Graphics Params
@@ -37,7 +50,7 @@ _params = {
 
     # Genetic Algorithm
     'GeneticAlgorithm': {
-        'fitness_func': type(lambda : None)
+        'fitness_func': SerializableFunction
     },
 
     # Crossover Params
@@ -146,9 +159,9 @@ class Config(object):
                         self._config_dict[section][k] = tuple(cast(val) for val in v.split(','))
                     else:
                         raise Exception('Expected a 2 tuple value describing that it is to be parse as a tuple and the type to cast it as')
-                elif 'lambda' in v:
+                elif isinstance(_type, SerializableFunction):
                     try:
-                        self._config_dict[section][k] = eval(v)
+                        self._config_dict[section][k] = SerializableFunction(eval(v))
                     except:
                         pass
                 # Is it a bool?

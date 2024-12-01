@@ -10,16 +10,6 @@ from neural_network import FeedForwardNetwork, linear, sigmoid, tanh, relu, leak
 from utils import SMB, StaticTileType, EnemyType
 from config import Config
 
-## For multithreading, lambda functions need to be named ie. serializable
-## This is used for the fitness function
-class SerializableFunction:
-    def __init__(self, func):
-        self.func = func
-
-    def __call__(self, *args, **kwargs):
-        return self.func(*args, **kwargs)
-
-
 class Mario(Individual):
     def __init__(self,
                  config: Config,
@@ -104,7 +94,7 @@ class Mario(Individual):
         distance = self.x_dist
         score = self.game_score
 
-        self._fitness = SerializableFunction(self.config.GeneticAlgorithm.fitness_func)(frames, distance, score, self.did_win)
+        self._fitness = self.config.GeneticAlgorithm.fitness_func(frames, distance, score, self.did_win)
 
     def set_input_as_array(self, ram, tiles) -> None:
         mario_row, mario_col = SMB.get_mario_row_col(ram)
