@@ -85,6 +85,9 @@ class DQN(nn.Module, FeedForwardNetwork):
 
     # This one is for FeedForwardNetwork compatability
     def feed_forward(self, X: np.ndarray) -> np.ndarray:
+
+        assert X.shape[0] == self.layer_nodes[0], f"Input shape {X.shape} does not match expected {self.layer_nodes[0]} nodes."
+
         
         # Ensures the torch params are synced to the FeedForwardNetwork params
         self.save_torch_params()
@@ -92,10 +95,12 @@ class DQN(nn.Module, FeedForwardNetwork):
         A_prev = X
         L = len(self.layer_nodes) - 1  # len(self.params) // 2
 
+
         # Feed hidden layers
         for l in range(1, L):
             W = self.params['W' + str(l)]
             b = self.params['b' + str(l)]
+            print(f"Layer {l}: W.shape={W.shape}, A_prev.shape={A_prev.shape}, b.shape={b.shape}")
             Z = np.dot(W, A_prev) + b
             A_prev = self.hidden_activation(Z)
             self.params['A' + str(l)] = A_prev
