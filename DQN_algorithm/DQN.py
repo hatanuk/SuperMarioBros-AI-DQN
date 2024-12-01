@@ -120,7 +120,9 @@ class DQN(nn.Module, FeedForwardNetwork):
       
         X = torch.as_tensor(X, dtype = torch.float32)
         out = self.torch_model(X)
-    
+        print(f"Output type from torch_model: {type(out)}, shape: {out.shape}")
+
+
         return out
     
     def save_torch_params(self):
