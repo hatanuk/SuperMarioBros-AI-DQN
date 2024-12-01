@@ -24,6 +24,7 @@ class Mario(Individual):
         
 
         self.config = config
+        self.fitness_func = self.config.get_fitness_func()
 
         self.lifespan = lifespan
         self.name = name
@@ -93,8 +94,15 @@ class Mario(Individual):
         frames = self._frames
         distance = self.x_dist
         score = self.game_score
+        did_win = self.did_win
 
-        self._fitness = self.config.GeneticAlgorithm.fitness_func(frames, distance, score, self.did_win)
+        # Use the fitness_func from config
+        self._fitness = self.fitness_func(
+            frames=frames,
+            distance=distance,
+            game_score=score,
+            did_win=did_win
+        )
 
     def set_input_as_array(self, ram, tiles) -> None:
         mario_row, mario_col = SMB.get_mario_row_col(ram)

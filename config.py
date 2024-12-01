@@ -3,7 +3,65 @@ import os
 from typing import Any, Dict
 
 import dill
-dill.detect.trace(True)
+
+import ast
+import operator as op
+
+# Supported operators for safe evaluation
+allowed_operators = {
+    ast.Add: op.add,
+    ast.Sub: op.sub,
+    ast.Mult: op.mul,
+    ast.Div: op.truediv,
+    ast.Pow: op.pow,
+    ast.USub: op.neg,
+    ast.UAdd: op.pos,
+    ast.Call: op.call,
+    ast.Load: op.load,
+    ast.Name: op.attrgetter,
+    ast.Expr: op.attrgetter,
+    ast.BinOp: op.attrgetter,
+    ast.Num: op.attrgetter,
+    ast.Constant: op.attrgetter,
+    ast.UnaryOp: op.attrgetter,
+    ast.keyword: op.attrgetter
+}
+
+def safe_eval(expr, variables):
+    # Parse an expression and evaluate it safely
+    def _eval(node):
+        if isinstance(node, ast.Expression):
+            return _eval(node.body)
+        elif isinstance(node, ast.Num):  # <number>
+            return node.n
+        elif isinstance(node, ast.Constant):  # Python 3.8+
+            return node.value
+        elif isinstance(node, ast.BinOp):  # <left> <operator> <right>
+            if type(node.op) in allowed_operators:
+                return allowed_operators[type(node.op)](_eval(node.left), _eval(node.right))
+            else:
+                raise TypeError(f"Unsupported binary operator: {ast.dump(node.op)}")
+        elif isinstance(node, ast.UnaryOp):  # - <operand> or + <operand>
+            if type(node.op) in allowed_operators:
+                return allowed_operators[type(node.op)](_eval(node.operand))
+            else:
+                raise TypeError(f"Unsupported unary operator: {ast.dump(node.op)}")
+        elif isinstance(node, ast.Call):  # Function calls like max(), min(), int()
+            func_name = node.func.id
+            if func_name in variables:
+                args = [_eval(arg) for arg in node.args]
+                return variables[func_name](*args)
+            else:
+                raise NameError(f"Use of unsupported function '{func_name}'")
+        elif isinstance(node, ast.Name):
+            if node.id in variables:
+                return variables[node.id]
+            else:
+                raise NameError(f"Use of undefined variable '{node.id}'")
+        else:
+            raise TypeError(f"Unsupported expression: {ast.dump(node)}")
+    node = ast.parse(expr, mode='eval')
+    return _eval(node.body)
 
 class SerializableFunction:
     def __init__(self, func):
@@ -55,12 +113,10 @@ _params = {
 
     # Deep Q Network
     'DQN': {
-        'reward_func': SerializableFunction
     },
 
     # Genetic Algorithm
     'GeneticAlgorithm': {
-        'fitness_func': SerializableFunction
     },
 
     # Crossover Params
@@ -156,30 +212,27 @@ class Config(object):
     def _set_dict_types(self) -> None:
         for section in self._config_dict:
             for k, v in self._config_dict[section].items():
-                try:
-                    _type = _params[section][k]
-                except:
-                    raise Exception('No value "{}" found for section "{}". Please set this in _params'.format(k, section))
-                
-                if isinstance(_type, tuple):
-                    if len(_type) == 2:
-                        cast = _type[1]
-                        v = v.replace('(', '').replace(')', '')
-                        self._config_dict[section][k] = tuple(cast(val) for val in v.split(','))
-                    else:
-                        raise Exception('Expected a 2-tuple value describing parsing logic')
-                elif _type == SerializableFunction:
-                    try:
-                        func = eval(v)  # Convert the string into a callable
-                        self._config_dict[section][k] = SerializableFunction(func)
-                    except Exception as e:
-                        raise Exception(f"Error evaluating function for {section}.{k}: {v}. {e}")
-                    
-                    
-                elif _type == bool:
-                    self._config_dict[section][k] = _type(eval(v))
+                if k in ('reward_func', 'fitness_func'):
+                    # Store the function expression as a string
+                    self._config_dict[section][k] = v
                 else:
-                    self._config_dict[section][k] = _type(v)
+                    # Existing type handling
+                    try:
+                        _type = _params[section][k]
+                    except:
+                        raise Exception('No value "{}" found for section "{}". Please set this in _params'.format(k, section))
+                    
+                    if isinstance(_type, tuple):
+                        if len(_type) == 2:
+                            cast = _type[1]
+                            v = v.replace('(', '').replace(')', '')
+                            self._config_dict[section][k] = tuple(cast(val) for val in v.split(','))
+                        else:
+                            raise Exception('Expected a 2-tuple value describing parsing logic')
+                    elif _type == bool:
+                        self._config_dict[section][k] = _type(eval(v))
+                    else:
+                        self._config_dict[section][k] = _type(v)
 
 
     def _verify_sections(self) -> None:
@@ -204,4 +257,29 @@ class Config(object):
             return True
         except ValueError:
             return False
-        
+
+    def get_reward_func(self):
+        expr = self._config_dict['DQN']['reward_func']
+        def reward_func(**variables):
+            # Include built-in functions like max(), min(), int() in variables
+            safe_vars = {
+                'max': max,
+                'min': min,
+                'int': int,
+                **variables
+            }
+            return safe_eval(expr, safe_vars)
+        return reward_func
+
+    def get_fitness_func(self):
+        expr = self._config_dict['GeneticAlgorithm']['fitness_func']
+        def fitness_func(**variables):
+            # Include built-in functions like max(), min(), int() in variables
+            safe_vars = {
+                'max': max,
+                'min': min,
+                'int': int,
+                **variables
+            }
+            return safe_eval(expr, safe_vars)
+        return fitness_func

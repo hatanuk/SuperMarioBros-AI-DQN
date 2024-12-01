@@ -1,5 +1,3 @@
-
-
 import retro
 from PyQt5 import QtGui, QtWidgets
 from PyQt5.QtGui import QPainter, QBrush, QPen, QPolygonF, QColor, QImage, QPixmap
@@ -19,7 +17,8 @@ import os
 from utils import SMB, EnemyType, StaticTileType, ColorMap, DynamicTileType
 from config import Config
 from nn_viz import NeuralNetworkViz
-from mario import Mario, save_mario, save_stats, get_num_trainable_parameters, get_num_inputs, load_mario
+from mario import Mario, save_mario, save_stats, get_num_trainable_parameters, get_num_inputs, load_mario, fitness_func
+from DQN_algorithm.DQN import reward_func
 
 from genetic_algorithm.individual import Individual
 from genetic_algorithm.population import Population
@@ -126,7 +125,7 @@ class MainWindow:
         individuals: List[Individual] = []
         num_parents = self.config.Selection.num_parents
         for _ in range(num_parents):
-            individual = Mario(self.config)
+            individual = Mario(config=self.config)
             individuals.append(individual)
         return individuals
 
@@ -164,7 +163,8 @@ class MainWindow:
         next_state = self._get_state(self.env_DQN, self.mario_DQN)
         done = not self.mario_DQN.is_alive
 
-        reward = self.calculate_reward(curr_stats, next_stats)
+        # Calculate reward using DQNMario's calculate_reward method
+        reward = self.mario_DQN.calculate_reward(curr_stats, next_stats)
 
         self.mario_DQN.replay_buffer.add(curr_state, action, next_state, reward, done)
         self.mario_DQN.learn()
