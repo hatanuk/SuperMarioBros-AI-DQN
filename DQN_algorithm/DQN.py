@@ -235,35 +235,17 @@ class DQNAgent():
 
             print(f"states shape: {states.shape}, actions shape: {actions.shape}, next states shape: {next_states.shape}, rewards shape: {rewards.shape}, dones shape : {dones.shape}") 
 
+            # Q-values for all states
+            predicted_q_values = self.network.forward(states)  # Shape: [batch_size, num_actions]
 
-            # Predicted Q-values for all current states
-            q_values = self.network.forward(states)  # Shape: [batch_size, num_actions]
-
-
-            # convert the 1 hot encoded full action space to the indices of the actual action space
-            actions_decoded = [torch.nonzero(action, as_tuple=True)[0].tolist() for action in actions]
-            mapped_actions = [[self.ouput_to_keys_map[a] for a in action_set] for action_set in actions_decoded]
-
-
-            # Get the predicted Q-values for the actions actually taken
-            predicted_q_values = []
-            for i, action_indices in enumerate(mapped_actions):
-                predicted_q_values.append(q_values[i, action_indices])
-
-            predicted_q_values = torch.cat(predicted_q_values)
+            # Q-values for actions actually taken
+            batch_indices, action_indices = actions.nonzero(as_tuple=True)
+            predicted_q_values = predicted_q_values[batch_indices, action_indices]
 
             # Compute target Q-values for next states
             with torch.no_grad():
-                next_q_values = self.target_network.forward(next_states)  # Shape: [batch_size, num_actions]
-
-            # Calculate target Q-values for actions taken
-            target_q_values = []
-            for i, action_indices in enumerate(actions):
-                for action in action_indices:
-                    target_q_value = rewards[i] + self.discount_value * next_q_values[i, action] * (1 - dones[i])
-                    target_q_values.append(target_q_value)
-
-            target_q_values = torch.stack(target_q_values)
+                next_max_q_values = self.target_network.forward(next_states).max(dim=1)[0]  # Qmax(s', a')
+                target_q_values = rewards + self.discount_value * next_max_q_values * (1 - dones) # r + gamma * max_a' Qmax(s', a')
 
             # Calculate loss
             loss = self.network.loss_function(predicted_q_values, target_q_values)
