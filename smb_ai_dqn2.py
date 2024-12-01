@@ -27,11 +27,15 @@ from DQN_algorithm.DQN import DQNMario
 
 from smb_ai import draw_border, parse_args
 
+import dill
 import multiprocessing
 import queue
 
 normal_font = QtGui.QFont('Times', 11, QtGui.QFont.Normal)
 font_bold = QtGui.QFont('Times', 11, QtGui.QFont.Bold)
+
+multiprocessing.set_start_method("fork", force=True)
+multiprocessing.reduction.ForkingPickler = dill.Pickler
 
 
 class Visualizer(QtWidgets.QWidget):
