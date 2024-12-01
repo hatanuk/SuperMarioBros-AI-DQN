@@ -177,22 +177,22 @@ class Config(object):
         # Remove unpickleable attributes
         state.pop('get_fitness_func', None)
         state.pop('get_reward_func', None)
+        state['_fitness_func_expr'] = self._config_dict['GeneticAlgorithm']['fitness_func']
+        state['_reward_func_expr'] = self._config_dict['DQN']['reward_func']
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        self.get_fitness_func = self._create_fitness_func()
-        self.get_reward_func = self._create_reward_func()
+        self.get_fitness_func = self._create_fitness_func(state['_fitness_func_expr'])
+        self.get_reward_func = self._create_reward_func(state['_reward_func_expr'])
 
-    def _create_fitness_func(self):
-        expr = self._config_dict['GeneticAlgorithm']['fitness_func']
+    def _create_fitness_func(self, expr):
         def fitness_func(**variables):
             safe_vars = {'max': max, 'min': min, 'int': int, **variables}
             return safe_eval(expr, safe_vars)
         return fitness_func
 
-    def _create_reward_func(self):
-        expr = self._config_dict['DQN']['reward_func']
+    def _create_reward_func(self, expr):
         def reward_func(**variables):
             safe_vars = {'max': max, 'min': min, 'int': int, **variables}
             return safe_eval(expr, safe_vars)
