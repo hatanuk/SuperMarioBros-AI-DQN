@@ -178,7 +178,7 @@ class DQNAgent():
             # Replay buffer initialisation
             self.replay_buffer = ReplayBuffer(self.buffer_size)
 
-            self.output_to_keys_map = {
+            self.ouput_to_keys_map = {
                 0: 4,  # U
                 1: 5,  # D
                 2: 6,  # L
@@ -227,7 +227,7 @@ class DQNAgent():
             states, actions, next_states, rewards, dones = zip(*samples)
 
             states = torch.FloatTensor(states)
-            actions = torch.FloatTensor([self.output_to_keys_map[a] for a in actions]).unsqueeze(1)
+            actions = torch.LongTensor(actions).unsqueeze(1)
 
             next_states = torch.FloatTensor(next_states)
             rewards = torch.FloatTensor(rewards).unsqueeze(1)  
@@ -236,16 +236,39 @@ class DQNAgent():
             print(f"states shape: {states.shape}, actions shape: {actions.shape}, next states shape: {next_states.shape}, rewards shape: {rewards.shape}, dones shape : {dones.shape}") 
 
 
-            predicted_values = self.network.forward(states).gather(1, actions)  # Q(s, a)
+            # Predicted Q-values for all current states
+            q_values = self.network.forward(states)  # Shape: [batch_size, num_actions]
 
+
+            # convert the 1 hot encoded full action space to the indices of the actual action space
+            actions_decoded = [torch.nonzero(action, as_tuple=True)[0].tolist() for action in actions]
+            mapped_actions = [[self.ouput_to_keys_map[a] for a in action_set] for action_set in actions_decoded]
+
+
+            # Get the predicted Q-values for the actions actually taken
+            predicted_q_values = []
+            for i, action_indices in enumerate(mapped_actions):
+                predicted_q_values.append(q_values[i, action_indices])
+
+            predicted_q_values = torch.cat(predicted_q_values)
+
+            # Compute target Q-values for next states
             with torch.no_grad():
-                next_q_values = self.target_network.forward(next_states).max(1, keepdim=True)[0]  # max Q(s', a')
-                target_values = rewards + (self.discount_value * next_q_values * (1 - dones))  # r + γmax Q(s', a')
+                next_q_values = self.target_network.forward(next_states)  # Shape: [batch_size, num_actions]
 
-            # calculate loss between predicted and target Q-values
-            loss = self.network.loss_function(predicted_values, target_values)
+            # Calculate target Q-values for actions taken
+            target_q_values = []
+            for i, action_indices in enumerate(actions):
+                for action in action_indices:
+                    target_q_value = rewards[i] + self.discount_value * next_q_values[i, action] * (1 - dones[i])
+                    target_q_values.append(target_q_value)
 
-            # backpropagation via SGD
+            target_q_values = torch.stack(target_q_values)
+
+            # Calculate loss
+            loss = self.network.loss_function(predicted_q_values, target_q_values)
+
+            # backpropagation via SGDs
             self.network.optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.network.torch_model.parameters(), max_norm=1.0)
