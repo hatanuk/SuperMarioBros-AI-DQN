@@ -117,6 +117,7 @@ class DQN(nn.Module, FeedForwardNetwork):
     def forward(self, X):
 
         assert X.shape[0] == self.layer_nodes[0], f"Input shape {X.shape} does not match expected {self.layer_nodes[0]} nodes."
+        print("hello")
         assert 1 == 0, "test"
 
 
