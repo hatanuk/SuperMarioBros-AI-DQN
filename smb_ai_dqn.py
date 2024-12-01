@@ -371,6 +371,18 @@ class MainWindow:
         gaussian_mutation(child1_bias, mutation_rate, scale=scale)
         gaussian_mutation(child2_bias, mutation_rate, scale=scale)
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Remove unpickleable attributes
+        del state['_timer']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._timer = QTimer()
+        self._timer.timeout.connect(self._update)
+        self._timer.start(1000 // 60)  # 60 fps
+
 
 if __name__ == "__main__":
     config = "/settings.config"

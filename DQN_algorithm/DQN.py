@@ -33,6 +33,13 @@ class ReplayBuffer:
     
     def __len__(self):
         return len(self.buffer)
+    
+    def __getstate__(self):
+        return self.buffer, self.buffer.maxlen
+
+    def __setstate__(self, state):
+        self.buffer, maxlen = state
+        self.buffer = deque(self.buffer, maxlen=maxlen)
 
 
 

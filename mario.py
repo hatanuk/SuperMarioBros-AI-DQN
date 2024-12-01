@@ -193,6 +193,20 @@ class Mario(Individual):
             self.buttons_to_press[ouput_to_buttons_map[b]] = 1
 
         return True
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Remove unpickleable attributes
+        del state['network']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.network = FeedForwardNetwork(self.network_architecture,
+                                          get_activation_by_name(self.hidden_activation),
+                                          get_activation_by_name(self.output_activation))
+        if 'chromosome' in state:
+            self.network.params = state['chromosome']
     
 def save_mario(population_folder: str, individual_name: str, mario: Mario) -> None:
     # Make population folder if it doesnt exist

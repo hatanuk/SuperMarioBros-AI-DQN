@@ -1,7 +1,6 @@
 import configparser
 import os
 from typing import Any, Dict
-
 import ast
 import operator as op
 
@@ -59,13 +58,11 @@ _params = {
         'tile_size': (tuple, float),
         'neuron_radius': float,
     },
-
     # Statistics Params
     'Statistics': {
         'save_best_individual_from_generation': str,
         'save_population_stats': str,
     },
-
     # NeuralNetwork Params
     'NeuralNetwork': {
         'input_dims': (tuple, int),
@@ -74,7 +71,6 @@ _params = {
         'output_node_activation': str,
         'encode_row': bool,
     },
-
     'NeuralNetworkDQN': {
         'input_dims': (tuple, int),
         'hidden_layer_architecture': (tuple, int),
@@ -83,15 +79,10 @@ _params = {
         'encode_row': bool,
         'learning_rate': float
     },
-
     # Deep Q Network
-    'DQN': {
-    },
-
+    'DQN': {},
     # Genetic Algorithm
-    'GeneticAlgorithm': {
-    },
-
+    'GeneticAlgorithm': {},
     # Crossover Params
     'Crossover': {
         'probability_sbx': float,
@@ -99,14 +90,12 @@ _params = {
         'crossover_selection': str,
         'tournament_size': int,
     },
-
     # Mutation Params
     'Mutation': {
         'mutation_rate': float,
         'mutation_rate_type': str,
         'gaussian_mutation_scale': float,
     },
-
     # Selection Params
     'Selection': {
         'num_parents': int,
@@ -114,7 +103,6 @@ _params = {
         'selection_type': str,
         'lifespan': float
     },
-
     # Misc Params
     'Misc': {
         'level': str,
@@ -125,10 +113,8 @@ _params = {
 class DotNotation(object):
     def __init__(self, d: Dict[Any, Any]):
         for k in d:
-            # If the key is another dictionary, keep going
             if isinstance(d[k], dict):
                 self.__dict__[k] = DotNotation(d[k])
-            # If it's a list or tuple then check to see if any element is a dictionary
             elif isinstance(d[k], (list, tuple)):
                 l = []
                 for v in d[k]:
@@ -150,11 +136,8 @@ class DotNotation(object):
     def __repr__(self) -> str:
         return str(self)
 
-
 class Config(object):
-    def __init__(self,
-                 filename: str
-                 ):
+    def __init__(self, filename: str):
         self.filename = filename
         
         if not os.path.isfile(self.filename):
@@ -172,22 +155,39 @@ class Config(object):
         dot_notation = DotNotation(self._config_dict)
         self.__dict__.update(dot_notation.__dict__)
 
-
     def _create_dict_from_config(self) -> None:
         d = {}
         for section in self._config.sections():
             d[section] = {}
             for k, v in self._config[section].items():
                 d[section][k] = v
-
         self._config_dict = d
 
     def _set_dict_types(self) -> None:
         for section in self._config_dict:
             for k, v in self._config_dict[section].items():
                 if k in ('reward_func', 'fitness_func'):
-                    # Store the function expression as a string
                     self._config_dict[section][k] = v
+                else:
+                    try:
+                        _type = _params[section][k]
+                    except:
+                        raise Exception('No value "{}" found for section "{}". Please set this in _params'.format(k, section))
+                    
+                    if isinstance(_type, tuple):
+                        if len(_type) == 2:
+                            cast = _type[1]
+                            v = v.replace('(', '').replace(')', '')
+                            self._config_dict[section][k] = tuple(cast(val) for val in v.split(','))
+                        else:
+                            raise Exception('Expected a 2-tuple value describing parsing logic')
+                    elif _type == bool:
+                        self._config_dict[section][k] = _type(eval(v))
+                    else:
+                        self._config_dict[section][k] = _type(v)
+
+    def _verify_sections(self) -> None:
+        for section in self._config.sections():
                 else:
                     # Existing type handling
                     try:

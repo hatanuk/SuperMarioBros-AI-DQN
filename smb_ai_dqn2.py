@@ -27,32 +27,12 @@ from DQN_algorithm.DQN import DQNMario
 
 from smb_ai import draw_border, parse_args
 
-import dill
 import multiprocessing
 import queue
 
 normal_font = QtGui.QFont('Times', 11, QtGui.QFont.Normal)
 font_bold = QtGui.QFont('Times', 11, QtGui.QFont.Bold)
 
-import multiprocessing
-import dill
-from multiprocessing.reduction import ForkingPickler
-
-# Override ForkingPickler to use dill
-class DillForkingPickler(ForkingPickler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @staticmethod
-    def dumps(obj, protocol=None):
-        return dill.dumps(obj, protocol=protocol)
-
-    @staticmethod
-    def loads(buf):
-        return dill.loads(buf)
-
-ForkingPickler.dumps = DillForkingPickler.dumps
-ForkingPickler.loads = DillForkingPickler.loads
 
 
 
