@@ -66,10 +66,10 @@ class Visualizer(QtWidgets.QWidget):
             return
         for row in range(15):
             for col in range(16):
-                painter.setPen(QPen(Qt.black,  1, Qt.SolidLine))
+                painter.setPen(QPen(Qt.black, 1, Qt.SolidLine))
                 painter.setBrush(QBrush(Qt.white, Qt.SolidPattern))
-                x_start = 5 + (self.tile_width * col) + self.x_offset
-                y_start = 5 + (self.tile_height * row)
+                x_start = int(5 + (self.tile_width * col) + self.x_offset)
+                y_start = int(5 + (self.tile_height * row))
 
                 loc = (row, col)
                 tile = self.tiles[loc]
@@ -81,30 +81,26 @@ class Visualizer(QtWidgets.QWidget):
                 else:
                     pass
 
-                painter.drawRect(x_start, y_start, self.tile_width, self.tile_height)
+                painter.drawRect(x_start, y_start, int(self.tile_width), int(self.tile_height))
+
 
     def paintEvent(self, event):
-        painter = QPainter()
-        painter.begin(self)
+        painter = QPainter(self)
+        try:
+            if self._should_update:
+                draw_border(painter, self.size)
+                if self.ram is not None:
+                    self.draw_tiles(painter)
+                    self._draw_region_of_interest(painter)
+                    self.nn_viz.show_network(painter)
+            else:
+                painter.setPen(QColor(0, 0, 0))
+                painter.setFont(QtGui.QFont('Times', 30, QtGui.QFont.Normal))
+                txt = 'Display is hidden.\nHit Ctrl+V to show\nConfig: {}'.format(args.config)
+                painter.drawText(event.rect(), Qt.AlignCenter, txt)
+        finally:
+            painter.end()
 
-        if self._should_update:
-            draw_border(painter, self.size)
-            if not self.ram is None:
-                self.draw_tiles(painter)
-                self._draw_region_of_interest(painter)
-                self.nn_viz.show_network(painter)
-        else:
-            # draw_border(painter, self.size)
-            painter.setPen(QColor(0, 0, 0))
-            painter.setFont(QtGui.QFont('Times', 30, QtGui.QFont.Normal))
-            txt = 'Display is hidden.\nHit Ctrl+V to show\nConfig: {}'.format(args.config)
-            painter.drawText(event.rect(), Qt.AlignCenter, txt)
-            pass
-
-        painter.end()
-
-    def _update(self):
-        self.update()
 
 
 class GameWindow(QtWidgets.QWidget):
@@ -121,26 +117,24 @@ class GameWindow(QtWidgets.QWidget):
         
  
     def paintEvent(self, event):
-        painter = QPainter()
-        painter.begin(self)
+        # Hopefully this should stop complaining now
+        painter = QPainter(self)
+        try:
+            if self._should_update:
+                draw_border(painter, self.size)
+                if self.screen is not None:
+                    height, width, channel = self.screen.shape
+                    bytesPerLine = 3 * width
+                    qImg = QImage(self.screen.data, width, height, bytesPerLine, QImage.Format_RGB888)
+                    self.img_label.setPixmap(QPixmap.fromImage(qImg))
+            else:
+                painter.setPen(QColor(0, 0, 0))
+                painter.setFont(QtGui.QFont('Times', 30, QtGui.QFont.Normal))
+                txt = 'Display is hidden.\nHit Ctrl+V to show\nConfig: {}'.format(args.config)
+                painter.drawText(event.rect(), Qt.AlignCenter, txt)
+        finally:
+            painter.end()
 
-        if self._should_update:
-            draw_border(painter, self.size)
-            if self.screen is not None:
-                # Convert the screen data to a QImage and display it
-                height, width, channel = self.screen.shape
-                bytesPerLine = 3 * width
-                qImg = QImage(self.screen.data, width, height, bytesPerLine, QImage.Format_RGB888)
-                self.img_label.setPixmap(QPixmap.fromImage(qImg))
-        else:
-            # draw_border(painter, self.size)
-            painter.setPen(QColor(0, 0, 0))
-            painter.setFont(QtGui.QFont('Times', 30, QtGui.QFont.Normal))
-            txt = 'Display is hidden.\nHit Ctrl+V to show\nConfig: {}'.format(args.config)
-            painter.drawText(event.rect(), Qt.AlignCenter, txt)
-            pass
-
-        painter.end()
 
     def _update(self):
         self.update()
@@ -256,7 +250,7 @@ class InformationWidget(QtWidgets.QWidget):
     def to_attribute_name(input_string):
         input_string = input_string.replace(" ", "_")
         cleaned_string = re.sub(r'[^a-zA-Z_]', '', input_string)
-        return cleaned_string
+        return cleaned_string.lower()
 
 
     def _create_info_section(self, info_dict, vbox, prefix=''):
@@ -405,7 +399,6 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             while True:
                 ga_data = self.ga_data_queue.get_nowait()
-                # Update GA GUI components using ga_data
                 if not args.no_display:
                     if self._should_display:
                         self.ga_game_window.screen = ga_data['screen']
@@ -430,7 +423,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.ga_viz_window._should_update = False
                     self.ga_viz_window._update()
 
-                # Update info labels
                 self.info_window.ga_best_fitness.setText('{:.2f}'.format(ga_data['best_fitness']))
                 self.info_window.ga_max_distance.setText(str(ga_data['max_distance']))
                 self.info_window.ga_total_steps.setText(str(ga_data['total_steps']))
@@ -444,7 +436,6 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             while True:
                 dqn_data = self.dqn_data_queue.get_nowait()
-                # Update DQN GUI components using dqn_data
                 if not args.no_display:
                     if self._should_display:
                         self.dqn_game_window.screen = dqn_data['screen']
@@ -464,11 +455,10 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.dqn_viz_window._should_update = False
                     self.dqn_viz_window._update()
 
-                # Update info labels
                 self.info_window.dqn_best_fitness.setText('{:.2f}'.format(dqn_data['best_fitness']))
                 self.info_window.dqn_max_distance.setText(str(dqn_data['max_distance']))
                 self.info_window.dqn_total_steps.setText(str(dqn_data['total_steps']))
-                self.info_window.dqn_individual.setText(str(dqn_data['dqn_episodes']))
+                self.info_window.dqn_ndividual.setText(str(dqn_data['dqn_episodes']))
 
         except queue.Empty:
             pass
