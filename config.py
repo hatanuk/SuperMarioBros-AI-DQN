@@ -180,6 +180,8 @@ class Config(object):
                         self._config_dict[section][k] = SerializableFunction(func)
                     except Exception as e:
                         raise Exception(f"Error evaluating function for {section}.{k}: {v}. {e}")
+                    
+                    
                 elif _type == bool:
                     self._config_dict[section][k] = _type(eval(v))
                 else:
