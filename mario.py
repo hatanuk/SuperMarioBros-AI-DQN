@@ -104,7 +104,7 @@ class Mario(Individual):
         distance = self.x_dist
         score = self.game_score
 
-        self._fitness = SerializableFunction(self.config.GeneticAlgorithm.fitness_func(frames, distance, score, self.did_win))
+        self._fitness = SerializableFunction(self.config.GeneticAlgorithm.fitness_func)(frames, distance, score, self.did_win)
 
     def set_input_as_array(self, ram, tiles) -> None:
         mario_row, mario_col = SMB.get_mario_row_col(ram)
