@@ -177,8 +177,13 @@ class Mario(Individual):
 
         # Calculate the output
         output = self.network.feed_forward(self.inputs_as_array)
+        threshold = np.where(output > 0.5)[0]
         self.buttons_to_press.fill(0)  # Clear
-        highest_input = np.argmax(output, axis=0)~
+
+        # Set buttons
+        for b in threshold:
+            self.buttons_to_press[ouput_to_buttons_map[b]] = 1
+
         return True
     
 def save_mario(population_folder: str, individual_name: str, mario: Mario) -> None:

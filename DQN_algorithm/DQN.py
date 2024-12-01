@@ -348,10 +348,10 @@ class DQNMario(DQNAgent, Mario):
 
         self.model_output = output
         self.buttons_to_press.fill(0)  # Clear
+        highest_input = np.argmax(output, axis=0)
 
-        # Set buttons
-        for b in threshold:
-            self.buttons_to_press[ouput_to_buttons_map[b]] = 1
+        # !!! ONLY INCLUDES SINGLE ACTION OUTPUTS FOR NOW
+        self.buttons_to_press[ouput_to_buttons_map[highest_input]] = 1
 
         # Updates the fitness value as well
         self._fitness = self.config.DQN.reward_func(self.game_score, self.x_dist, self._frames, self.did_win)
