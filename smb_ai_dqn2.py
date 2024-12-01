@@ -34,8 +34,26 @@ import queue
 normal_font = QtGui.QFont('Times', 11, QtGui.QFont.Normal)
 font_bold = QtGui.QFont('Times', 11, QtGui.QFont.Bold)
 
-multiprocessing.set_start_method("fork", force=True)
-multiprocessing.reduction.ForkingPickler = dill.Pickler
+import multiprocessing
+import dill
+from multiprocessing.reduction import ForkingPickler
+
+# Override ForkingPickler to use dill
+class DillForkingPickler(ForkingPickler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def dumps(obj, protocol=None):
+        return dill.dumps(obj, protocol=protocol)
+
+    @staticmethod
+    def loads(buf):
+        return dill.loads(buf)
+
+ForkingPickler.dumps = DillForkingPickler.dumps
+ForkingPickler.loads = DillForkingPickler.loads
+
 
 
 class Visualizer(QtWidgets.QWidget):
@@ -788,6 +806,9 @@ def _crossover_and_mutate(p1, p2, config, current_generation):
     return c1_params, c2_params
 
 if __name__ == "__main__":
+
+    multiprocessing.set_start_method("fork", force=True)
+
     global args
     args = parse_args()
     config = None
