@@ -16,15 +16,7 @@ allowed_operators = {
     ast.Pow: op.pow,
     ast.USub: op.neg,
     ast.UAdd: op.pos,
-    ast.Call: op.call,
-    ast.Load: op.load,
-    ast.Name: op.attrgetter,
-    ast.Expr: op.attrgetter,
-    ast.BinOp: op.attrgetter,
-    ast.Num: op.attrgetter,
-    ast.Constant: op.attrgetter,
-    ast.UnaryOp: op.attrgetter,
-    ast.keyword: op.attrgetter
+    # Removed ast.Call and ast.Load
 }
 
 def safe_eval(expr, variables):
@@ -32,27 +24,27 @@ def safe_eval(expr, variables):
     def _eval(node):
         if isinstance(node, ast.Expression):
             return _eval(node.body)
-        elif isinstance(node, ast.Num):  # <number>
+        elif isinstance(node, ast.Num):  # For Python versions < 3.8
             return node.n
-        elif isinstance(node, ast.Constant):  # Python 3.8+
+        elif isinstance(node, ast.Constant):  # For Python 3.8 and above
             return node.value
         elif isinstance(node, ast.BinOp):  # <left> <operator> <right>
             if type(node.op) in allowed_operators:
                 return allowed_operators[type(node.op)](_eval(node.left), _eval(node.right))
             else:
                 raise TypeError(f"Unsupported binary operator: {ast.dump(node.op)}")
-        elif isinstance(node, ast.UnaryOp):  # - <operand> or + <operand>
+        elif isinstance(node, ast.UnaryOp):  # -<operand> or +<operand>
             if type(node.op) in allowed_operators:
                 return allowed_operators[type(node.op)](_eval(node.operand))
             else:
                 raise TypeError(f"Unsupported unary operator: {ast.dump(node.op)}")
         elif isinstance(node, ast.Call):  # Function calls like max(), min(), int()
-            func_name = node.func.id
-            if func_name in variables:
-                args = [_eval(arg) for arg in node.args]
-                return variables[func_name](*args)
+            func = _eval(node.func)
+            args = [_eval(arg) for arg in node.args]
+            if func in variables.values():
+                return func(*args)
             else:
-                raise NameError(f"Use of unsupported function '{func_name}'")
+                raise NameError(f"Use of unsupported function '{func.__name__}'")
         elif isinstance(node, ast.Name):
             if node.id in variables:
                 return variables[node.id]
