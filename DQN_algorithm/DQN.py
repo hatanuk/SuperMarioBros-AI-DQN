@@ -120,6 +120,9 @@ class DQN(nn.Module, FeedForwardNetwork):
         
         if X.shape[0] == self.x_size and X.shape[1] == 1:  # Case where it's transposed
             X = X.view(1, -1)  # Reshape to [1, 80]
+
+        if len(X.shape) == 3 and X.shape[2] == 1:  # Extra last dimension
+            X = X.squeeze(-1)  # Remove the last dimension
         
         print(f"After reshaping: {X.shape}")
         out = self.torch_model(X)
