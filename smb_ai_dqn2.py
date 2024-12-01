@@ -697,7 +697,7 @@ def run_dqn_agent(config, data_queue):
         done = not mario_DQN.is_alive
 
         # Experience replay buffer
-        mario_DQN.replay_buffer.add(curr_state, mario_DQN.buttons_to_press, next_state, reward, done)
+        mario_DQN.replay_buffer.append(curr_state, mario_DQN.buttons_to_press, next_state, reward, done)
 
         # Perform learning step
         mario_DQN.learn()
