@@ -178,6 +178,15 @@ class DQNAgent():
             # Replay buffer initialisation
             self.replay_buffer = ReplayBuffer(self.buffer_size)
 
+            self.output_to_keys_map = {
+                0: 4,  # U
+                1: 5,  # D
+                2: 6,  # L
+                3: 7,  # R
+                4: 8,  # A
+                5: 0   # B
+            }
+
 
         def choose_action(self, state): 
             if np.random.random() < self.epsilon:
@@ -211,17 +220,21 @@ class DQNAgent():
         def learn(self):
             if len(self.replay_buffer) < self.batch_size:
                 return
+            
+          
 
             samples = self.replay_buffer.sample(self.batch_size)
             states, actions, next_states, rewards, dones = zip(*samples)
 
             states = torch.FloatTensor(states)
-            actions = torch.LongTensor(actions).unsqueeze(1) 
+            actions = torch.FloatTensor([self.output_to_keys_map[a] for a in actions]).unsqueeze(1)
+
             next_states = torch.FloatTensor(next_states)
             rewards = torch.FloatTensor(rewards).unsqueeze(1)  
             dones = torch.FloatTensor(dones).unsqueeze(1) 
 
             print(f"states shape: {states.shape}, actions shape: {actions.shape}, next states shape: {next_states.shape}, rewards shape: {rewards.shape}, dones shape : {dones.shape}") 
+
 
             predicted_values = self.network.forward(states).gather(1, actions)  # Q(s, a)
 

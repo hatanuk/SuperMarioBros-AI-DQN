@@ -696,6 +696,7 @@ def run_dqn_agent(config, data_queue):
         reward = mario_DQN.calculate_reward(curr_stats, next_stats)
         done = not mario_DQN.is_alive
 
+
         # Experience replay buffer
         mario_DQN.replay_buffer.append((curr_state, mario_DQN.buttons_to_press, next_state, reward, done))
 
