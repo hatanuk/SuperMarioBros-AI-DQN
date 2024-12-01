@@ -702,8 +702,6 @@ def run_dqn_agent(config, data_queue):
         # Perform learning step
         mario_DQN.learn()
 
-        # Update stats
-        mario_DQN.fitness += reward
         if mario_DQN.is_alive:
             if mario_DQN.farthest_x > max_distance_DQN:
                 max_distance_DQN = mario_DQN.farthest_x

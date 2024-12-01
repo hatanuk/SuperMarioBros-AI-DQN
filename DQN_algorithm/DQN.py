@@ -329,4 +329,7 @@ class DQNMario(DQNAgent, Mario):
         for b in threshold:
             self.buttons_to_press[ouput_to_buttons_map[b]] = 1
 
+        # Updates the fitness value as well
+        self._fitness = self.config.DQN.reward_func(self.game_score, self.x_dist, self._frames, self.did_win)
+
         return True
