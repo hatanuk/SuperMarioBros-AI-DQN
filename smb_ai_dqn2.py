@@ -101,6 +101,9 @@ class Visualizer(QtWidgets.QWidget):
         finally:
             painter.end()
 
+    def _update(self):
+        self.update()
+
 
 
 class GameWindow(QtWidgets.QWidget):
