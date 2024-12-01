@@ -237,11 +237,12 @@ class DQNMario(DQNAgent, Mario):
                  config: Config,
                  name: Optional[str] = None,
                  debug: Optional[bool] = False,):
+        self.config = config
         self.hidden_activation = self.config.NeuralNetworkDQN.hidden_node_activation
         self.output_activation = self.config.NeuralNetworkDQN.output_node_activation
         self.network_architecture = self.config.NeuralNetworkDQN.hidden_layer_architecture
         hidden_layer_architecture = self.network_architecture[1:-1]
-        self.config = config
+        
 
         Mario.__init__(self, config, None, hidden_layer_architecture, self.hidden_activation,
          self.output_activation, np.inf, name, debug)
