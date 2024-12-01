@@ -323,7 +323,7 @@ class DQNMario(DQNAgent, Mario):
         # Calculate the output
         output = self.choose_action(self.inputs_as_array)
 
-        threshold = torch.nonzero(output > 0.5, as_tuple=True)[0].cpu().numpy()
+        threshold = np.where(output > 0.5)[0]
 
         self.model_output = output
         self.buttons_to_press.fill(0)  # Clear
