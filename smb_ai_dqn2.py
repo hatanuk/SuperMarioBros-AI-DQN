@@ -712,8 +712,6 @@ def run_dqn_agent(config, data_queue):
             # Episode ended
             dqn_episodes += 1
             env.reset()
-            mario_DQN.reset()
-            # Optionally, you can update the neural network visualization here
 
         # Prepare data to send back
         data = {
