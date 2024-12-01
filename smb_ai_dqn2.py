@@ -805,15 +805,12 @@ def _crossover_and_mutate(p1, p2, config, current_generation):
     return c1_params, c2_params
 
 def get_stats(mario):
+        # returns the game's stats for reward calculation
         frames = mario._frames if mario._frames is not None else 0
         distance = mario.x_dist if mario.x_dist is not None else 0
         score = mario.game_score if mario.game_score is not None else 0
-
-        return {
-            "frames" : frames,
-            "distance" : distance,
-            "score" : score
-        }
+        did_win  = mario.did_win
+        return [frames, distance, score, did_win]
 
 if __name__ == "__main__":
 

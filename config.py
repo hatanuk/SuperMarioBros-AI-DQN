@@ -50,13 +50,18 @@ _params = {
         'encode_row': bool,
     },
 
-     'NeuralNetworkDQN': {
+    'NeuralNetworkDQN': {
         'input_dims': (tuple, int),
         'hidden_layer_architecture': (tuple, int),
         'hidden_node_activation': str,
         'output_node_activation': str,
         'encode_row': bool,
         'learning_rate': float
+    },
+
+    # Deep Q Network
+    'DQN': {
+        'reward_func': SerializableFunction
     },
 
     # Genetic Algorithm

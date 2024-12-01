@@ -257,16 +257,12 @@ class DQNMario(DQNAgent, Mario):
         DQNAgent.__init__(self, self.network_architecture[-1], get_num_inputs(self.config), model)
 
     def calculate_reward(self, prev_stats, next_stats):
-        frames_passed = next_stats["frames"] - prev_stats["frames"]
-        distance_moved = next_stats["distance"] - prev_stats["distance"]
-        score_increased = next_stats["score"] - prev_stats["score"]
-        
-        reward = 0
-        reward += frames_passed * self.config.NeuralNetworkDQN.reward_frames_passed
-        reward += distance_moved * self.config.NeuralNetworkDQN.reward_distance_moved
-        reward += score_increased * self.config.NeuralNetworkDQN.reward_score_increased
+        # For the DQN, reward for a state transition is calculated by taking the difference between the previous and next reward
 
-        return reward
+        prev_reward = self.config.DQN.reward_func(*prev_stats)
+        next_reward = self.config.DQN.reward_func(*next_stats)
+
+        return next_reward - prev_reward
 
 
 
