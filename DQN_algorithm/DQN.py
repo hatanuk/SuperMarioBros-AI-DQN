@@ -227,8 +227,7 @@ class DQNAgent():
             states, actions, next_states, rewards, dones = zip(*samples)
 
             states = torch.FloatTensor(states)
-            actions = torch.LongTensor(actions).unsqueeze(1)
-
+            actions = torch.LongTensor(actions)
             next_states = torch.FloatTensor(next_states)
             rewards = torch.FloatTensor(rewards).unsqueeze(1)  
             dones = torch.FloatTensor(dones).unsqueeze(1) 

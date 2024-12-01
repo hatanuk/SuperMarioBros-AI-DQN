@@ -178,11 +178,7 @@ class Mario(Individual):
         # Calculate the output
         output = self.network.feed_forward(self.inputs_as_array)
         self.buttons_to_press.fill(0)  # Clear
-        highest_input = np.argmax(output, axis=0)
-
-        # !!! ONLY INCLUDES SINGLE ACTION OUTPUTS FOR NOW
-        self.buttons_to_press[ouput_to_buttons_map[highest_input]] = 1
-
+        highest_input = np.argmax(output, axis=0)~
         return True
     
 def save_mario(population_folder: str, individual_name: str, mario: Mario) -> None:
