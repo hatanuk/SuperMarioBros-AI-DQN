@@ -34,8 +34,6 @@ normal_font = QtGui.QFont('Times', 11, QtGui.QFont.Normal)
 font_bold = QtGui.QFont('Times', 11, QtGui.QFont.Bold)
 
 
-
-
 class Visualizer(QtWidgets.QWidget):
     def __init__(self, parent, size, config: Config, nn_viz: NeuralNetworkViz):
         super().__init__(parent)
@@ -785,8 +783,8 @@ def get_stats(mario):
         # returns the game's stats for reward calculation
         frames = mario._frames if mario._frames is not None else 0
         distance = mario.x_dist if mario.x_dist is not None else 0
-        score = mario.game_score if mario.game_score is not None else 0
-        return [frames, distance, score]
+        #score = mario.game_score if mario.game_score is not None else 0
+        return [frames, distance]
 
 if __name__ == "__main__":
 

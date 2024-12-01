@@ -2,55 +2,6 @@ import configparser
 import os
 from typing import Any, Dict
 
-import ast
-import operator as op
-
-# Supported operators for safe evaluation
-allowed_operators = {
-    ast.Add: op.add,
-    ast.Sub: op.sub,
-    ast.Mult: op.mul,
-    ast.Div: op.truediv,
-    ast.Pow: op.pow,
-    ast.USub: op.neg,
-    ast.UAdd: op.pos,
-}
-
-def safe_eval(expr, variables):
-    # Parse an expression and evaluate it safely
-    def _eval(node):
-        if isinstance(node, ast.Expression):
-            return _eval(node.body)
-        elif isinstance(node, ast.Num):  # For Python versions < 3.8
-            return node.n
-        elif isinstance(node, ast.Constant):  # For Python 3.8 and above
-            return node.value
-        elif isinstance(node, ast.BinOp):  # <left> <operator> <right>
-            if type(node.op) in allowed_operators:
-                return allowed_operators[type(node.op)](_eval(node.left), _eval(node.right))
-            else:
-                raise TypeError(f"Unsupported binary operator: {ast.dump(node.op)}")
-        elif isinstance(node, ast.UnaryOp):  # -<operand> or +<operand>
-            if type(node.op) in allowed_operators:
-                return allowed_operators[type(node.op)](_eval(node.operand))
-            else:
-                raise TypeError(f"Unsupported unary operator: {ast.dump(node.op)}")
-        elif isinstance(node, ast.Call):  # Function calls like max(), min(), int()
-            func = _eval(node.func)
-            args = [_eval(arg) for arg in node.args]
-            if func in variables.values():
-                return func(*args)
-            else:
-                raise NameError(f"Use of unsupported function '{func.__name__}'")
-        elif isinstance(node, ast.Name):
-            if node.id in variables:
-                return variables[node.id]
-            else:
-                raise NameError(f"Use of undefined variable '{node.id}'")
-        else:
-            raise TypeError(f"Unsupported expression: {ast.dump(node)}")
-    node = ast.parse(expr, mode='eval')
-    return _eval(node.body)
 
 # A mapping from parameters name -> final type
 _params = {
@@ -75,22 +26,6 @@ _params = {
         'encode_row': bool,
     },
 
-    'NeuralNetworkDQN': {
-        'input_dims': (tuple, int),
-        'hidden_layer_architecture': (tuple, int),
-        'hidden_node_activation': str,
-        'output_node_activation': str,
-        'encode_row': bool,
-        'learning_rate': float
-    },
-
-    # Deep Q Network
-    'DQN': {
-    },
-
-    # Genetic Algorithm
-    'GeneticAlgorithm': {
-    },
 
     # Crossover Params
     'Crossover': {
@@ -148,7 +83,7 @@ class DotNotation(object):
         return str(self.__dict__)
 
     def __repr__(self) -> str:
-        return str(self.__dict__)
+        return str(self)
 
 
 class Config(object):
@@ -172,31 +107,9 @@ class Config(object):
         dot_notation = DotNotation(self._config_dict)
         self.__dict__.update(dot_notation.__dict__)
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        # Remove unpickleable attributes
-        state.pop('get_fitness_func', None)
-        state.pop('get_reward_func', None)
-        state['_fitness_func_expr'] = self._config_dict['GeneticAlgorithm']['fitness_func']
-        state['_reward_func_expr'] = self._config_dict['DQN']['reward_func']
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.get_fitness_func = self._create_fitness_func(state['_fitness_func_expr'])
-        self.get_reward_func = self._create_reward_func(state['_reward_func_expr'])
-
-    def _create_fitness_func(self, expr):
-        def fitness_func(**variables):
-            safe_vars = {'max': max, 'min': min, 'int': int, **variables}
-            return safe_eval(expr, safe_vars)
-        return fitness_func
-
-    def _create_reward_func(self, expr):
-        def reward_func(**variables):
-            safe_vars = {'max': max, 'min': min, 'int': int, **variables}
-            return safe_eval(expr, safe_vars)
-        return reward_func
+    # Temporarily hardcoded
+    def fitness_func(distance, frames, did_win):
+        max(distance ** 1.8 - frames ** 1.5 + min(max(distance - 50, 0), 1) * 2500 + int(did_win) * 1e6, 0.00001)
 
     def _create_dict_from_config(self) -> None:
         d = {}
@@ -210,28 +123,30 @@ class Config(object):
     def _set_dict_types(self) -> None:
         for section in self._config_dict:
             for k, v in self._config_dict[section].items():
-                if k in ('reward_func', 'fitness_func'):
-                    # Store the function expression as a string
-                    self._config_dict[section][k] = v
-                else:
-                    # Existing type handling
-                    try:
-                        _type = _params[section][k]
-                    except:
-                        raise Exception('No value "{}" found for section "{}". Please set this in _params'.format(k, section))
-                    
-                    if isinstance(_type, tuple):
-                        if len(_type) == 2:
-                            cast = _type[1]
-                            v = v.replace('(', '').replace(')', '')
-                            self._config_dict[section][k] = tuple(cast(val) for val in v.split(','))
-                        else:
-                            raise Exception('Expected a 2-tuple value describing parsing logic')
-                    elif _type == bool:
-                        self._config_dict[section][k] = _type(eval(v))
+                try:
+                    _type = _params[section][k]
+                except:
+                    raise Exception('No value "{}" found for section "{}". Please set this in _params'.format(k, section))
+                # Normally _type will be int, str, float or some type of built-in type.
+                # If _type is an instance of a tuple, then we need to split the data
+                if isinstance(_type, tuple):
+                    if len(_type) == 2:
+                        cast = _type[1]
+                        v = v.replace('(', '').replace(')', '')  # Remove any parens that might be present 
+                        self._config_dict[section][k] = tuple(cast(val) for val in v.split(','))
                     else:
-                        self._config_dict[section][k] = _type(v)
-
+                        raise Exception('Expected a 2 tuple value describing that it is to be parse as a tuple and the type to cast it as')
+                elif 'lambda' in v:
+                    try:
+                        self._config_dict[section][k] = eval(v)
+                    except:
+                        pass
+                # Is it a bool?
+                elif _type == bool:
+                    self._config_dict[section][k] = _type(eval(v))
+                # Otherwise parse normally
+                else:
+                    self._config_dict[section][k] = _type(v)
 
     def _verify_sections(self) -> None:
         # Validate sections
@@ -255,29 +170,3 @@ class Config(object):
             return True
         except ValueError:
             return False
-
-    def get_reward_func(self):
-        expr = self._config_dict['DQN']['reward_func']
-        def reward_func(**variables):
-            # Include built-in functions like max(), min(), int() in variables
-            safe_vars = {
-                'max': max,
-                'min': min,
-                'int': int,
-                **variables
-            }
-            return safe_eval(expr, safe_vars)
-        return reward_func
-
-    def get_fitness_func(self):
-        expr = self._config_dict['GeneticAlgorithm']['fitness_func']
-        def fitness_func(**variables):
-            # Include built-in functions like max(), min(), int() in variables
-            safe_vars = {
-                'max': max,
-                'min': min,
-                'int': int,
-                **variables
-            }
-            return safe_eval(expr, safe_vars)
-        return fitness_func

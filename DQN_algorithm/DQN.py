@@ -262,14 +262,6 @@ class DQNAgent():
             self.step_counter += 1
             self.decay_epsilon()
 
-# Define the reward function outside the class
-def reward_func(frames, distance, game_score, did_win):
-    return max(
-        distance ** 1.8 -
-        frames ** 1.5 +
-        min(max(distance - 50, 0), 1) * 2500 +
-        did_win * 1e6, 0.00001
-    )
 
 # This is the interface that allows the DQN implementation to be
 # compatible with the rest of the code
@@ -279,7 +271,7 @@ class DQNMario(DQNAgent, Mario):
                  name: Optional[str] = None,
                  debug: Optional[bool] = False,):
         self.config = config
-        self.reward_func = self.config.get_reward_func()
+        self.reward_func = self.config.fitness_func
         self.hidden_activation = self.config.NeuralNetworkDQN.hidden_node_activation
         self.output_activation = self.config.NeuralNetworkDQN.output_node_activation
         self.network_architecture = self.config.NeuralNetworkDQN.hidden_layer_architecture
@@ -292,21 +284,19 @@ class DQNMario(DQNAgent, Mario):
 
     def calculate_reward(self, prev_stats, next_stats):
 
-        prev_frames, prev_distance, prev_score = prev_stats
-        next_frames, next_distance, next_score = next_stats
+        prev_frames, prev_distance = prev_stats
+        next_frames, next_distance = next_stats
         
         did_win = self.did_win
 
         prev_reward = self.reward_func(
             frames=prev_frames,
             distance=prev_distance,
-            game_score=prev_score,
             did_win=False
         )
         next_reward = self.reward_func(
             frames=next_frames,
             distance=next_distance,
-            game_score=next_score,
             did_win=did_win
         )
 

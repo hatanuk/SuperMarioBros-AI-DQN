@@ -24,7 +24,7 @@ class Mario(Individual):
         
 
         self.config = config
-        self.fitness_func = self.config.get_fitness_func()
+        self.fitness_func = config.fitness_func
 
         self.lifespan = lifespan
         self.name = name
