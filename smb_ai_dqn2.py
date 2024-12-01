@@ -809,6 +809,7 @@ def get_state(ram, mario):
 if __name__ == "__main__":
 
     multiprocessing.set_start_method("fork", force=True)
+    sys.stdout = sys.stderr
 
     global args
     args = parse_args()
