@@ -5,7 +5,7 @@ from torch import argmax
 import torch
 from torch import nn
 from random import sample
-from collections import deque
+from collections import deque, OrderedDict
 from config import Config
 from mario import Mario
 from neural_network import FeedForwardNetwork, get_activation_by_name, sigmoid, tanh, relu, leaky_relu, linear, ActivationFunction
