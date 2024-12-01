@@ -26,6 +26,15 @@ _params = {
         'encode_row': bool,
     },
 
+     'NeuralNetworkDQN': {
+        'input_dims': (tuple, int),
+        'hidden_layer_architecture': (tuple, int),
+        'hidden_node_activation': str,
+        'output_node_activation': str,
+        'encode_row': bool,
+        'learning_rate': float
+    },
+
     # Genetic Algorithm
     'GeneticAlgorithm': {
         'fitness_func': type(lambda : None)
