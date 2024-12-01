@@ -88,7 +88,8 @@ class NeuralNetworkViz(QtWidgets.QWidget):
                     else:
                         painter.setBrush(QtGui.QBrush(Qt.white))
 
-                painter.drawEllipse(x_loc, y_loc, self.neuron_radius*2, self.neuron_radius*2)
+            painter.drawEllipse(int(x_loc), int(y_loc), int(self.neuron_radius*2), int(self.neuron_radius*2))
+
             v_offset += 150
 
         # Reset horizontal offset for the weights
