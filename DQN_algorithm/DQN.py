@@ -10,6 +10,7 @@ from config import Config
 from mario import Mario
 from neural_network import FeedForwardNetwork, get_activation_by_name, sigmoid, tanh, relu, leaky_relu, linear, ActivationFunction
 from utils import SMB
+from mario import get_num_inputs
 
 
 
@@ -242,13 +243,11 @@ class DQNMario(DQNAgent, Mario):
         self.output_activation = self.config.NeuralNetworkDQN.output_node_activation
         self.network_architecture = self.config.NeuralNetworkDQN.hidden_layer_architecture
         hidden_layer_architecture = self.network_architecture[1:-1]
-        
-
+      
         Mario.__init__(self, config, None, hidden_layer_architecture, self.hidden_activation,
          self.output_activation, np.inf, name, debug)
         model = DQN(self.network_architecture, get_activation_by_name(self.hidden_activation), get_activation_by_name(self.output_activation))
-        DQNAgent.__init__(self, self.network_architecture[-1], self.get_num_inputs(config), model)
-
+        DQNAgent.__init__(self, self.network_architecture[-1], get_num_inputs(self.config), model)
 
     def calculate_reward(self, prev_stats, next_stats):
         frames_passed = next_stats["frames"] - prev_stats["frames"]
