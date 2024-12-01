@@ -678,8 +678,7 @@ def run_dqn_agent(config, data_queue):
         tiles = SMB.get_tiles(ram)
         enemies = SMB.get_enemy_locations(ram)
 
-        # Get current state
-        curr_state = mario_DQN.get_state(ram, tiles)
+        curr_state = get_state(ram, mario_DQN)
 
         # Update the DQN agent to get the output
         mario_DQN.update(ram, tiles, keys, ouput_to_keys_map)
@@ -688,17 +687,14 @@ def run_dqn_agent(config, data_queue):
         ret = env.step(mario_DQN.buttons_to_press)
         total_steps_DQN += 1
 
-        # Get next state
-        next_ram = env.get_ram()
-        next_tiles = SMB.get_tiles(next_ram)
-        next_state = mario_DQN.get_state(next_ram, next_tiles)
+        next_state = get_state(ram, mario_DQN)
 
         # Calculate reward
         reward = mario_DQN.calculate_reward(curr_state, next_state)
         done = not mario_DQN.is_alive
 
         # Experience replay buffer
-        mario_DQN.replay_buffer.add(curr_state, mario_DQN.action, next_state, reward, done)
+        mario_DQN.replay_buffer.add(curr_state, mario_DQN.buttons_to_press, next_state, reward, done)
 
         # Perform learning step
         mario_DQN.learn()
@@ -804,6 +800,11 @@ def _crossover_and_mutate(p1, p2, config, current_generation):
         np.clip(c2_params['b' + str(l)], -1, 1, out=c2_params['b' + str(l)])
 
     return c1_params, c2_params
+
+def get_state(ram, mario):
+    tiles = SMB.get_tiles(ram)
+    mario.set_input_as_array(ram, tiles)
+    return mario.input_as_array
 
 if __name__ == "__main__":
 
