@@ -117,11 +117,14 @@ class DQN(nn.Module, FeedForwardNetwork):
     def forward(self, X):
 
         assert X.shape[0] == self.layer_nodes[0], f"Input shape {X.shape} does not match expected {self.layer_nodes[0]} nodes."
-        print("hello")
-        assert 1 == 0, "test"
+        print(f"Input to forward(): {X.shape}")
 
 
         X = torch.as_tensor(X, dtype = torch.float32)
+
+        if len(X.shape) == 1:
+            X = X.view(1, -1)  # Add batch dimension
+        print(f"After reshaping: {X.shape}")
         out = self.torch_model(X)
         print(f"Output type from torch_model: {type(out)}, shape: {out.shape}")
         return out
