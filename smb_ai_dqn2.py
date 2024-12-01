@@ -6,14 +6,11 @@ from PyQt5.QtCore import Qt, QPointF, QTimer, QRect
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
 
-from PIL import Image
 from typing import Tuple, List, Optional
 import random
 import sys
 import math
 import numpy as np
-import argparse
-import os
 
 from utils import SMB, EnemyType, StaticTileType, ColorMap, DynamicTileType
 from config import Config
@@ -26,9 +23,9 @@ from genetic_algorithm.selection import elitism_selection, tournament_selection,
 from genetic_algorithm.crossover import simulated_binary_crossover as SBX
 from genetic_algorithm.mutation import gaussian_mutation
 
-from DQN_algorithm import DQN, DQNAgent, DQNMario
+from DQN_algorithm.DQN import DQNMario
 
-from smb_ai import next_generation, draw_border, parse_args
+from smb_ai import draw_border, parse_args
 
 normal_font = QtGui.QFont('Times', 11, QtGui.QFont.Normal)
 font_bold = QtGui.QFont('Times', 11, QtGui.QFont.Bold)
