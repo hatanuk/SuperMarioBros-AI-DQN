@@ -247,7 +247,7 @@ class DQNMario(DQNAgent, Mario):
         Mario.__init__(self, config, None, hidden_layer_architecture, self.hidden_activation,
          self.output_activation, np.inf, name, debug)
         model = DQN(self.network_architecture, get_activation_by_name(self.hidden_activation), get_activation_by_name(self.output_activation))
-        DQNAgent.__init__(self, self.network_architecture[-1], self.get_num_inputa(config), model)
+        DQNAgent.__init__(self, self.network_architecture[-1], self.get_num_inputs(config), model)
 
 
     def calculate_reward(self, prev_stats, next_stats):
