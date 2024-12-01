@@ -48,17 +48,22 @@ class Visualizer(QtWidgets.QWidget):
         self._should_update = True
 
     def _draw_region_of_interest(self, painter: QPainter) -> None:
-        # Grab mario row/col in our tiles
-        mario = SMB.get_mario_location_on_screen(self.ram)
-        mario_row, mario_col = SMB.get_mario_row_col(self.ram)
+        _, mario_col = SMB.get_mario_row_col(self.ram)
         x = mario_col
-       
+
         color = QColor(255, 0, 217)
         painter.setPen(QPen(color, 3.0, Qt.SolidLine))
-        painter.setBrush(QBrush(Qt.NoBrush))
+        painter.setBrush(Qt.NoBrush)
 
         start_row, viz_width, viz_height = self.config.NeuralNetwork.input_dims
-        painter.drawRect(x*self.tile_width + 5 + self.x_offset, start_row*self.tile_height + 5, viz_width*self.tile_width, viz_height*self.tile_height)
+        
+        rect_x = int(x * self.tile_width + 5 + self.x_offset)
+        rect_y = int(start_row * self.tile_height + 5)
+        rect_width = int(viz_width * self.tile_width)
+        rect_height = int(viz_height * self.tile_height)
+
+        painter.drawRect(rect_x, rect_y, rect_width, rect_height)
+
 
 
     def draw_tiles(self, painter: QPainter):
