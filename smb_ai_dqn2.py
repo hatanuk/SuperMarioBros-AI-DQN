@@ -806,8 +806,7 @@ def get_stats(mario):
         frames = mario._frames if mario._frames is not None else 0
         distance = mario.x_dist if mario.x_dist is not None else 0
         score = mario.game_score if mario.game_score is not None else 0
-        did_win  = mario.did_win
-        return [frames, distance, score, did_win]
+        return [frames, distance, score]
 
 if __name__ == "__main__":
 

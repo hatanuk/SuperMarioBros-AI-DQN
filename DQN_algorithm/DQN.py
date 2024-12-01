@@ -291,16 +291,17 @@ class DQNMario(DQNAgent, Mario):
         DQNAgent.__init__(self, self.network_architecture[-1], get_num_inputs(self.config), model)
 
     def calculate_reward(self, prev_stats, next_stats):
-        # Unpack stats
-        prev_frames, prev_distance, prev_score, did_win = prev_stats
-        next_frames, next_distance, next_score, did_win = next_stats
 
-        # Use the reward_func from config
+        prev_frames, prev_distance, prev_score = prev_stats
+        next_frames, next_distance, next_score = next_stats
+        
+        did_win = self.did_win
+
         prev_reward = self.reward_func(
             frames=prev_frames,
             distance=prev_distance,
             game_score=prev_score,
-            did_win=did_win
+            did_win=False
         )
         next_reward = self.reward_func(
             frames=next_frames,

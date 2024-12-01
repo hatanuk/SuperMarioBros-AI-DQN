@@ -2,8 +2,6 @@ import configparser
 import os
 from typing import Any, Dict
 
-import dill
-
 import ast
 import operator as op
 
@@ -16,7 +14,6 @@ allowed_operators = {
     ast.Pow: op.pow,
     ast.USub: op.neg,
     ast.UAdd: op.pos,
-    # Removed ast.Call and ast.Load
 }
 
 def safe_eval(expr, variables):
@@ -54,22 +51,6 @@ def safe_eval(expr, variables):
             raise TypeError(f"Unsupported expression: {ast.dump(node)}")
     node = ast.parse(expr, mode='eval')
     return _eval(node.body)
-
-class SerializableFunction:
-    def __init__(self, func):
-        self.func = func
-
-    def __getstate__(self):
-        # Serialize the function using dill
-        return dill.dumps(self.func)
-
-    def __setstate__(self, state):
-        # Restore the function using dill
-        self.func = dill.loads(state)
-
-    def __call__(self, *args, **kwargs):
-        return self.func(*args, **kwargs)
-
 
 # A mapping from parameters name -> final type
 _params = {
