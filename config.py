@@ -5,13 +5,24 @@ from typing import Any, Dict
 
 ## For multithreading, lambda functions need to be named ie. serializable
 ## This is used for the fitness function
+import dill
+
 class SerializableFunction:
     def __init__(self, func):
         self.func = func
+        self.serialized_func = dill.dumps(func) 
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
-    
+
+    def __reduce__(self):
+        return (self._reconstruct, (self.serialized_func,))
+
+    @staticmethod
+    def _reconstruct(serialized_func):
+        func = dill.loads(serialized_func)
+        return SerializableFunction(func)
+
     def __repr__(self):
         return f"SerializableFunction({self.func})"
 
@@ -150,26 +161,25 @@ class Config(object):
                     _type = _params[section][k]
                 except:
                     raise Exception('No value "{}" found for section "{}". Please set this in _params'.format(k, section))
-                # Normally _type will be int, str, float or some type of built-in type.
-                # If _type is an instance of a tuple, then we need to split the data
+                
                 if isinstance(_type, tuple):
                     if len(_type) == 2:
                         cast = _type[1]
-                        v = v.replace('(', '').replace(')', '')  # Remove any parens that might be present 
+                        v = v.replace('(', '').replace(')', '')
                         self._config_dict[section][k] = tuple(cast(val) for val in v.split(','))
                     else:
-                        raise Exception('Expected a 2 tuple value describing that it is to be parse as a tuple and the type to cast it as')
-                elif isinstance(_type, SerializableFunction):
+                        raise Exception('Expected a 2-tuple value describing parsing logic')
+                elif _type == SerializableFunction:
                     try:
-                        self._config_dict[section][k] = SerializableFunction(eval(v))
-                    except:
-                        pass
-                # Is it a bool?
+                        func = eval(v)  # Convert the string into a callable
+                        self._config_dict[section][k] = SerializableFunction(func)
+                    except Exception as e:
+                        raise Exception(f"Error evaluating function for {section}.{k}: {v}. {e}")
                 elif _type == bool:
                     self._config_dict[section][k] = _type(eval(v))
-                # Otherwise parse normally
                 else:
                     self._config_dict[section][k] = _type(v)
+
 
     def _verify_sections(self) -> None:
         # Validate sections
