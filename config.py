@@ -152,9 +152,11 @@ class DotNotation(object):
 
 
 class Config(object):
-    def __init__(self, filename: str):
+    def __init__(self,
+                 filename: str
+                 ):
         self.filename = filename
-
+        
         if not os.path.isfile(self.filename):
             raise Exception('No file found named "{}"'.format(self.filename))
 
@@ -167,25 +169,22 @@ class Config(object):
         self._verify_sections()
         self._create_dict_from_config()
         self._set_dict_types()
-
-        # Store expressions for functions
-        self._fitness_func_expr = self._config_dict['GeneticAlgorithm'].get('fitness_func', "")
-        self._reward_func_expr = self._config_dict['DQN'].get('reward_func', "")
+        dot_notation = DotNotation(self._config_dict)
+        self.__dict__.update(dot_notation.__dict__)
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        # Store expressions instead of the functions
-        state['fitness_func_expr'] = self._fitness_func_expr
-        state['reward_func_expr'] = self._reward_func_expr
+        # Remove unpickleable attributes
         state.pop('get_fitness_func', None)
         state.pop('get_reward_func', None)
+        state['_fitness_func_expr'] = self._config_dict['GeneticAlgorithm']['fitness_func']
+        state['_reward_func_expr'] = self._config_dict['DQN']['reward_func']
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        # Recreate functions from expressions
-        self.get_fitness_func = self._create_fitness_func(state['fitness_func_expr'])
-        self.get_reward_func = self._create_reward_func(state['reward_func_expr'])
+        self.get_fitness_func = self._create_fitness_func(state['_fitness_func_expr'])
+        self.get_reward_func = self._create_reward_func(state['_reward_func_expr'])
 
     def _create_fitness_func(self, expr):
         def fitness_func(**variables):
@@ -199,15 +198,16 @@ class Config(object):
             return safe_eval(expr, safe_vars)
         return reward_func
 
-    def _create_dict_from_config(self):
+    def _create_dict_from_config(self) -> None:
         d = {}
         for section in self._config.sections():
             d[section] = {}
             for k, v in self._config[section].items():
                 d[section][k] = v
+
         self._config_dict = d
 
-    def _set_dict_types(self):
+    def _set_dict_types(self) -> None:
         for section in self._config_dict:
             for k, v in self._config_dict[section].items():
                 if k in ('reward_func', 'fitness_func'):
@@ -232,13 +232,52 @@ class Config(object):
                     else:
                         self._config_dict[section][k] = _type(v)
 
-    def _verify_sections(self):
-        for section in self._config.sections():
-            if section not in _params:
-                raise Exception(f'Section "{section}" has no parameters allowed. Please remove this section and run again.')
 
-    def get_fitness_func(self):
-        return self._create_fitness_func(self._fitness_func_expr)
+    def _verify_sections(self) -> None:
+        # Validate sections
+        for section in self._config.sections():
+            # Make sure the section is allowed
+            if section not in _params:
+                raise Exception('Section "{}" has no parameters allowed. Please remove this section and run again.'.format(section))
+
+    def _get_reference_from_dict(self, reference: str) -> Any:
+        path = reference.split('.')
+        d = self._config_dict
+        for p in path:
+            d = d[p]
+        
+        assert type(d) in (tuple, int, float, bool, str)
+        return d
+
+    def _is_number(self, value: str) -> bool:
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
 
     def get_reward_func(self):
-        return self._create_reward_func(self._reward_func_expr)
+        expr = self._config_dict['DQN']['reward_func']
+        def reward_func(**variables):
+            # Include built-in functions like max(), min(), int() in variables
+            safe_vars = {
+                'max': max,
+                'min': min,
+                'int': int,
+                **variables
+            }
+            return safe_eval(expr, safe_vars)
+        return reward_func
+
+    def get_fitness_func(self):
+        expr = self._config_dict['GeneticAlgorithm']['fitness_func']
+        def fitness_func(**variables):
+            # Include built-in functions like max(), min(), int() in variables
+            safe_vars = {
+                'max': max,
+                'min': min,
+                'int': int,
+                **variables
+            }
+            return safe_eval(expr, safe_vars)
+        return fitness_func
