@@ -260,6 +260,7 @@ class DQNMario(DQNAgent, Mario):
         frames_passed = next_stats["frames"] - prev_stats["frames"]
         distance_moved = next_stats["distance"] - prev_stats["distance"]
         score_increased = next_stats["score"] - prev_stats["score"]
+        
         reward = 0
         reward += frames_passed * self.config.NeuralNetworkDQN.reward_frames_passed
         reward += distance_moved * self.config.NeuralNetworkDQN.reward_distance_moved

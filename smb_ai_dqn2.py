@@ -678,7 +678,8 @@ def run_dqn_agent(config, data_queue):
         tiles = SMB.get_tiles(ram)
         enemies = SMB.get_enemy_locations(ram)
 
-        curr_state = get_state(ram, mario_DQN)
+        curr_stats = get_stats(mario_DQN) # gets the x distance, frames, score, etc. for reward calculation
+        curr_state = mario_DQN.inputs_as_array
 
         # Update the DQN agent to get the output
         mario_DQN.update(ram, tiles, keys, ouput_to_keys_map)
@@ -687,10 +688,12 @@ def run_dqn_agent(config, data_queue):
         ret = env.step(mario_DQN.buttons_to_press)
         total_steps_DQN += 1
 
-        next_state = get_state(ram, mario_DQN)
+        next_stats = get_stats(mario_DQN) # do not confuse this with state
+        next_state = mario_DQN.inputs_as_array
 
         # Calculate reward
-        reward = mario_DQN.calculate_reward(curr_state, next_state)
+
+        reward = mario_DQN.calculate_reward(curr_stats, next_stats)
         done = not mario_DQN.is_alive
 
         # Experience replay buffer
@@ -801,10 +804,16 @@ def _crossover_and_mutate(p1, p2, config, current_generation):
 
     return c1_params, c2_params
 
-def get_state(ram, mario):
-    tiles = SMB.get_tiles(ram)
-    mario.set_input_as_array(ram, tiles)
-    return mario.inputs_as_array
+def get_stats(mario):
+        frames = mario._frames
+        distance = mario.x_dist
+        score = mario.game_score
+
+        return {
+            "frames" : frames,
+            "distance" : distance,
+            "score" : score
+        }
 
 if __name__ == "__main__":
 
