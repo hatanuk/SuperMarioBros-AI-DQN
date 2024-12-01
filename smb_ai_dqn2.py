@@ -56,7 +56,7 @@ class Visualizer(QtWidgets.QWidget):
         painter.setBrush(Qt.NoBrush)
 
         start_row, viz_width, viz_height = self.config.NeuralNetwork.input_dims
-        
+
         rect_x = int(x * self.tile_width + 5 + self.x_offset)
         rect_y = int(start_row * self.tile_height + 5)
         rect_width = int(viz_width * self.tile_width)
@@ -425,6 +425,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.ga_viz_window.ram = ga_data['ram']
                         self.ga_viz_window.tiles = ga_data['tiles']
                         self.ga_viz_window.enemies = ga_data['enemies']
+                        self.ga_viz_window.nn_viz.mario = ga_data['mario'] 
                         self.ga_viz_window._should_update = True
                         self.ga_viz_window.ram = ga_data['ram']
                     else:
@@ -457,6 +458,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.dqn_viz_window.ram = dqn_data['ram']
                         self.dqn_viz_window.tiles = dqn_data['tiles']
                         self.dqn_viz_window.enemies = dqn_data['enemies']
+                        self.dqn_viz_window.nn_viz.mario = dqn_data['mario'] 
                         self.dqn_viz_window._should_update = True
                         self.dqn_viz_window.ram = dqn_data['ram']
                     else:
@@ -524,6 +526,8 @@ def run_ga_agent(config, data_queue):
     env.reset()
 
     while True:
+
+
         # Update agent
         ram = env.get_ram()
         tiles = SMB.get_tiles(ram)
@@ -612,6 +616,7 @@ def run_ga_agent(config, data_queue):
             'total_steps': total_steps_GA,
             'current_generation': current_generation,
             'current_individual': _current_individual + 1,
+            'mario': mario_GA
         }
 
         # Send data to main process
@@ -700,6 +705,7 @@ def run_dqn_agent(config, data_queue):
             'max_distance': max_distance_DQN,
             'total_steps': total_steps_DQN,
             'dqn_episodes': dqn_episodes,
+            'mario': mario_DQN
         }
 
         # Send data to main process
