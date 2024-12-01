@@ -8,21 +8,17 @@ dill.detect.trace(True)
 class SerializableFunction:
     def __init__(self, func):
         self.func = func
-        self.serialized_func = dill.dumps(func) 
+
+    def __getstate__(self):
+        # Serialize the function using dill
+        return dill.dumps(self.func)
+
+    def __setstate__(self, state):
+        # Restore the function using dill
+        self.func = dill.loads(state)
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
-
-    def __reduce__(self):
-        return (self._reconstruct, (self.serialized_func,))
-
-    @staticmethod
-    def _reconstruct(serialized_func):
-        func = dill.loads(serialized_func)
-        return SerializableFunction(func)
-
-    def __repr__(self):
-        return f"SerializableFunction({self.func})"
 
 
 # A mapping from parameters name -> final type
