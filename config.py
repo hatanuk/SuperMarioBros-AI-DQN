@@ -2,10 +2,8 @@ import configparser
 import os
 from typing import Any, Dict
 
-
-## For multithreading, lambda functions need to be named ie. serializable
-## This is used for the fitness function
 import dill
+dill.detect.trace(True)
 
 class SerializableFunction:
     def __init__(self, func):
