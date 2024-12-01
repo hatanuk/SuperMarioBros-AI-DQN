@@ -262,6 +262,15 @@ class DQNAgent():
             self.step_counter += 1
             self.decay_epsilon()
 
+# Define the reward function outside the class
+def reward_func(frames, distance, game_score, did_win):
+    return max(
+        distance ** 1.8 -
+        frames ** 1.5 +
+        min(max(distance - 50, 0), 1) * 2500 +
+        did_win * 1e6, 0.00001
+    )
+
 # This is the interface that allows the DQN implementation to be
 # compatible with the rest of the code
 class DQNMario(DQNAgent, Mario):
@@ -270,6 +279,7 @@ class DQNMario(DQNAgent, Mario):
                  name: Optional[str] = None,
                  debug: Optional[bool] = False,):
         self.config = config
+        self.reward_func = self.config.get_reward_func()
         self.hidden_activation = self.config.NeuralNetworkDQN.hidden_node_activation
         self.output_activation = self.config.NeuralNetworkDQN.output_node_activation
         self.network_architecture = self.config.NeuralNetworkDQN.hidden_layer_architecture
@@ -281,17 +291,32 @@ class DQNMario(DQNAgent, Mario):
         DQNAgent.__init__(self, self.network_architecture[-1], get_num_inputs(self.config), model)
 
     def calculate_reward(self, prev_stats, next_stats):
-        # For the DQN, reward for a state transition is calculated by taking the difference between the previous and next reward
+        # Unpack stats
+        prev_frames = prev_stats["frames"]
+        prev_distance = prev_stats["distance"]
+        prev_score = prev_stats["score"]
+        next_frames = next_stats["frames"]
+        next_distance = next_stats["distance"]
+        next_score = next_stats["score"]
+        did_win = self.did_win
 
-        prev_reward = self.config.DQN.reward_func(*prev_stats)
-        next_reward = self.config.DQN.reward_func(*next_stats)
+        # Use the reward_func from config
+        prev_reward = self.reward_func(
+            frames=prev_frames,
+            distance=prev_distance,
+            game_score=prev_score,
+            did_win=did_win
+        )
+        next_reward = self.reward_func(
+            frames=next_frames,
+            distance=next_distance,
+            game_score=next_score,
+            did_win=did_win
+        )
 
         return next_reward - prev_reward
 
-
-
-
-    # Override
+    # In the update method, update the fitness calculation
     def update(self, ram, tiles, buttons, ouput_to_buttons_map) -> bool:
         """
         The main update call for Mario.
@@ -354,6 +379,11 @@ class DQNMario(DQNAgent, Mario):
         self.buttons_to_press[ouput_to_buttons_map[highest_input]] = 1
 
         # Updates the fitness value as well
-        self._fitness = self.config.DQN.reward_func(self.game_score, self.x_dist, self._frames, self.did_win)
+        self._fitness = self.reward_func(
+            frames=self._frames,
+            distance=self.x_dist,
+            game_score=self.game_score,
+            did_win=self.did_win
+        )
 
         return True
