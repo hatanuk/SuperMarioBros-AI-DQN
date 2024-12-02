@@ -468,7 +468,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.info_window.dqn_best_fitness.setText('{:.2f}'.format(dqn_data['best_fitness']))
                 self.info_window.dqn_max_distance.setText(str(dqn_data['max_distance']))
                 self.info_window.dqn_total_steps.setText(str(dqn_data['total_steps']))
-                self.info_window.dqn_ndividual.setText(str(dqn_data['dqn_episodes']))
+                self.info_window.dqn_individual.setText(str(dqn_data['dqn_episodes']))
 
         except queue.Empty:
             pass
