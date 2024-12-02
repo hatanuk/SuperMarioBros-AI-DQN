@@ -301,19 +301,21 @@ class DQNMario(DQNAgent, Mario):
 
     def calculate_reward(self, prev_stats, next_stats):
 
-        prev_frames, prev_distance = prev_stats
-        next_frames, next_distance = next_stats
+        prev_frames, prev_distance, game_score = prev_stats
+        next_frames, next_distance, game_score = next_stats
         
         did_win = self.did_win
 
         prev_reward = self.reward_func(
             frames=prev_frames,
             distance=prev_distance,
+            game_score=game_score,
             did_win=False
         )
         next_reward = self.reward_func(
             frames=next_frames,
             distance=next_distance,
+            game_score=game_score,
             did_win=did_win
         )
 
@@ -385,6 +387,7 @@ class DQNMario(DQNAgent, Mario):
         self._fitness = self.reward_func(
             distance=self.x_dist,
             frames=self._frames,
+            game_score =self.game_score,
             did_win=self.did_win
         )
 

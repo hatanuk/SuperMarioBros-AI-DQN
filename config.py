@@ -132,7 +132,7 @@ class Config(object):
         self.__dict__.update(dot_notation.__dict__)
 
     # Temporarily hardcoded
-    def fitness_func(distance, frames, did_win):
+    def fitness_func(distance, frames, game_score, did_win):
         max(distance ** 1.8 - frames ** 1.5 + min(max(distance - 50, 0), 1) * 2500 + int(did_win) * 1e6, 0.00001)
 
     def _create_dict_from_config(self) -> None:
