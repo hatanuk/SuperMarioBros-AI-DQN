@@ -260,8 +260,7 @@ class DQNAgent():
 
             # Calculate loss
             loss = self.network.loss_function(predicted_q_values, target_q_values)
-            if rewards[0] == 0:
-                print(f"IT'S HAPPENING ON {self.step_counter}")
+ 
             self.curr_loss = int(loss.item())
 
             # backpropagation via SGDs

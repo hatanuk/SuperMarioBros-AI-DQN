@@ -721,8 +721,8 @@ def run_dqn_agent(config, data_queue):
 
         # Calculate reward
         reward = mario_DQN.calculate_reward(curr_stats, next_stats)
-        if mario_DQN.step_counter % 100 == 0:
-            print(f"Step: {mario_DQN.step_counter}, Reward: {reward}, Current Stats: {curr_stats}, Next Stats: {next_stats}")  # Debug print
+        #if mario_DQN.step_counter % 100 == 0:
+            #print(f"Step: {mario_DQN.step_counter}, Reward: {reward}, Current Stats: {curr_stats}, Next Stats: {next_stats}")  # Debug print
         done = not mario_DQN.is_alive
 
         # Experience replay buffer
