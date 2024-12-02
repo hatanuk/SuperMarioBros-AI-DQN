@@ -513,7 +513,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 def run_ga_agent(config, data_queue):
     # Initialize environment
-    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode=None)
 
     # Initialize population and agent
     individuals = _initialize_population(config)
@@ -651,7 +651,7 @@ def run_ga_agent(config, data_queue):
 
 def run_dqn_agent(config, data_queue):
     # Initialize environment
-    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode=None)
 
     # Initialize DQN agent
     mario_DQN = DQNMario(config)
