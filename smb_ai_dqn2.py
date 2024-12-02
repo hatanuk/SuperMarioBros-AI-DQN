@@ -392,8 +392,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.centralWidget)
         
         # Layouts
-        self.main_layout = QtWidgets.QVBoxLayout(self.centralWidget)
-        self.algo_container = QtWidgets.QHBoxLayout(self.centralWidget)
+        self.main_layout = QtWidgets.QVBoxLayout()
+        self.algo_container = QtWidgets.QHBoxLayout()
 
         # Info Widget
         self.info_window = InformationWidget(self.centralWidget, (512, 200), self.config)
@@ -403,18 +403,37 @@ class MainWindow(QtWidgets.QMainWindow):
         # GA Widgets
         self.ga_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
         self.ga_game_window.setObjectName('ga_game_window')
-        self.ga_viz_window = Visualizer(self.centralWidget, (512, 448), self.config, NeuralNetworkViz(self.centralWidget, None, (512, 448), self.config, nn_params=self.config.NeuralNetworkGA))
+        self.ga_viz_window = Visualizer(
+            self.centralWidget,
+            (512, 448),
+            self.config,
+            NeuralNetworkViz(
+                self.centralWidget,
+                None,
+                (512, 448),
+                self.config,
+                nn_params=self.config.NeuralNetworkGA
+            )
+        )
         self.ga_viz_window.setObjectName('ga_viz_window')
 
-        
         # DQN Widgets
         self.dqn_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
         self.dqn_game_window.setObjectName('dqn_game_window')
-        self.dqn_viz_window = Visualizer(self.centralWidget, (512, 448), self.config, NeuralNetworkViz(self.centralWidget, None, (512, 448), self.config, nn_params=self.config.NeuralNetworkDQN))
+        self.dqn_viz_window = Visualizer(
+            self.centralWidget,
+            (512, 448),
+            self.config,
+            NeuralNetworkViz(
+                self.centralWidget,
+                None,
+                (512, 448),
+                self.config,
+                nn_params=self.config.NeuralNetworkDQN
+            )
+        )
         self.dqn_viz_window.setObjectName('dqn_viz_window')
 
-        
-        # Add widgets to layouts
         self.ga_layout = QtWidgets.QHBoxLayout()
         self.ga_layout.addWidget(self.ga_viz_window)
         self.ga_layout.addWidget(self.ga_game_window)
@@ -427,8 +446,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.algo_container.addLayout(self.dqn_layout)
 
         self.main_layout.addLayout(self.algo_container)
-        self.main_layout.addWidget(self.info_window) 
+        self.main_layout.addWidget(self.info_window)
 
+        self.centralWidget.setLayout(self.main_layout)
 
     def _update(self):
         # Get data from GA agent
@@ -475,7 +495,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 dqn_data = self.dqn_data_queue.get_nowait()
                 if not args.no_display:
                     if self._should_display:
-                        print('Updating2')
                         self.dqn_game_window.screen = dqn_data['screen']
                         self.dqn_game_window._should_update = True    
                     else:
@@ -484,7 +503,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 if not args.no_display:
                     if self._should_display:
-                        print('Updating1')
                         self.dqn_viz_window.ram = dqn_data['ram']
                         self.dqn_viz_window.tiles = dqn_data['tiles']
                         self.dqn_viz_window.enemies = dqn_data['enemies']
@@ -700,8 +718,6 @@ def run_dqn_agent(config, data_queue):
         next_stats = get_stats(mario_DQN) # do not confuse this with state
         next_state = mario_DQN.inputs_as_array
 
-        if next_stats == curr_stats:
-            print('NO REWARD')
 
         # Calculate reward
         reward = mario_DQN.calculate_reward(curr_stats, next_stats)
@@ -732,7 +748,7 @@ def run_dqn_agent(config, data_queue):
             mario_DQN.is_alive = True
             env.reset()
 
-        print("preparing data")
+ 
         # Prepare data to send back
         data = {
             'screen': ret[0],
