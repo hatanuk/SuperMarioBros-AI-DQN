@@ -408,8 +408,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dqn_layout.addWidget(self.dqn_viz_window)
         self.dqn_layout.addWidget(self.dqn_game_window)
 
-        self.algo_container.addWidget(self.ga_layout)
-        self.algo_container.addWidget(self.dqn_layout)
+        self.algo_container.addLayout(self.ga_layout)
+        self.algo_container.addLayout(self.dqn_layout)
 
         self.main_layout.addLayout(self.algo_container)
         self.main_layout.addWidget(self.info_window) 
