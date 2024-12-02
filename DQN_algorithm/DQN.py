@@ -226,7 +226,7 @@ class DQNAgent():
             samples = self.replay_buffer.sample(self.batch_size)
             states, actions, next_states, rewards, dones = zip(*samples)
 
-            print("actions prior shape:", actions.shape) 
+            print("actions prior shape:", actions) 
 
             states = torch.FloatTensor(np.array(states))
             actions = torch.LongTensor(np.array(states))
