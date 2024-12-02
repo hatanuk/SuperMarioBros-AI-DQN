@@ -223,7 +223,7 @@ class DQNAgent():
         def learn(self):
             if len(self.replay_buffer) < self.batch_size:
                 return
-        
+            print(f"replay_buffer size: {len(self.replay_buffer)}")
 
             samples = self.replay_buffer.sample(self.batch_size)
             states, actions, next_states, rewards, dones = zip(*samples)

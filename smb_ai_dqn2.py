@@ -690,7 +690,7 @@ def run_dqn_agent(config, data_queue):
         mario_DQN.update(ram, tiles, keys, ouput_to_keys_map)
 
         # Take a step in the environment
-        print(mario_DQN.buttons_to_press)
+        print(f" chosen buttons: {mario_DQN.buttons_to_press}")
         ret = env.step(mario_DQN.buttons_to_press)
         total_steps_DQN += 1
 
@@ -818,7 +818,6 @@ if __name__ == "__main__":
 
     multiprocessing.set_start_method("spawn", force=True)
     sys.stdout = sys.stderr
-    print("test")
 
     global args
     args = parse_args()
