@@ -257,7 +257,8 @@ class DQNAgent():
 
             # Calculate loss
             loss = self.network.loss_function(predicted_q_values, target_q_values)
-            print(actions[:10])
+            if rewards[0] == 0:
+                print("IT'S HAPPENING ON {self.step_counter}")
             print(rewards[:10])
             print(loss)
 
