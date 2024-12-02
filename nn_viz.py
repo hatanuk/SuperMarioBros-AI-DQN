@@ -44,12 +44,6 @@ class NeuralNetworkViz(QtWidgets.QWidget):
         
         layer_nodes = self.mario.network.layer_nodes
 
-        print(self.mario)
-        if self.mario is not None:
-            if self.mario.name == "DQNAgent":
-                print("DQN LAYER_NODES: ", layer_nodes)
-            else:
-                print("GA LAYER_NODES: ", layer_nodes)
 
         default_offset = self.x_offset
         h_offset = self.x_offset
