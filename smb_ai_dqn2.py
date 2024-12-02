@@ -405,12 +405,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ga_game_window.setObjectName('ga_game_window')
         self.ga_viz_window = Visualizer(
             self.centralWidget,
-            (512, 448),
+            (1100-514, 700),
             self.config,
             NeuralNetworkViz(
                 self.centralWidget,
                 None,
-                (512, 448),
+                (1100-514, 700),
                 self.config,
                 nn_params=self.config.NeuralNetworkGA
             )
