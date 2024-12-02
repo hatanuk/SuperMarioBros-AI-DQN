@@ -30,6 +30,9 @@ from smb_ai import draw_border, parse_args
 import multiprocessing
 import queue
 
+import atexit
+
+
 normal_font = QtGui.QFont('Times', 11, QtGui.QFont.Normal)
 font_bold = QtGui.QFont('Times', 11, QtGui.QFont.Bold)
 
@@ -371,6 +374,15 @@ class MainWindow(QtWidgets.QMainWindow):
         # Start the DQN process
         self.dqn_process = multiprocessing.Process(target=run_dqn_agent, args=(self.config, self.dqn_data_queue))
         self.dqn_process.start()
+
+        # multiprocessing cleanup
+        def cleanup():
+            self.ga_process.terminate()
+            self.dqn_process.terminate()
+            self.ga_data_queue.close()
+            self.dqn_data_queue.close()
+
+        atexit.register(cleanup)
 
     def init_gui(self):
         self.centralWidget = QtWidgets.QWidget(self)
@@ -801,7 +813,7 @@ def get_stats(mario):
 
 if __name__ == "__main__":
 
-    multiprocessing.set_start_method("fork", force=True)
+    multiprocessing.set_start_method("spawn", force=True)
     sys.stdout = sys.stderr
     print("test")
 
