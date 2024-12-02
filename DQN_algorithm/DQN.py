@@ -285,13 +285,13 @@ class DQNMario(DQNAgent, Mario):
         self.output_activation = self.config.NeuralNetworkDQN.output_node_activation
         self.hidden_layer_architecture = self.config.NeuralNetworkDQN.hidden_layer_architecture
       
-        Mario.__init__(self, config, None, hidden_layer_architecture, self.hidden_activation,
+        Mario.__init__(self, config, None, self.hidden_layer_architecture, self.hidden_activation,
          self.output_activation, np.inf, name, debug)
         
         # overwrite them because Mario's constructor actually just sets it to GA's config's values again fantastic
         self.hidden_activation = self.config.NeuralNetworkDQN.hidden_node_activation
         self.output_activation = self.config.NeuralNetworkDQN.output_node_activation
-        
+
         if self.config.NeuralNetworkDQN.encode_row:
             num_inputs = self.viz_width * self.viz_height + self.viz_height
         else:
