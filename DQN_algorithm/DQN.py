@@ -267,8 +267,6 @@ class DQNAgent():
             torch.nn.utils.clip_grad_norm_(self.network.torch_model.parameters(), max_norm=1.0)
             self.network.optimizer.step()      
 
-            self.step_counter += 1
-            self.decay_epsilon()
 
 
 # This is the interface that allows the DQN implementation to be

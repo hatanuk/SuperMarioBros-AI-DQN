@@ -712,6 +712,9 @@ def run_dqn_agent(config, data_queue):
         # Check whether its time to transfer target network weights to online network
         mario_DQN.sync_network()
 
+        mario_DQN.step_counter += 1
+        mario_DQN.decay_epsilon()
+
         if mario_DQN.is_alive:
             if mario_DQN.farthest_x > max_distance_DQN:
                 max_distance_DQN = mario_DQN.farthest_x
