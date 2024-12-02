@@ -86,13 +86,11 @@ class DQN(nn.Module, FeedForwardNetwork):
     # This one is for FeedForwardNetwork compatability
     def feed_forward(self, X: np.ndarray) -> np.ndarray:
 
-        
         # Ensures the torch params are synced to the FeedForwardNetwork params
         self.save_torch_params()
         
         A_prev = X
         L = len(self.layer_nodes) - 1  # len(self.params) // 2
-
 
         # Feed hidden layers
         for l in range(1, L):
@@ -141,7 +139,7 @@ class DQN(nn.Module, FeedForwardNetwork):
                 self.params[W_key] = param.detach().numpy()
             else:
                 b_key = f'b{l//2 + 1}'
-                self.params[b_key] = param.detach().numpy()
+                self.params[b_key] = param.detach().numpy().reshape(-1, 1)
 
     
 
