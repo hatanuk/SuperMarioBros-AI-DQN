@@ -226,15 +226,15 @@ class DQNAgent():
             samples = self.replay_buffer.sample(self.batch_size)
             states, actions, next_states, rewards, dones = zip(*samples)
 
-            print("actions prior shape:", actions) 
-
             states = torch.FloatTensor(np.array(states))
-            actions = torch.LongTensor(np.array(states))
-            next_states = torch.FloatTensor(np.array(states))
-            rewards = torch.FloatTensor(np.array(states)).unsqueeze(1)  
-            dones = torch.FloatTensor(np.array(states)).unsqueeze(1) 
+            actions = torch.LongTensor(np.array(actions))
+            next_states = torch.FloatTensor(np.array(next_states))
+            rewards = torch.FloatTensor(np.array(rewards)).unsqueeze(1)  
+            dones = torch.FloatTensor(np.array(dones)).unsqueeze(1) 
 
             print("actions shape:", actions.shape) 
+            print("rewards shape:", rewards.shape)
+            print("dones shape:", dones.shape)
 
             # Q-values for all states
             predicted_q_values = self.network.forward(states)  # Shape: [batch_size, num_actions]
