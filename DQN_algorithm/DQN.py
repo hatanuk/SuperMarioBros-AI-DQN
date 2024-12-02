@@ -221,9 +221,8 @@ class DQNAgent():
             
         def learn(self):
             
-            if self.step_counter % self.batch_size != 0 and self.step_counter != 0:
+            if self.step_counter % self.batch_size != 0 or self.step_counter == 0:
                 return
-            
           
 
             samples = self.replay_buffer.sample(self.batch_size)
