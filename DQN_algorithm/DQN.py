@@ -96,7 +96,6 @@ class DQN(nn.Module, FeedForwardNetwork):
         for l in range(1, L):
             W = self.params['W' + str(l)]
             b = self.params['b' + str(l)]
-            print(f"Layer {l}: W.shape={W.shape}, A_prev.shape={A_prev.shape}, b.shape={b.shape}")
             Z = np.dot(W, A_prev) + b
             A_prev = self.hidden_activation(Z)
             self.params['A' + str(l)] = A_prev
@@ -113,7 +112,6 @@ class DQN(nn.Module, FeedForwardNetwork):
         
     
     def forward(self, X):
-        print(f"Input to forward(): {X.shape}")
         X = torch.as_tensor(X, dtype=torch.float32)
         
         if X.shape[0] == self.x_size and X.shape[1] == 1:  # Case where it's transposed
@@ -122,9 +120,7 @@ class DQN(nn.Module, FeedForwardNetwork):
         if len(X.shape) == 3 and X.shape[2] == 1:  # Extra last dimension
             X = X.squeeze(-1)  # Remove the last dimension
         
-        print(f"After reshaping: {X.shape}")
         out = self.torch_model(X)
-        print(f"Output: {out.shape}")
         return out
 
     
@@ -235,8 +231,6 @@ class DQNAgent():
             next_states = torch.FloatTensor(next_states)
             rewards = torch.FloatTensor(rewards).unsqueeze(1)  
             dones = torch.FloatTensor(dones).unsqueeze(1) 
-
-            print(f"states shape: {states.shape}, actions shape: {actions.shape}, next states shape: {next_states.shape}, rewards shape: {rewards.shape}, dones shape : {dones.shape}") 
 
             # Q-values for all states
             predicted_q_values = self.network.forward(states)  # Shape: [batch_size, num_actions]

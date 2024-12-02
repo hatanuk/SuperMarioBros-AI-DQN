@@ -351,6 +351,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.show()
 
+    #QWidget override
+    def closeEvent(self, event):
+        self.ga_process.terminate()
+        self.dqn_process.terminate()
+        self.ga_process.join()
+        self.dqn_process.join()
+        event.accept()
+
     def init_agents(self):
         # Queues for inter-process communication
         self.ga_data_queue = multiprocessing.Queue()
@@ -365,42 +373,32 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dqn_process.start()
 
     def init_gui(self):
-        self.centralWidget = QtWidgets.QWidget(self)
-        self.setCentralWidget(self.centralWidget)
-        
-        # Layouts
-        self.main_layout = QtWidgets.QHBoxLayout(self.centralWidget)
+        # Info panel
+        self.info_window = InformationWidget(self.centralWidget(), (512, 200), self.config)
 
-        # Info Widget
-        self.info_window = InformationWidget(self.centralWidget, (512, 200), self.config)
-        self.info_window.setObjectName('info_window')
-        
-        # GA Widgets
-        self.ga_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
-        self.ga_game_window.setObjectName('ga_game_window')
-        self.ga_viz_window = Visualizer(self.centralWidget, (512, 448), self.config, NeuralNetworkViz(self.centralWidget, None, (512, 448), self.config, nn_params=self.config.NeuralNetworkGA))
-        self.ga_viz_window.setObjectName('ga_viz_window')
+        # GA section
+        self.ga_game_window = GameWindow(self.centralWidget(), (512, 448), self.config)
+        self.ga_viz_window = Visualizer(self.centralWidget(), (512, 448), self.config,
+                                        NeuralNetworkViz(self.centralWidget(), None, (512, 448), self.config, nn_params=self.config.NeuralNetworkGA))
 
-        
-        # DQN Widgets
-        self.dqn_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
-        self.dqn_game_window.setObjectName('dqn_game_window')
-        self.dqn_viz_window = Visualizer(self.centralWidget, (512, 448), self.config, NeuralNetworkViz(self.centralWidget, None, (512, 448), self.config, nn_params=self.config.NeuralNetworkDQN))
-        self.dqn_viz_window.setObjectName('dqn_viz_window')
-
-        
-        # Add widgets to layouts
         self.ga_layout = QtWidgets.QVBoxLayout()
         self.ga_layout.addWidget(self.ga_game_window)
         self.ga_layout.addWidget(self.ga_viz_window)
-        
+
+        # DQN section
+        self.dqn_game_window = GameWindow(self.centralWidget(), (512, 448), self.config)
+        self.dqn_viz_window = Visualizer(self.centralWidget(), (512, 448), self.config,
+                                        NeuralNetworkViz(self.centralWidget(), None, (512, 448), self.config, nn_params=self.config.NeuralNetworkDQN))
+
         self.dqn_layout = QtWidgets.QVBoxLayout()
         self.dqn_layout.addWidget(self.dqn_game_window)
         self.dqn_layout.addWidget(self.dqn_viz_window)
-        
+
+        self.main_layout = QtWidgets.QHBoxLayout(self.centralWidget())
         self.main_layout.addLayout(self.ga_layout)
         self.main_layout.addLayout(self.dqn_layout)
-        self.main_layout.addWidget(self.info_window) 
+        self.main_layout.addWidget(self.info_window)
+
 
     def _update(self):
         # Get data from GA agent
@@ -799,5 +797,7 @@ if __name__ == "__main__":
         config = Config(args.config)
 
     app = QtWidgets.QApplication(sys.argv)
+    app.setApplicationDisplayName('Super Mario Bros AI - GA vs DQN')
     window = MainWindow(config)
+    window.show()
     sys.exit(app.exec_())
