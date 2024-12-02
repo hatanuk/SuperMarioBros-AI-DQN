@@ -73,6 +73,7 @@ class FeedForwardNetwork(object):
         return np.exp(X) / np.sum(np.exp(X), axis=0)
 
 def get_activation_by_name(name: str) -> ActivationFunction:
+    print("being passed: ", name)
     activations = [('relu', relu),
                    ('sigmoid', sigmoid),
                    ('linear', linear),
@@ -82,5 +83,6 @@ def get_activation_by_name(name: str) -> ActivationFunction:
 
     func = [activation[1] for activation in activations if activation[0].lower() == name.lower()]
     assert len(func) == 1
+    print("being returned: ", func[0])
 
     return func[0]
