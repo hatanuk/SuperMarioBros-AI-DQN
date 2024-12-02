@@ -377,7 +377,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.centralWidget)
         
         # Layouts
-        self.main_layout = QtWidgets.QHBoxLayout(self.centralWidget)
+        self.main_layout = QtWidgets.QVBoxLayout(self.centralWidget)
+        self.algo_container = QtWidgets.QHBoxLayout(self.centralWidget)
 
         # Info Widget
         self.info_window = InformationWidget(self.centralWidget, (512, 200), self.config)
@@ -399,16 +400,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
         
         # Add widgets to layouts
-        self.ga_layout = QtWidgets.QVBoxLayout()
-        self.ga_layout.addWidget(self.ga_game_window)
+        self.ga_layout = QtWidgets.QHBoxLayout()
         self.ga_layout.addWidget(self.ga_viz_window)
-        
-        self.dqn_layout = QtWidgets.QVBoxLayout()
-        self.dqn_layout.addWidget(self.dqn_game_window)
+        self.ga_layout.addWidget(self.ga_game_window)
+
+        self.dqn_layout = QtWidgets.QHBoxLayout()
         self.dqn_layout.addWidget(self.dqn_viz_window)
-        
-        self.main_layout.addLayout(self.ga_layout)
-        self.main_layout.addLayout(self.dqn_layout)
+        self.dqn_layout.addWidget(self.dqn_game_window)
+
+        self.algo_container.addWidget(self.ga_layout)
+        self.algo_container.addWidget(self.dqn_layout)
+
+        self.main_layout.addLayout(self.algo_container)
         self.main_layout.addWidget(self.info_window) 
 
 
