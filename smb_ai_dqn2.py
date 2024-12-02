@@ -410,7 +410,7 @@ class MainWindow(QtWidgets.QMainWindow):
             NeuralNetworkViz(
                 self.centralWidget,
                 None,
-                (256, 224),
+                (100, 80),
                 self.config,
                 nn_params=self.config.NeuralNetworkGA
             )
@@ -427,7 +427,7 @@ class MainWindow(QtWidgets.QMainWindow):
             NeuralNetworkViz(
                 self.centralWidget,
                 None,
-                (256, 224),
+                (100, 80),
                 self.config,
                 nn_params=self.config.NeuralNetworkDQN
             )
