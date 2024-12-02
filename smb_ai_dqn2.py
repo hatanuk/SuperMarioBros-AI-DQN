@@ -32,7 +32,6 @@ import queue
 
 import atexit
 
-
 normal_font = QtGui.QFont('Times', 11, QtGui.QFont.Normal)
 font_bold = QtGui.QFont('Times', 11, QtGui.QFont.Bold)
 
@@ -824,4 +823,5 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow(config)
+    app.aboutToQuit.connect(window.cleanup)
     sys.exit(app.exec_())
