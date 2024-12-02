@@ -422,12 +422,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dqn_game_window.setObjectName('dqn_game_window')
         self.dqn_viz_window = Visualizer(
             self.centralWidget,
-            (512, 448),
+            (1100-514, 700),
             self.config,
             NeuralNetworkViz(
                 self.centralWidget,
                 None,
-                (512, 448),
+                (1100-514, 700),
                 self.config,
                 nn_params=self.config.NeuralNetworkDQN
             )
@@ -436,11 +436,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ga_layout = QtWidgets.QHBoxLayout()
         self.ga_layout.addWidget(self.ga_viz_window)
-        #self.ga_layout.addWidget(self.ga_game_window)
+        self.ga_layout.addWidget(self.ga_game_window)
 
         self.dqn_layout = QtWidgets.QHBoxLayout()
         self.dqn_layout.addWidget(self.dqn_viz_window)
-        #self.dqn_layout.addWidget(self.dqn_game_window)
+        self.dqn_layout.addWidget(self.dqn_game_window)
 
         self.algo_container.addLayout(self.ga_layout)
         self.algo_container.addLayout(self.dqn_layout)
