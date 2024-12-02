@@ -22,12 +22,6 @@ class NeuralNetworkViz(QtWidgets.QWidget):
         self.neuron_radius = self.config.Graphics.neuron_radius
 
 
-        if self.mario is not None:
-            if self.mario.name == "DQNAgent":
-                print("DQN L SHAPE: ", l)
-            else:
-                print("GA L SHAPE: ", l)
-
         # Set all neuron locations for layer 0 (Input) to be at the same point.
         # The reason I do this is because the number of inputs can easily become too many to show on the screen.
         # For this reason it is easier to not explicitly show the input nodes and rather show the bounding box of the rectangle.
@@ -50,6 +44,7 @@ class NeuralNetworkViz(QtWidgets.QWidget):
         
         layer_nodes = self.mario.network.layer_nodes
 
+        print(self.mario)
         if self.mario is not None:
             if self.mario.name == "DQNAgent":
                 print("DQN LAYER_NODES: ", layer_nodes)
