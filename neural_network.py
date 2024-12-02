@@ -1,16 +1,22 @@
 import numpy as np
 from typing import List, Callable, NewType, Optional
 
-
 ActivationFunction = NewType('ActivationFunction', Callable[[np.ndarray], np.ndarray])
 
-sigmoid = ActivationFunction(lambda X: 1.0 / (1.0 + np.exp(-X)))
-tanh = ActivationFunction(lambda X: np.tanh(X))
-relu = ActivationFunction(lambda X: np.maximum(0, X))
-leaky_relu = ActivationFunction(lambda X: np.where(X > 0, X, X * 0.01))
-linear = ActivationFunction(lambda X: X)
+def sigmoid(X: np.ndarray) -> np.ndarray:
+    return 1.0 / (1.0 + np.exp(-X))
 
+def tanh(X: np.ndarray) -> np.ndarray:
+    return np.tanh(X)
 
+def relu(X: np.ndarray) -> np.ndarray:
+    return np.maximum(0, X)
+
+def leaky_relu(X: np.ndarray) -> np.ndarray:
+    return np.where(X > 0, X, X * 0.01)
+
+def linear(X: np.ndarray) -> np.ndarray:
+    return X
 
 class FeedForwardNetwork(object):
     def __init__(self,

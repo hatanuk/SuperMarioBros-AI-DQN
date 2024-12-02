@@ -287,7 +287,7 @@ class DQNMario(DQNAgent, Mario):
          self.output_activation, np.inf, name, debug)
         
         ## Parameter initialisation
-        self.learning_rate = self.config.NeuralNetworkDQN.learning_rate
+        self.learning_rate = self.config.DQN.learning_rate
         self.buffer_size = self.config.DQN.buffer_size
         self.sync_network_rate = self.config.DQN.sync_network_rate
         self.batch_size = self.config.DQN.batch_size

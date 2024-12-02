@@ -221,7 +221,7 @@ class InformationWidget(QtWidgets.QWidget):
         L = [num_inputs] + hidden + [num_outputs]
         layers_txt = '[' + ', '.join(str(nodes) for nodes in L) + ']'
 
-        learning_rate_txt = str(self.config.NeuralNetworkDQN.learning_rate)
+        learning_rate_txt = str(self.config.DQN.learning_rate)
 
         # Prepare info_dict
         info_dict = {
