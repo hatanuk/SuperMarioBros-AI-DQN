@@ -190,9 +190,9 @@ class DQNAgent():
 
         def choose_action(self, state): 
             if np.random.random() < self.epsilon:
-                print("choosing randomly")
-                num_indices = np.random.choice([1, 2, 3], p=[0.45, 0.45, 0.1])
-                action = np.random.choice(range(self.num_actions), size=num_indices, replace=False)
+                #num_indices = np.random.choice([1, 2, 3], p=[0.45, 0.45, 0.1])
+                #action = np.random.choice(range(self.num_actions), size=num_indices, replace=False)
+                action = np.random.choice(range(self.num_actions), size=1, replace=False)
             else:
                 action = self.choose_best_action(state)
             return action
@@ -201,8 +201,9 @@ class DQNAgent():
         def choose_best_action(self, state):
             out = self.network.forward(state)
             scaled = torch.sigmoid(out)
-            threshold = torch.nonzero(scaled > 0.5, as_tuple=True)[0].cpu().numpy()
-            return threshold
+            #threshold = torch.nonzero(scaled > 0.5, as_tuple=True)[0].cpu().numpy()
+            highest_rated_action = np.array(torch.argmax(scaled))
+            return highest_rated_action
         
         def choose_best_action_F(self, state):
             out = self.network.feed_forward(state)
@@ -373,17 +374,16 @@ class DQNMario(DQNAgent, Mario):
         self.set_input_as_array(ram, tiles)
 
         # Calculate the output
-        output = self.choose_action(self.inputs_as_array)
+        action = self.choose_action(self.inputs_as_array)
 
         #threshold = np.where(output > 0.5)[0]
 
-        self.model_output = output
+        self.model_output = action
         self.buttons_to_press.fill(0)  # Clear
-        print(f"output: {output}")
-        highest_input = np.argmax(output, axis=0)
+        print(f"output: {action}")
 
         # !!! ONLY INCLUDES SINGLE ACTION OUTPUTS FOR NOW
-        self.buttons_to_press[output_to_buttons_map[highest_input]] = 1
+        self.buttons_to_press[output_to_buttons_map[action]] = 1
 
         # Updates the fitness value as well
         self._fitness = self.reward_func(
