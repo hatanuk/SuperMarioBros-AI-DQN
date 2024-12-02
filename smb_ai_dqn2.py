@@ -401,8 +401,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.info_window.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         
         # GA Widgets
-        #self.ga_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
-        #self.ga_game_window.setObjectName('ga_game_window')
+        self.ga_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
+        self.ga_game_window.setObjectName('ga_game_window')
         self.ga_viz_window = Visualizer(
             self.centralWidget,
             (512, 448),
@@ -418,8 +418,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ga_viz_window.setObjectName('ga_viz_window')
 
         # DQN Widgets
-        #self.dqn_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
-        #self.dqn_game_window.setObjectName('dqn_game_window')
+        self.dqn_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
+        self.dqn_game_window.setObjectName('dqn_game_window')
         self.dqn_viz_window = Visualizer(
             self.centralWidget,
             (512, 448),
