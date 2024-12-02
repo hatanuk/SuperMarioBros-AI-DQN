@@ -708,6 +708,9 @@ def run_dqn_agent(config, data_queue):
 
         # Perform learning step
         mario_DQN.learn()
+        
+        # Check whether its time to transfer target network weights to online network
+        mario_DQN.sync_network()
 
         if mario_DQN.is_alive:
             if mario_DQN.farthest_x > max_distance_DQN:
