@@ -21,6 +21,7 @@ class Mario(Individual):
                  name: Optional[str] = None,
                  debug: Optional[bool] = False,
                  ):
+ 
         
 
         self.config = config

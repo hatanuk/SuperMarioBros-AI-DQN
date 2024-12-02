@@ -289,6 +289,11 @@ class DQNMario(DQNAgent, Mario):
         Mario.__init__(self, config, None, hidden_layer_architecture, self.hidden_activation,
          self.output_activation, np.inf, name, debug)
         
+        # overwrite them because Mario's constructor actually just sets it to GA's config's values again fantastic
+        self.hidden_activation = self.config.NeuralNetworkDQN.hidden_node_activation
+        self.output_activation = self.config.NeuralNetworkDQN.output_node_activation
+        self.network_architecture = self.config.NeuralNetworkDQN.hidden_layer_architecture
+        
         ## Parameter initialisation
         self.learning_rate = self.config.DQN.learning_rate
         self.buffer_size = self.config.DQN.buffer_size
@@ -298,11 +303,6 @@ class DQNMario(DQNAgent, Mario):
         self.epsilon_start = self.config.DQN.epsilon_start
         self.epsilon_min = self.config.DQN.epsilon_min
         self.epsilon_decay = self.config.DQN.epsilon_decay
-
-        print("BEFORE: ", self.output_activation)
-        by_name = get_activation_by_name(self.output_activation)
-        print ("AFTER: ", by_name)
-
 
 
         model = DQN(layer_nodes=self.network_architecture, hidden_activation=get_activation_by_name(self.hidden_activation), output_activation=get_activation_by_name(self.output_activation))
