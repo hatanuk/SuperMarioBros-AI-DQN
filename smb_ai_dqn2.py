@@ -460,7 +460,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.ga_game_window.screen = ga_data['screen']
                         self.ga_game_window._should_update = True    
                     else:
-                        print("SHOULD UPDATE FALSE")
                         self.ga_game_window._should_update = False
                     self.ga_game_window._update()
 
@@ -478,7 +477,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.ga_viz_window._should_update = True
                         self.ga_viz_window.ram = ga_data['ram']
                     else:
-                        print("SHOULD UPDATE FALSE")
                         self.ga_viz_window._should_update = False
                     self.ga_viz_window._update()
 
@@ -500,7 +498,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.dqn_game_window.screen = dqn_data['screen']
                         self.dqn_game_window._should_update = True    
                     else:
-                        print("SHOULD UPDATE FALSE")
                         self.dqn_game_window._should_update = False
                     self.dqn_game_window._update()
 
@@ -513,7 +510,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.dqn_viz_window._should_update = True
                         self.dqn_viz_window.ram = dqn_data['ram']
                     else:
-                        print("SHOULD UPDATE FALSE")
                         self.dqn_viz_window._should_update = False
                     self.dqn_viz_window._update()
 
@@ -749,7 +745,7 @@ def run_dqn_agent(config, data_queue):
         else:
             # Episode ended
             dqn_episodes += 1
-            mario_DQN.is_alive = True
+            #mario_DQN.is_alive = True
             env.reset()
 
  
