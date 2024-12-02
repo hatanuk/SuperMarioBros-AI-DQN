@@ -17,8 +17,8 @@ _params = {
         'save_population_stats': str,
     },
 
-    # NeuralNetwork Params
-    'NeuralNetwork': {
+    # NeuralNetwork Params for GA
+    'NeuralNetworkGA': {
         'input_dims': (tuple, int),
         'hidden_layer_architecture': (tuple, int),
         'hidden_node_activation': str,
@@ -26,6 +26,28 @@ _params = {
         'encode_row': bool,
     },
 
+    # NeuralNetwork Params for DQN 
+    'NeuralNetworkDQN': {
+        'input_dims': (tuple, int),
+        'hidden_layer_architecture': (tuple, int),
+        'hidden_node_activation': str,
+        'output_node_activation': str,
+        'encode_row': bool,
+    },
+
+    # DQN Params
+    'DQN'  : {
+        'learning_rate': float,
+        'discount_value': float,
+        'sync_network_rate': int,
+        'batch_size': int,
+        'buffer_size': int,
+        'epsilon_start': float,
+        'epsilon_min': float,
+        'epsilon_decay': float
+    },
+
+    ### GA Params
 
     # Crossover Params
     'Crossover': {
@@ -49,6 +71,8 @@ _params = {
         'selection_type': str,
         'lifespan': float
     },
+
+    ###
 
     # Misc Params
     'Misc': {

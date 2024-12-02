@@ -55,7 +55,7 @@ class Visualizer(QtWidgets.QWidget):
         painter.setPen(QPen(color, 3.0, Qt.SolidLine))
         painter.setBrush(Qt.NoBrush)
 
-        start_row, viz_width, viz_height = self.config.NeuralNetwork.input_dims
+        start_row, viz_width, viz_height = self.config.NeuralNetworkGA.input_dims
 
         rect_x = int(x * self.tile_width + 5 + self.x_offset)
         rect_y = int(start_row * self.tile_height + 5)
@@ -178,7 +178,7 @@ class InformationWidget(QtWidgets.QWidget):
             raise Exception('Unkown Selection type "{}"'.format(selection_type))
 
         num_inputs = get_num_inputs(self.config)
-        hidden = self.config.NeuralNetwork.hidden_layer_architecture
+        hidden = self.config.NeuralNetworkGA.hidden_layer_architecture
         num_outputs = 6
         L = [num_inputs] + hidden + [num_outputs]
         layers_txt = '[' + ', '.join(str(nodes) for nodes in L) + ']'
@@ -378,14 +378,14 @@ class MainWindow(QtWidgets.QMainWindow):
         # GA Widgets
         self.ga_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
         self.ga_game_window.setObjectName('ga_game_window')
-        self.ga_viz_window = Visualizer(self.centralWidget, (512, 448), self.config, NeuralNetworkViz(self.centralWidget, None, (512, 448), self.config))
+        self.ga_viz_window = Visualizer(self.centralWidget, (512, 448), self.config, NeuralNetworkViz(self.centralWidget, None, (512, 448), self.config, nn_parms=self.config.NeuralNetworkGA))
         self.ga_viz_window.setObjectName('ga_viz_window')
 
         
         # DQN Widgets
         self.dqn_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
         self.dqn_game_window.setObjectName('dqn_game_window')
-        self.dqn_viz_window = Visualizer(self.centralWidget, (512, 448), self.config, NeuralNetworkViz(self.centralWidget, None, (512, 448), self.config))
+        self.dqn_viz_window = Visualizer(self.centralWidget, (512, 448), self.config, NeuralNetworkViz(self.centralWidget, None, (512, 448), self.config, nn_parms=self.config.NeuralNetworkDQN))
         self.dqn_viz_window.setObjectName('dqn_viz_window')
 
         

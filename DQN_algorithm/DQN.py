@@ -150,19 +150,25 @@ class DQNAgent():
         def __init__(self, 
                      num_actions, 
                      num_states, 
-                     network, 
+                     network,
+                     sync_network_rate,
+                     batch_size,
+                     discount_value,
+                     epsilon_start,
+                     epsilon_min,
+                     epsilon_decay,
+                     learning_rate,
+                     buffer_size
                      ):
             
-            self.sync_network_rate = 500  
-            self.batch_size = 128        
-            self.buffer_size = 1000      
-            self.discount_value = 0.99  
-
-            self.epsilon_start = 0.7
-            self.epsilon_min = 0.2   
-            self.epsilon_decay = 0.9995
-
-            self.learning_rate = 0.01
+            self.sync_network_rate = sync_network_rate
+            self.batch_size = batch_size
+            self.discount_value = discount_value
+            self.epsilon_start = epsilon_start
+            self.epsilon_min = epsilon_min
+            self.epsilon_decay = epsilon_decay
+            self.learning_rate = learning_rate
+            self.buffer_size = buffer_size
 
             self.num_states = num_states
             self.num_actions = num_actions
@@ -279,8 +285,19 @@ class DQNMario(DQNAgent, Mario):
       
         Mario.__init__(self, config, None, hidden_layer_architecture, self.hidden_activation,
          self.output_activation, np.inf, name, debug)
+        
+        ## Parameter initialisation
+        self.learning_rate = self.config.NeuralNetworkDQN.learning_rate
+        self.buffer_size = self.config.DQN.buffer_size
+        self.sync_network_rate = self.config.DQN.sync_network_rate
+        self.batch_size = self.config.DQN.batch_size
+        self.discount_value = self.config.DQN.discount_value
+        self.epsilon_start = self.config.DQN.epsilon_start
+        self.epsilon_min = self.config.DQN.epsilon_min
+        self.epsilon_decay = self.config.DQN.epsilon_decay
+
         model = DQN(self.network_architecture, get_activation_by_name(self.hidden_activation), get_activation_by_name(self.output_activation))
-        DQNAgent.__init__(self, self.network_architecture[-1], get_num_inputs(self.config), model)
+        DQNAgent.__init__(self, self.network_architecture[-1], get_num_inputs(self.config), model, self.sync_network_rate, self.batch_size, self.discount_value, self.epsilon_start, self.epsilon_min, self.epsilon_decay, self.learning_rate, self.buffer_size)
 
     def calculate_reward(self, prev_stats, next_stats):
 

@@ -60,7 +60,7 @@ class Visualizer(QtWidgets.QWidget):
         painter.setPen(QPen(color, 3.0, Qt.SolidLine))
         painter.setBrush(QBrush(Qt.NoBrush))
 
-        start_row, viz_width, viz_height = self.config.NeuralNetwork.input_dims
+        start_row, viz_width, viz_height = self.config.NeuralNetworkGA.input_dims
         painter.drawRect(x*self.tile_width + 5 + self.x_offset, start_row*self.tile_height + 5, viz_width*self.tile_width, viz_height*self.tile_height)
 
 
@@ -295,7 +295,7 @@ class InformationWidget(QtWidgets.QWidget):
 
         # Layers
         num_inputs = get_num_inputs(self.config)
-        hidden = self.config.NeuralNetwork.hidden_layer_architecture
+        hidden = self.config.NeuralNetworkGA.hidden_layer_architecture
         num_outputs = 6
         L = [num_inputs] + hidden + [num_outputs]
         layers_txt = '[' + ', '.join(str(nodes) for nodes in L) + ']'
@@ -476,7 +476,7 @@ class MainWindow(QtWidgets.QMainWindow):
         screen = self.env.reset()
         self.game_window.screen = screen
  
-        self.viz = NeuralNetworkViz(self.centralWidget, self.mario, (1100-514, 700), self.config)
+        self.viz = NeuralNetworkViz(self.centralWidget, self.mario, (1100-514, 700), self.config, self.config.NeuralNetworkGA)
 
         self.viz_window = Visualizer(self.centralWidget, (1100-514, 700), self.config, self.viz)
         self.viz_window.setGeometry(0, 0, 1100-514, 700)

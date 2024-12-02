@@ -8,14 +8,14 @@ from mario import Mario
 from config import Config
 
 class NeuralNetworkViz(QtWidgets.QWidget):
-    def __init__(self, parent, mario: Mario, size, config: Config):
+    def __init__(self, parent, mario: Mario, size, config: Config, nn_params):
         super().__init__(parent)
         self.mario = mario
         self.size = size
         self.config = config
         self.horizontal_distance_between_layers = 50
         self.vertical_distance_between_nodes = 10
-        l = self.config.NeuralNetwork.hidden_layer_architecture + [6]
+        l = nn_params.hidden_layer_architecture + [6]
         self.num_neurons_in_largest_layer = max(l[1:])
         self.neuron_locations = {}
         self.tile_size = self.config.Graphics.tile_size

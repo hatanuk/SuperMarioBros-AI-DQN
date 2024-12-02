@@ -34,13 +34,13 @@ class Mario(Individual):
         self._frames_since_progress = 0  # Number of frames since Mario has made progress towards the goal
         self._frames = 0  # Number of frames Mario has been alive
         
-        self.hidden_layer_architecture = self.config.NeuralNetwork.hidden_layer_architecture
-        self.hidden_activation = self.config.NeuralNetwork.hidden_node_activation
-        self.output_activation = self.config.NeuralNetwork.output_node_activation
+        self.hidden_layer_architecture = self.config.NeuralNetworkGA.hidden_layer_architecture
+        self.hidden_activation = self.config.NeuralNetworkGA.hidden_node_activation
+        self.output_activation = self.config.NeuralNetworkGA.output_node_activation
 
-        self.start_row, self.viz_width, self.viz_height = self.config.NeuralNetwork.input_dims
+        self.start_row, self.viz_width, self.viz_height = self.config.NeuralNetworkGA.input_dims
 
-        if self.config.NeuralNetwork.encode_row:
+        if self.config.NeuralNetworkGA.encode_row:
             num_inputs = self.viz_width * self.viz_height + self.viz_height
         else:
             num_inputs = self.viz_width * self.viz_height
@@ -126,7 +126,7 @@ class Mario(Individual):
                     arr.append(0) # Empty
 
         self.inputs_as_array[:self.viz_height*self.viz_width, :] = np.array(arr).reshape((-1,1))
-        if self.config.NeuralNetwork.encode_row:
+        if self.config.NeuralNetworkGA.encode_row:
             # Assign one-hot for mario row
             row = mario_row - self.start_row
             one_hot = np.zeros((self.viz_height, 1))
@@ -347,8 +347,8 @@ def load_stats(path_to_stats: str, normalize: Optional[bool] = False):
     return data
 
 def get_num_inputs(config: Config) -> int:
-    _, viz_width, viz_height = config.NeuralNetwork.input_dims
-    if config.NeuralNetwork.encode_row:
+    _, viz_width, viz_height = config.NeuralNetworkGA.input_dims
+    if config.NeuralNetworkGA.encode_row:
         num_inputs = viz_width * viz_height + viz_height
     else:
         num_inputs = viz_width * viz_height
@@ -356,7 +356,7 @@ def get_num_inputs(config: Config) -> int:
 
 def get_num_trainable_parameters(config: Config) -> int:
     num_inputs = get_num_inputs(config)
-    hidden_layers = config.NeuralNetwork.hidden_layer_architecture
+    hidden_layers = config.NeuralNetworkGA.hidden_layer_architecture
     num_outputs = 6  # U, D, L, R, A, B
 
     layers = [num_inputs] + hidden_layers + [num_outputs]
