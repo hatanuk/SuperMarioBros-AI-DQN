@@ -696,6 +696,10 @@ def run_dqn_agent(config, data_queue):
         next_stats = get_stats(mario_DQN) # do not confuse this with state
         next_state = mario_DQN.inputs_as_array
 
+        if next_stats == curr_stats:
+            print("ISSUE!!!")
+            print(ret)
+
         # Calculate reward
         reward = mario_DQN.calculate_reward(curr_stats, next_stats)
         if mario_DQN.step_counter % 100 == 0:
