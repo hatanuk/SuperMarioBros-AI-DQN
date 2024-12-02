@@ -497,7 +497,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.info_window.dqn_max_distance.setText(str(dqn_data['max_distance']))
                 self.info_window.dqn_total_steps.setText(str(dqn_data['total_steps']))
                 self.info_window.dqn_episodes.setText(str(dqn_data['dqn_episodes']))
-                self.info_window.loss.setText(str(dqn_data['loss']))
+                self.info_window.dqn_loss.setText(str(dqn_data['loss']))
 
         except queue.Empty:
             pass
@@ -727,7 +727,7 @@ def run_dqn_agent(config, data_queue):
         else:
             # Episode ended
             dqn_episodes += 1
-            print(f"Episode {dqn_episodes} ended. Resetting environment.")  # Debug print
+            mario_DQN.is_alive = True
             env.reset()
 
         # Prepare data to send back
