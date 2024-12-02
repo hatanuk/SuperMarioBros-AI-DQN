@@ -31,7 +31,6 @@ class ReplayBuffer:
     def sample(self, sample_size):
         return sample(self.buffer, sample_size)
         
-
     
     def __len__(self):
         return len(self.buffer)
@@ -224,7 +223,7 @@ class DQNAgent():
             
         def learn(self):
             
-            if self.step_counter % self.batch_size != 0 and self.step_counter != 0:
+            if self.step_counter % self.batch_size != 0 or self.step_counter == 0:
                 return
             
             print(f"replay_buffer size: {len(self.replay_buffer)}")
