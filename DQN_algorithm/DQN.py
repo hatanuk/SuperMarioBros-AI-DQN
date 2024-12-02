@@ -200,12 +200,10 @@ class DQNAgent():
 
         def choose_best_action(self, state):
             out = self.network.forward(state)
-            print(f"out: {out}")
             scaled = torch.sigmoid(out)
             print(f"scaled: {scaled}")
             #threshold = torch.nonzero(scaled > 0.5, as_tuple=True)[0].cpu().numpy()
-            highest_rated_action = np.array(torch.argmax(scaled))
-            print(f"highest_rated_action: {highest_rated_action}")
+            highest_rated_action = np.array([torch.argmax(scaled)])
             return highest_rated_action
         
         def choose_best_action_F(self, state):
