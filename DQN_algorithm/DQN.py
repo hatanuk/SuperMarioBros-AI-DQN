@@ -383,8 +383,8 @@ class DQNMario(DQNAgent, Mario):
 
         # Updates the fitness value as well
         self._fitness = self.reward_func(
-            frames=self._frames,
             distance=self.x_dist,
+            frames=self._frames,
             did_win=self.did_win
         )
 
