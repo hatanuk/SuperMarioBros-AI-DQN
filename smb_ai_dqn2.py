@@ -473,6 +473,7 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             while True:
                 dqn_data = self.dqn_data_queue.get_nowait()
+                print("Received DQN data")  # Debug print
                 if not args.no_display:
                     if self._should_display:
                         self.dqn_game_window.screen = dqn_data['screen']
@@ -730,6 +731,7 @@ def run_dqn_agent(config, data_queue):
             mario_DQN.is_alive = True
             env.reset()
 
+        print("preparing data")
         # Prepare data to send back
         data = {
             'screen': ret[0],
