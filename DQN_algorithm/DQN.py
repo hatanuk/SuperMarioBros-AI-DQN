@@ -202,7 +202,6 @@ class DQNAgent():
         def choose_best_action(self, state):
             out = self.network.forward(state)
             scaled = torch.sigmoid(out)
-            print(f"scaled: {scaled}")
             #threshold = torch.nonzero(scaled > 0.5, as_tuple=True)[0].cpu().numpy()
             highest_rated_action = np.array([torch.argmax(scaled)])
             return highest_rated_action
@@ -226,7 +225,6 @@ class DQNAgent():
             if self.step_counter % self.batch_size != 0 or self.step_counter == 0:
                 return
             
-            print(f"replay_buffer size: {len(self.replay_buffer)}")
 
             samples = self.replay_buffer.sample(self.batch_size)
             states, actions, next_states, rewards, dones = zip(*samples)
@@ -381,7 +379,6 @@ class DQNMario(DQNAgent, Mario):
 
         self.model_output = output
         self.buttons_to_press.fill(0)  # Clear
-        print(f"output: {output}")
 
         # !!! ONLY INCLUDES SINGLE ACTION OUTPUTS FOR NOW
         self.buttons_to_press[output_to_buttons_map[action]] = 1
