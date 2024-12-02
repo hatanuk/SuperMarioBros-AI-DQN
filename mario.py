@@ -8,7 +8,7 @@ from genetic_algorithm.individual import Individual
 from genetic_algorithm.population import Population
 from neural_network import FeedForwardNetwork, linear, sigmoid, tanh, relu, leaky_relu, ActivationFunction, get_activation_by_name
 from utils import SMB, StaticTileType, EnemyType
-from config import Config
+from config import Config, fitness_func
 
 class Mario(Individual):
     def __init__(self,
@@ -24,7 +24,7 @@ class Mario(Individual):
         
 
         self.config = config
-        self.fitness_func = config.fitness_func
+        self.fitness_func = fitness_func
 
         self.lifespan = lifespan
         self.name = name

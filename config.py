@@ -2,6 +2,11 @@ import configparser
 import os
 from typing import Any, Dict
 
+# Temporarily hardcoded
+def fitness_func(distance, frames, game_score, did_win):
+    max(distance ** 1.8 - frames ** 1.5 + min(max(distance - 50, 0), 1) * 2500 + int(did_win) * 1e6, 0.00001)
+
+
 
 # A mapping from parameters name -> final type
 _params = {
@@ -130,10 +135,6 @@ class Config(object):
         self._set_dict_types()
         dot_notation = DotNotation(self._config_dict)
         self.__dict__.update(dot_notation.__dict__)
-
-    # Temporarily hardcoded
-    def fitness_func(distance, frames, game_score, did_win):
-        max(distance ** 1.8 - frames ** 1.5 + min(max(distance - 50, 0), 1) * 2500 + int(did_win) * 1e6, 0.00001)
 
     def _create_dict_from_config(self) -> None:
         d = {}

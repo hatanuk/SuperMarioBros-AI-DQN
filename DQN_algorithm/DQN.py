@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from random import sample
 from collections import deque, OrderedDict
-from config import Config
+from config import Config, fitness_func
 from mario import Mario
 from neural_network import FeedForwardNetwork, get_activation_by_name, sigmoid, tanh, relu, leaky_relu, linear, ActivationFunction
 from utils import SMB
@@ -277,7 +277,7 @@ class DQNMario(DQNAgent, Mario):
                  name: Optional[str] = None,
                  debug: Optional[bool] = False,):
         self.config = config
-        self.reward_func = self.config.fitness_func
+        self.reward_func = fitness_func
         self.hidden_activation = self.config.NeuralNetworkDQN.hidden_node_activation
         self.output_activation = self.config.NeuralNetworkDQN.output_node_activation
         self.network_architecture = self.config.NeuralNetworkDQN.hidden_layer_architecture
