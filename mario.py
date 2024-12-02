@@ -98,8 +98,8 @@ class Mario(Individual):
 
         # Use the fitness_func from config
         self._fitness = self.fitness_func(
-            frames=frames,
             distance=distance,
+            frames=frames,
             game_score=score,
             did_win=did_win
         )
