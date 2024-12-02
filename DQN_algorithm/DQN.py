@@ -221,8 +221,6 @@ class DQNAgent():
             self.epsilon = max(self.epsilon, self.epsilon_min)
             
         def learn(self):
-
-            print(self.step_counter)
             
             if self.step_counter % self.batch_size != 0 or self.step_counter == 0:
                 return
@@ -254,11 +252,12 @@ class DQNAgent():
             with torch.no_grad():
                 next_max_q_values = self.target_network.forward(next_states).max(dim=1)[0]  # Qmax(s', a')
                 target_q_values = rewards + self.discount_value * next_max_q_values * (1 - dones) # r + gamma * max_a' Qmax(s', a')
-              
-           
+                         
 
             # Calculate loss
             loss = self.network.loss_function(predicted_q_values, target_q_values)
+            print(actions[:10])
+            print(rewards[:10])
             print(loss)
 
             # backpropagation via SGDs
