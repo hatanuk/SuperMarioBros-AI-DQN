@@ -42,6 +42,8 @@ class DQN(nn.Module, FeedForwardNetwork):
         FeedForwardNetwork.__init__(self, layer_nodes, hidden_activation, output_activation)
         nn.Module.__init__(self)
         self.lr = lr
+
+        print(f"output_activation: {output_activation}")
         
         self.x_size = layer_nodes[0]
         self.y_size = layer_nodes[-1]
@@ -171,6 +173,7 @@ class DQNAgent():
             self.network = network
             self.network.lr = self.learning_rate
             self.step_counter = 0
+            self.curr_loss = -1
 
             self.epsilon = self.epsilon_start
 
@@ -259,8 +262,7 @@ class DQNAgent():
             loss = self.network.loss_function(predicted_q_values, target_q_values)
             if rewards[0] == 0:
                 print(f"IT'S HAPPENING ON {self.step_counter}")
-            print(rewards[:10])
-            print(loss)
+            self.curr_loss = int(loss.item())
 
             # backpropagation via SGDs
             self.network.optimizer.zero_grad()
@@ -296,8 +298,6 @@ class DQNMario(DQNAgent, Mario):
         self.epsilon_start = self.config.DQN.epsilon_start
         self.epsilon_min = self.config.DQN.epsilon_min
         self.epsilon_decay = self.config.DQN.epsilon_decay
-
-        print("Output Activation Config:", self.config.NeuralNetworkDQN.output_node_activation)
 
 
         model = DQN(layer_nodes=self.network_architecture, hidden_activation=get_activation_by_name(self.hidden_activation), output_activation=get_activation_by_name(self.output_activation))

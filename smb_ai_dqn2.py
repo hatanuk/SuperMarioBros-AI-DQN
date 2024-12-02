@@ -228,6 +228,7 @@ class InformationWidget(QtWidgets.QWidget):
         # Prepare info_dict
         info_dict = {
             "Episodes": '0',
+            "Loss": '0',
             "Best Fitness": '0',
             "Max Distance": '0',
             "Total Steps": '0',
@@ -496,6 +497,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.info_window.dqn_max_distance.setText(str(dqn_data['max_distance']))
                 self.info_window.dqn_total_steps.setText(str(dqn_data['total_steps']))
                 self.info_window.dqn_episodes.setText(str(dqn_data['dqn_episodes']))
+                self.info_window.loss.setText(str(dqn_data['loss']))
 
         except queue.Empty:
             pass
@@ -702,7 +704,7 @@ def run_dqn_agent(config, data_queue):
         # Calculate reward
         reward = mario_DQN.calculate_reward(curr_stats, next_stats)
         if mario_DQN.step_counter % 100 == 0:
-            print(f"Reward: {reward}, Current Stats: {curr_stats}, Next Stats: {next_stats}")  # Debug print
+            print(f"Step: {mario_DQN.step_counter}, Reward: {reward}, Current Stats: {curr_stats}, Next Stats: {next_stats}")  # Debug print
         done = not mario_DQN.is_alive
 
         # Experience replay buffer
@@ -725,6 +727,7 @@ def run_dqn_agent(config, data_queue):
         else:
             # Episode ended
             dqn_episodes += 1
+            print(f"Episode {dqn_episodes} ended. Resetting environment.")  # Debug print
             env.reset()
 
         # Prepare data to send back
@@ -737,7 +740,8 @@ def run_dqn_agent(config, data_queue):
             'max_distance': max_distance_DQN,
             'total_steps': total_steps_DQN,
             'dqn_episodes': dqn_episodes,
-            'mario': mario_DQN
+            'mario': mario_DQN,
+            'loss': mario_DQN.curr_loss
         }
 
         # Send data to main process
