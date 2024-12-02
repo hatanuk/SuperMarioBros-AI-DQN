@@ -283,8 +283,7 @@ class DQNMario(DQNAgent, Mario):
         self.reward_func = fitness_func
         self.hidden_activation = self.config.NeuralNetworkDQN.hidden_node_activation
         self.output_activation = self.config.NeuralNetworkDQN.output_node_activation
-        self.network_architecture = self.config.NeuralNetworkDQN.hidden_layer_architecture
-        hidden_layer_architecture = self.network_architecture[1:-1]
+        self.hidden_layer_architecture = self.config.NeuralNetworkDQN.hidden_layer_architecture
       
         Mario.__init__(self, config, None, hidden_layer_architecture, self.hidden_activation,
          self.output_activation, np.inf, name, debug)
@@ -292,7 +291,15 @@ class DQNMario(DQNAgent, Mario):
         # overwrite them because Mario's constructor actually just sets it to GA's config's values again fantastic
         self.hidden_activation = self.config.NeuralNetworkDQN.hidden_node_activation
         self.output_activation = self.config.NeuralNetworkDQN.output_node_activation
-        self.network_architecture = self.config.NeuralNetworkDQN.hidden_layer_architecture
+        
+        if self.config.NeuralNetworkDQN.encode_row:
+            num_inputs = self.viz_width * self.viz_height + self.viz_height
+        else:
+            num_inputs = self.viz_width * self.viz_height
+
+        self.network_architecture = [num_inputs]                          # Input Nodes
+        self.network_architecture.extend(self.hidden_layer_architecture)  # Hidden Layer Ndoes
+        self.network_architecture.append(6)                        # 6 Outputs ['u', 'd', 'l', 'r', 'a', 'b']
         
         ## Parameter initialisation
         self.learning_rate = self.config.DQN.learning_rate
