@@ -374,13 +374,14 @@ class DQNMario(DQNAgent, Mario):
         self.set_input_as_array(ram, tiles)
 
         # Calculate the output
-        action = self.choose_action(self.inputs_as_array)
+        output = self.choose_action(self.inputs_as_array)
+        action = output[0]
 
         #threshold = np.where(output > 0.5)[0]
 
-        self.model_output = action
+        self.model_output = output
         self.buttons_to_press.fill(0)  # Clear
-        print(f"output: {action}")
+        print(f"output: {output}")
 
         # !!! ONLY INCLUDES SINGLE ACTION OUTPUTS FOR NOW
         self.buttons_to_press[output_to_buttons_map[action]] = 1
