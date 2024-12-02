@@ -745,7 +745,7 @@ def run_dqn_agent(config, data_queue):
         else:
             # Episode ended
             dqn_episodes += 1
-            #mario_DQN.is_alive = True
+            mario_DQN.is_alive = True
             env.reset()
 
  

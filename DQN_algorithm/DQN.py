@@ -299,7 +299,7 @@ class DQNMario(DQNAgent, Mario):
         self.network_architecture = [num_inputs]                          # Input Nodes
         self.network_architecture.extend(self.hidden_layer_architecture)  # Hidden Layer Ndoes
         self.network_architecture.append(6)                        # 6 Outputs ['u', 'd', 'l', 'r', 'a', 'b']
-        
+        print(f"Network Architecture: {self.network_architecture}")
         ## Parameter initialisation
         self.learning_rate = self.config.DQN.learning_rate
         self.buffer_size = self.config.DQN.buffer_size
