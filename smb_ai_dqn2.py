@@ -381,6 +381,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dqn_process.join()
         self.ga_data_queue.close()
         self.dqn_data_queue.close()
+        for widget in QApplication.allWidgets():
+            if widget.isVisible():
+                widget.close()
+        QApplication.quit()
 
     def init_gui(self):
         self.centralWidget = QtWidgets.QWidget(self)
