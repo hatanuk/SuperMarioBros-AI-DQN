@@ -299,6 +299,11 @@ class DQNMario(DQNAgent, Mario):
         self.epsilon_min = self.config.DQN.epsilon_min
         self.epsilon_decay = self.config.DQN.epsilon_decay
 
+        print("BEFORE: ", self.output_activation)
+        by_name = get_activation_by_name(self.output_activation)
+        print ("AFTER: ", by_name)
+
+
 
         model = DQN(layer_nodes=self.network_architecture, hidden_activation=get_activation_by_name(self.hidden_activation), output_activation=get_activation_by_name(self.output_activation))
         DQNAgent.__init__(self, self.network_architecture[-1], get_num_inputs(self.config), model, self.sync_network_rate, self.batch_size, self.discount_value, self.epsilon_start, self.epsilon_min, self.epsilon_decay, self.learning_rate, self.buffer_size)
