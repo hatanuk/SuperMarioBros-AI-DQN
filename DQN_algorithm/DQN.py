@@ -229,8 +229,8 @@ class DQNAgent():
             states = torch.FloatTensor(np.array(states))
             actions = torch.LongTensor(np.array(actions))
             next_states = torch.FloatTensor(np.array(next_states))
-            rewards = torch.FloatTensor(np.array(rewards)).unsqueeze(1)  
-            dones = torch.FloatTensor(np.array(dones)).unsqueeze(1) 
+            rewards = torch.FloatTensor(np.array(rewards))
+            dones = torch.FloatTensor(np.array(dones))
 
             print("actions shape:", actions.shape) 
             print("rewards shape:", rewards.shape)
