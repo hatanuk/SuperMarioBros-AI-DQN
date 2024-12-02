@@ -221,6 +221,8 @@ class DQNAgent():
             self.epsilon = max(self.epsilon, self.epsilon_min)
             
         def learn(self):
+
+            print(self.step_counter)
             
             if self.step_counter % self.batch_size != 0 or self.step_counter == 0:
                 return
