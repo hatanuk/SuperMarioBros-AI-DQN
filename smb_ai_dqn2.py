@@ -103,7 +103,7 @@ class Visualizer(QtWidgets.QWidget):
             else:
                 painter.setPen(QColor(0, 0, 0))
                 painter.setFont(QtGui.QFont('Times', 30, QtGui.QFont.Normal))
-                txt = 'Display is hidden.\nHit Ctrl+V to show\nConfig: {}'.format(args.config)
+                txt = 'Display is hidden.\nHit Ctrl+V to show\n'
                 painter.drawText(event.rect(), Qt.AlignCenter, txt)
         finally:
             painter.end()
@@ -140,7 +140,7 @@ class GameWindow(QtWidgets.QWidget):
             else:
                 painter.setPen(QColor(0, 0, 0))
                 painter.setFont(QtGui.QFont('Times', 30, QtGui.QFont.Normal))
-                txt = 'Display is hidden.\nHit Ctrl+V to show\nConfig: {}'.format(args.config)
+                txt = 'Display is hidden.\nHit Ctrl+V to show\n'
                 painter.drawText(event.rect(), Qt.AlignCenter, txt)
         finally:
             painter.end()
@@ -513,7 +513,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 def run_ga_agent(config, data_queue):
     # Initialize environment
-    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode=None)
 
     # Initialize population and agent
     individuals = _initialize_population(config)
@@ -651,7 +651,7 @@ def run_ga_agent(config, data_queue):
 
 def run_dqn_agent(config, data_queue):
     # Initialize environment
-    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode=None)
 
     # Initialize DQN agent
     mario_DQN = DQNMario(config)
@@ -690,6 +690,7 @@ def run_dqn_agent(config, data_queue):
         mario_DQN.update(ram, tiles, keys, ouput_to_keys_map)
 
         # Take a step in the environment
+        print("taking a step: ", mario_DQN.buttons_to_press)
         ret = env.step(mario_DQN.buttons_to_press)
         total_steps_DQN += 1
 
