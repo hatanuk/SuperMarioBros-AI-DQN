@@ -182,13 +182,13 @@ class DQNAgent():
             # Replay buffer initialisation
             self.replay_buffer = ReplayBuffer(self.buffer_size)
 
-            self.ouput_to_keys_map = {
-                0: 4,  # U
-                1: 5,  # D
-                2: 6,  # L
-                3: 7,  # R
-                4: 8,  # A
-                5: 0   # B
+            self.keys_to_output_map = {
+                4: 0,  # U
+                5: 1,  # D
+                6: 2,  # L
+                7: 3,  # R
+                8: 4,  # A
+                0: 5  # B
             }
 
 
@@ -243,6 +243,10 @@ class DQNAgent():
 
             # Q-values for actions actually taken
             batch_indices, action_indices = actions.nonzero(as_tuple=True)
+
+            # converts key action indices to output indices (bound between 0 and output layer size)
+            action_indices = torch.tensor([self.keys_to_output_map[item.item()] for item in action_indices])
+
             predicted_q_values = predicted_q_values[batch_indices, action_indices]
 
             # Compute target Q-values for next states
