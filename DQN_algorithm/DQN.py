@@ -226,6 +226,8 @@ class DQNAgent():
             samples = self.replay_buffer.sample(self.batch_size)
             states, actions, next_states, rewards, dones = zip(*samples)
 
+            print("actions prior shape:", actions.shape) 
+
             states = torch.FloatTensor(np.array(states))
             actions = torch.LongTensor(np.array(states))
             next_states = torch.FloatTensor(np.array(states))
@@ -328,8 +330,8 @@ class DQNMario(DQNAgent, Mario):
 
         return next_reward - prev_reward
 
-    # In the update method, update the fitness calculation
-    def update(self, ram, tiles, buttons, ouput_to_buttons_map) -> bool:
+    # Mario Override
+    def update(self, ram, tiles, buttons, output_to_buttons_map) -> bool:
         """
         The main update call for Mario.
         Takes in inputs of surrounding area and feeds through the Neural Network
@@ -381,14 +383,14 @@ class DQNMario(DQNAgent, Mario):
         # Calculate the output
         output = self.choose_action(self.inputs_as_array)
 
-        threshold = np.where(output > 0.5)[0]
+        #threshold = np.where(output > 0.5)[0]
 
         self.model_output = output
         self.buttons_to_press.fill(0)  # Clear
         highest_input = np.argmax(output, axis=0)
 
         # !!! ONLY INCLUDES SINGLE ACTION OUTPUTS FOR NOW
-        self.buttons_to_press[ouput_to_buttons_map[highest_input]] = 1
+        self.buttons_to_press[output_to_buttons_map[highest_input]] = 1
 
         # Updates the fitness value as well
         self._fitness = self.reward_func(
