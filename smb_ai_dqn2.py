@@ -382,6 +382,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Info Widget
         self.info_window = InformationWidget(self.centralWidget, (512, 200), self.config)
         self.info_window.setObjectName('info_window')
+        self.info_window.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         
         # GA Widgets
         self.ga_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
