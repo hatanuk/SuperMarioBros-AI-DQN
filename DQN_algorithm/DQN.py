@@ -220,8 +220,7 @@ class DQNAgent():
         def learn(self):
             if len(self.replay_buffer) < self.batch_size:
                 return
-            
-          
+        
 
             samples = self.replay_buffer.sample(self.batch_size)
             states, actions, next_states, rewards, dones = zip(*samples)
@@ -232,16 +231,11 @@ class DQNAgent():
             rewards = torch.FloatTensor(np.array(rewards))
             dones = torch.FloatTensor(np.array(dones))
 
-            print("actions shape:", actions.shape) 
-            print("rewards shape:", rewards.shape)
-            print("dones shape:", dones.shape)
-
             # Q-values for all states
             predicted_q_values = self.network.forward(states)  # Shape: [batch_size, num_actions]
 
             # Converts key action indices to output indices (bound between 0 and output layer size)
             action_indices = actions.argmax(dim=1).squeeze(-1) # extract the index of the one-hot encoded action
-            print("action_indices shape:", action_indices.shape) 
 
             action_indices = torch.tensor([self.keys_to_output_map[item.item()] for item in action_indices]) # map that index to the index of the network's output
 
@@ -249,20 +243,17 @@ class DQNAgent():
             batch_indices = torch.arange(states.size(0))
             predicted_q_values = predicted_q_values[batch_indices, action_indices]
 
-            print("predicted_q_values shape:", predicted_q_values.shape)
-            print("batch_indices shape:", batch_indices.shape)
-            print("action_indices shape:", action_indices.shape)
 
             # Compute target Q-values for next states
             with torch.no_grad():
                 next_max_q_values = self.target_network.forward(next_states).max(dim=1)[0]  # Qmax(s', a')
                 target_q_values = rewards + self.discount_value * next_max_q_values * (1 - dones) # r + gamma * max_a' Qmax(s', a')
               
-            print("next_max_q_values shape:", next_max_q_values.shape)
-            print("target_q_values shape:", target_q_values.shape)
+           
 
             # Calculate loss
             loss = self.network.loss_function(predicted_q_values, target_q_values)
+            print(loss)
 
             # backpropagation via SGDs
             self.network.optimizer.zero_grad()

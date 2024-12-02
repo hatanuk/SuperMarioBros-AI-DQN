@@ -227,7 +227,7 @@ class InformationWidget(QtWidgets.QWidget):
 
         # Prepare info_dict
         info_dict = {
-            "Individual": '0',
+            "Episodes": '0',
             "Best Fitness": '0',
             "Max Distance": '0',
             "Total Steps": '0',
@@ -495,7 +495,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.info_window.dqn_best_fitness.setText('{:.2f}'.format(dqn_data['best_fitness']))
                 self.info_window.dqn_max_distance.setText(str(dqn_data['max_distance']))
                 self.info_window.dqn_total_steps.setText(str(dqn_data['total_steps']))
-                self.info_window.dqn_individual.setText(str(dqn_data['dqn_episodes']))
+                self.info_window.dqn_episodes.setText(str(dqn_data['dqn_episodes']))
 
         except queue.Empty:
             pass
@@ -642,7 +642,7 @@ def run_ga_agent(config, data_queue):
             'max_distance': max_distance_GA,
             'total_steps': total_steps_GA,
             'current_generation': current_generation,
-            'current_individual': _current_individual + 1,
+            'current_individual': _current_individual,
             'mario': mario_GA
         }
 
@@ -690,6 +690,7 @@ def run_dqn_agent(config, data_queue):
         mario_DQN.update(ram, tiles, keys, ouput_to_keys_map)
 
         # Take a step in the environment
+        print(mario_DQN.buttons_to_press)
         ret = env.step(mario_DQN.buttons_to_press)
         total_steps_DQN += 1
 
