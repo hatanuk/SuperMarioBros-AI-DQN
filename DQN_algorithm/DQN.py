@@ -232,19 +232,17 @@ class DQNAgent():
             rewards = torch.FloatTensor(np.array(states)).unsqueeze(1)  
             dones = torch.FloatTensor(np.array(states)).unsqueeze(1) 
 
-            print("actions shape:", actions.shape)
-            print("actions:", actions)      
+            print("actions shape:", actions.shape) 
 
             # Q-values for all states
             predicted_q_values = self.network.forward(states)  # Shape: [batch_size, num_actions]
 
-            # Q-values for actions actually taken
-            batch_indices, action_indices = actions.nonzero(as_tuple=True)
+            # Converts key action indices to output indices (bound between 0 and output layer size)
+            action_indices = actions.argmax(dim=1).squeeze(-1) # extract the index of the one-hot encoded action
+            action_indices = torch.tensor([self.keys_to_output_map[item.item()] for item in action_indices]) # map that index to the index of the network's output
 
-            # converts key action indices to output indices (bound between 0 and output layer size)
-            action_indices = torch.tensor([self.keys_to_output_map[item.item()] for item in action_indices])
-            print("Mapped action indices:", [self.keys_to_output_map[item.item()] for item in action_indices])
-
+            # extract the Q-values we are interested in (chosen actions)
+            batch_indices = torch.arange(states.size(0))
             predicted_q_values = predicted_q_values[batch_indices, action_indices]
 
             print("predicted_q_values shape:", predicted_q_values.shape)
@@ -255,6 +253,9 @@ class DQNAgent():
             with torch.no_grad():
                 next_max_q_values = self.target_network.forward(next_states).max(dim=1)[0]  # Qmax(s', a')
                 target_q_values = rewards + self.discount_value * next_max_q_values * (1 - dones) # r + gamma * max_a' Qmax(s', a')
+              
+            print("next_max_q_values shape:", next_max_q_values.shape)
+            print("target_q_values shape:", target_q_values.shape)
 
             # Calculate loss
             loss = self.network.loss_function(predicted_q_values, target_q_values)
