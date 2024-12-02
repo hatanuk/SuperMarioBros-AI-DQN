@@ -276,7 +276,7 @@ class DQNAgent():
 class DQNMario(DQNAgent, Mario):
     def __init__(self, 
                  config: Config,
-                 name: Optional[str] = None,
+                 name: Optional[str] = "DQNAgent",
                  debug: Optional[bool] = False,):
         self.config = config
         self.reward_func = fitness_func

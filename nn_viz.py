@@ -21,7 +21,11 @@ class NeuralNetworkViz(QtWidgets.QWidget):
         self.tile_size = self.config.Graphics.tile_size
         self.neuron_radius = self.config.Graphics.neuron_radius
 
-        print("L SHAPE: ", l)
+
+        if mario.name == "DQNAgent":
+            print("DQN L SHAPE: ", l)
+        else:
+            print("GA L SHAPE: ", l)
 
         # Set all neuron locations for layer 0 (Input) to be at the same point.
         # The reason I do this is because the number of inputs can easily become too many to show on the screen.
@@ -44,8 +48,10 @@ class NeuralNetworkViz(QtWidgets.QWidget):
         horizontal_space = 20  # Space between Nodes within the same layer
         
         layer_nodes = self.mario.network.layer_nodes
-
-        print("LAYER NODES: ", layer_nodes)
+        if self.mario.name == "DQNAgent":
+            print("DQN LAYER_NODES: ", layer_nodes)
+        else:
+            print("GA LAYER_NODES: ", layer_nodes)
 
         default_offset = self.x_offset
         h_offset = self.x_offset
