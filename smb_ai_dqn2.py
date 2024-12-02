@@ -400,6 +400,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_layout.addWidget(self.info_window)
 
 
+
     def _update(self):
         # Get data from GA agent
         try:
@@ -797,7 +798,5 @@ if __name__ == "__main__":
         config = Config(args.config)
 
     app = QtWidgets.QApplication(sys.argv)
-    app.setApplicationDisplayName('Super Mario Bros AI - GA vs DQN')
     window = MainWindow(config)
-    window.show()
     sys.exit(app.exec_())
