@@ -226,11 +226,14 @@ class DQNAgent():
             samples = self.replay_buffer.sample(self.batch_size)
             states, actions, next_states, rewards, dones = zip(*samples)
 
-            states = torch.FloatTensor(states)
-            actions = torch.LongTensor(actions)
-            next_states = torch.FloatTensor(next_states)
-            rewards = torch.FloatTensor(rewards).unsqueeze(1)  
-            dones = torch.FloatTensor(dones).unsqueeze(1) 
+            states = torch.FloatTensor(np.array(states))
+            actions = torch.LongTensor(np.array(states))
+            next_states = torch.FloatTensor(np.array(states))
+            rewards = torch.FloatTensor(np.array(states)).unsqueeze(1)  
+            dones = torch.FloatTensor(np.array(states)).unsqueeze(1) 
+
+            print("actions shape:", actions.shape)
+            print("actions:", actions)      
 
             # Q-values for all states
             predicted_q_values = self.network.forward(states)  # Shape: [batch_size, num_actions]
@@ -240,8 +243,13 @@ class DQNAgent():
 
             # converts key action indices to output indices (bound between 0 and output layer size)
             action_indices = torch.tensor([self.keys_to_output_map[item.item()] for item in action_indices])
+            print("Mapped action indices:", [self.keys_to_output_map[item.item()] for item in action_indices])
 
             predicted_q_values = predicted_q_values[batch_indices, action_indices]
+
+            print("predicted_q_values shape:", predicted_q_values.shape)
+            print("batch_indices shape:", batch_indices.shape)
+            print("action_indices shape:", action_indices.shape)
 
             # Compute target Q-values for next states
             with torch.no_grad():
