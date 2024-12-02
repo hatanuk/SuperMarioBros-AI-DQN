@@ -190,6 +190,7 @@ class DQNAgent():
 
         def choose_action(self, state): 
             if np.random.random() < self.epsilon:
+                print("choosing randomly")
                 num_indices = np.random.choice([1, 2, 3], p=[0.45, 0.45, 0.1])
                 action = np.random.choice(range(self.num_actions), size=num_indices, replace=False)
             else:
@@ -378,6 +379,7 @@ class DQNMario(DQNAgent, Mario):
 
         self.model_output = output
         self.buttons_to_press.fill(0)  # Clear
+        print(f"output: {output}")
         highest_input = np.argmax(output, axis=0)
 
         # !!! ONLY INCLUDES SINGLE ACTION OUTPUTS FOR NOW
