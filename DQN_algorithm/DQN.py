@@ -78,6 +78,7 @@ class DQN(nn.Module, FeedForwardNetwork):
             net[f'Afn{l}'] = self.to_torch_activation(self.hidden_activation)
             
         # build output layer
+        print(self.output_activation)
         net[f'L{L}'] = nn.Linear(self.layer_nodes[L-1], self.layer_nodes[L])
         net[f'Afn{L}'] =  self.to_torch_activation(self.output_activation)
         
@@ -201,9 +202,9 @@ class DQNAgent():
 
         def choose_best_action(self, state):
             out = self.network.forward(state)
-            scaled = torch.sigmoid(out)
+            #scaled = torch.sigmoid(out)
             #threshold = torch.nonzero(scaled > 0.5, as_tuple=True)[0].cpu().numpy()
-            highest_rated_action = np.array([torch.argmax(scaled)])
+            highest_rated_action = np.array([torch.argmax(out)])
             return highest_rated_action
         
         def choose_best_action_F(self, state):
