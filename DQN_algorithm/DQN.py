@@ -30,6 +30,8 @@ class ReplayBuffer:
         
     def sample(self, sample_size):
         return sample(self.buffer, sample_size)
+        
+
     
     def __len__(self):
         return len(self.buffer)
@@ -208,7 +210,7 @@ class DQNAgent():
             return np.argmax(out)
 
         def sync_network(self):
-            if self.step_counter % self.sync_network_rate == 0:
+            if self.step_counter % self.sync_network_rate == 0 and self.step_counter != 0:
                 self.target_network.torch_model.load_state_dict(self.network.torch_model.state_dict())
 
         
@@ -218,7 +220,8 @@ class DQNAgent():
             self.epsilon = max(self.epsilon, self.epsilon_min)
             
         def learn(self):
-            if len(self.replay_buffer) < self.batch_size:
+            
+            if self.step_counter % self.batch_size != 0 and self.step_counter != 0:
                 return
             
           
@@ -269,10 +272,6 @@ class DQNAgent():
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.network.torch_model.parameters(), max_norm=1.0)
             self.network.optimizer.step()      
-
-            # Periodically sync target network with the main network
-            if self.step_counter % self.sync_network_rate == 0:
-                self.sync_network()
 
             self.step_counter += 1
             self.decay_epsilon()
