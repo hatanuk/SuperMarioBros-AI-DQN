@@ -473,9 +473,9 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             while True:
                 dqn_data = self.dqn_data_queue.get_nowait()
-                print("Received DQN data")  # Debug print
                 if not args.no_display:
                     if self._should_display:
+                        print('Updating2')
                         self.dqn_game_window.screen = dqn_data['screen']
                         self.dqn_game_window._should_update = True    
                     else:
@@ -484,6 +484,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 if not args.no_display:
                     if self._should_display:
+                        print('Updating1')
                         self.dqn_viz_window.ram = dqn_data['ram']
                         self.dqn_viz_window.tiles = dqn_data['tiles']
                         self.dqn_viz_window.enemies = dqn_data['enemies']
