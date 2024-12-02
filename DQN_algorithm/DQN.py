@@ -239,6 +239,8 @@ class DQNAgent():
 
             # Converts key action indices to output indices (bound between 0 and output layer size)
             action_indices = actions.argmax(dim=1).squeeze(-1) # extract the index of the one-hot encoded action
+            print("action_indices shape:", action_indices.shape) 
+
             action_indices = torch.tensor([self.keys_to_output_map[item.item()] for item in action_indices]) # map that index to the index of the network's output
 
             # extract the Q-values we are interested in (chosen actions)

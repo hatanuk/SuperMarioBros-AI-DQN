@@ -356,10 +356,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     #QWidget override
     def closeEvent(self, event):
-        self.ga_process.terminate()
-        self.dqn_process.terminate()
-        self.ga_process.join()
-        self.dqn_process.join()
+        self.cleanup()
         event.accept()
 
     def init_agents(self):
@@ -376,13 +373,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dqn_process.start()
 
         # multiprocessing cleanup
-        def cleanup():
-            self.ga_process.terminate()
-            self.dqn_process.terminate()
-            self.ga_data_queue.close()
-            self.dqn_data_queue.close()
+        atexit.register(self.cleanup)
 
-        atexit.register(cleanup)
+    def cleanup(self):
+        self.ga_process.terminate()
+        self.dqn_process.terminate()
+        self.ga_process.join() 
+        self.dqn_process.join()
+        self.ga_data_queue.close()
+        self.dqn_data_queue.close()
 
     def init_gui(self):
         self.centralWidget = QtWidgets.QWidget(self)
