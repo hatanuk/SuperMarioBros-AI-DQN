@@ -196,7 +196,7 @@ def run_dqn_agent(config, data_queue, dqn_model):
     # Initialize environment
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
     env = ActionDiscretizer(env)
-    env = InputSpaceReduction(env)
+    env = InputSpaceReduction(env, config)
     env = DummyVecEnv([lambda: env])
 
     # Initialize DQN agent
