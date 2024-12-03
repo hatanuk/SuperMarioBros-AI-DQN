@@ -77,13 +77,17 @@ class InputSpaceReduction(gym.Env):
                 try:
                     t = tiles[(row, col)]
                     if isinstance(t, StaticTileType):
-                        arr.append(0 if t.value == 0 else 1)
+                        if t.value == 0:
+                            arr.append(0)
+                        else:
+                            arr.append(1)
                     elif isinstance(t, EnemyType):
                         arr.append(-1)
                     else:
-                        raise Exception("Unexpected tile type")
-                except KeyError:
-                    arr.append(0)  
+                        raise Exception("This should never happen")
+                except:
+                    t = StaticTileType(0x00)
+                    arr.append(0) # Empty  
         
         input_array = np.array(arr).reshape((-1, 1))
         
