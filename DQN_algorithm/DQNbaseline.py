@@ -18,7 +18,7 @@ import torch.nn as nn
 
 from gym.spaces import Space
 import numpy as np
-
+ 
 
 import gym
 import numpy as np
@@ -62,6 +62,7 @@ class InputSpaceReduction(gym.Env):
     
     def _observation(self, obs):
         ram = self.env.get_ram()  
+        print(ram)
         
 
         mario_row, mario_col = SMB.get_mario_row_col(ram)
