@@ -18,41 +18,40 @@ import retro
 from gym.spaces import Space
 import numpy as np
 
-class CustomBox(Space):
-    def __init__(self, low, high, shape, dtype=np.float32):
-        super().__init__(shape, dtype)
-        self.low = low
-        self.high = high
 
-    def sample(self):
-        return np.random.uniform(self.low, self.high, size=self.shape).astype(self.dtype)
+import gym
+import numpy as np
+from gym import spaces
 
-    def contains(self, x):
-        return np.all(x >= self.low) and np.all(x <= self.high)
-
-    def __repr__(self):
-        return f"CustomBox(low={self.low}, high={self.high}, shape={self.shape}, dtype={self.dtype})"
-
-
-
-class InputSpaceReduction(gym.ObservationWrapper):
+class InputSpaceReductionEnv(gym.Env):
     def __init__(self, env, config):
-        super().__init__(env)
+        super().__init__()
+        
+        self.env = env  
+        
         self.action_space = self.env.action_space
-        self.observation_space = self.env.observation_space
+        self.observation_space = spaces.Box(
+            low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
+        )
+        
         self._start_row = config.NeuralNetworkDQN.input_dims[0]
         self._width = config.NeuralNetworkDQN.input_dims[1]
         self._height = config.NeuralNetworkDQN.input_dims[2]
         self._encode_row = config.NeuralNetworkDQN.encode_row
-#
-        encoded_row_size = self._height if self._encode_row else 0
-        print( self.observation_space )
-        print("hi")
-       
+        
+    def reset(self):
+        obs = self.env.reset()  
+        return self._observation(obs)
+    
+    def step(self, action):
+        obs, reward, done, info = self.env.step(action)  
+        return self._observation(obs), reward, done, info  
+
     
     def _observation(self, obs):
-        ram = self.env.get_ram()
+        ram = self.env.get_ram()  
         
+
         mario_row, mario_col = SMB.get_mario_row_col(ram)
         tiles = SMB.get_tiles(ram)
         arr = []
@@ -62,30 +61,25 @@ class InputSpaceReduction(gym.ObservationWrapper):
                 try:
                     t = tiles[(row, col)]
                     if isinstance(t, StaticTileType):
-                        if t.value == 0:
-                            arr.append(0)
-                        else:
-                            arr.append(1)
+                        arr.append(0 if t.value == 0 else 1)
                     elif isinstance(t, EnemyType):
                         arr.append(-1)
                     else:
-                        raise Exception("This should never happen")
+                        raise Exception("Unexpected tile type")
                 except KeyError:
-                    t = StaticTileType(0x00)
-                    arr.append(0) 
-
-        input_array = np.array(arr).reshape((-1, 1)) 
+                    arr.append(0)  
+        
+        input_array = np.array(arr).reshape((-1, 1))
         
         if self._encode_row:
             row = mario_row - self._start_row
             one_hot = np.zeros((self._height, 1))
-            if row >= 0 and row < self._height:
+            if 0 <= row < self._height:
                 one_hot[row, 0] = 1
             input_array = np.vstack([input_array, one_hot.reshape((-1, 1))])
 
-        return input_array.reshape(-1)
+        return input_array.flatten()
 
- 
 
 
 
