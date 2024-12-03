@@ -26,10 +26,10 @@ from gym import spaces
 
 def get_torch_activation_by_name(name: str):
     activations = {
-        'relu': nn.ReLU(),
-        'tanh': nn.Tanh(),
-        'sigmoid': nn.Sigmoid(),
-        'leaky_relu': nn.LeakyReLU(),
+        'relu': nn.ReLU,
+        'tanh': nn.Tanh,
+        'sigmoid': nn.Sigmoid,
+        'leaky_relu': nn.LeakyReLU,
     }
     return activations.get(name.lower(), None)
 
