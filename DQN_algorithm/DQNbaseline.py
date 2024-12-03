@@ -158,7 +158,8 @@ class DQNCallback(BaseCallback):
             self.max_distance = self.mario.farthest_x
         if self.mario.fitness >  self.max_fitness:
             self.max_fitness = self.mario.fitness
-        
+            
+        print(self.locals.keys())
         data = {
             'screen': self.locals['obs'][0],
             'ram': ram,
