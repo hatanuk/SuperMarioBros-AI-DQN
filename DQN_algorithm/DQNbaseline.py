@@ -8,10 +8,8 @@ from mario import Mario
 from neural_network import FeedForwardNetwork, get_activation_by_name, sigmoid, tanh, relu, leaky_relu, linear, ActivationFunction
 from utils import SMB
 from mario import get_num_inputs
-from stable_baselines import DQN
-from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines.deepq.policies import MlpPolicy
-from stable_baselines.common.callbacks import BaseCallback
+from stable_baselines3 import DQN
+from stable_baselines3.common.callbacks import BaseCallback
 import gym
 import retro
 
@@ -128,7 +126,7 @@ class DQNMario(Mario):
         # specifies the model architecture for the DQN
         policy_kwargs = dict(act_fun=self.hidden_activation, net_arch=self.hidden_layer_architecture)
 
-        self.model = DQN(MlpPolicy, 
+        self.model = DQN('MlpPolicy', 
                     env, 
                     gamma=self.discount_value, 
                     learning_rate=self.learning_rate,  

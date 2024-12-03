@@ -27,8 +27,8 @@ from DQN_algorithm.DQNbaseline import ActionDiscretizer, DQNCallback, DQNMario
 
 from smb_ai import draw_border, parse_args
 
-from stable_baselines import DQN
-from stable_baselines.bench.monitor import Monitor
+from stable_baselines3 import DQN
+from stable_baselines3.common.vec_env import DummyVecEnv
 
 import multiprocessing
 import queue
@@ -421,7 +421,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.logger.ga_writer.close()
         self.logger.dqn_writer.close()
-        
+
         for widget in QApplication.allWidgets():
             if widget.isVisible():
                 widget.close()
@@ -595,8 +595,6 @@ class MainWindow(QtWidgets.QMainWindow):
 def run_ga_agent(config, data_queue):
     # Initialize environment
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
-    env = Monitor(env, f'{config.Statistics.monitor_dir}/GAMonitor.csv')
-
 
     # Initialize population and agent
     individuals = _initialize_population(config)
@@ -736,7 +734,8 @@ def run_dqn_agent(config, data_queue, dqn_model):
     # Initialize environment
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
     env = ActionDiscretizer(env)
-    env = Monitor(env, f'{config.Statistics.monitor_dir}/DQNMonitor.csv')
+    env = DummyVecEnv([lambda: env])
+
 
 
     # Initialize DQN agent
