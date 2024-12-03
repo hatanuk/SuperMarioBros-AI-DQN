@@ -21,8 +21,8 @@ _params = {
         'save_best_individual_from_generation': str,
         'save_population_stats': str,
         'monitor_dir': str,
-        'DQN_save_dir': str,
-        'DQN_model_name': str,
+        'dqn_save_dir': str,
+        'dqn_model_name': str,
         'ga_tensorboard': str,
         'dqn_tensorboard': str,
         'log_interval': int
