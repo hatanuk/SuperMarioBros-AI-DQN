@@ -160,16 +160,11 @@ class DQNCallback(BaseCallback):
             self.max_fitness = self.mario.fitness
 
         data = {
-            'screen': self.locals['new_obs'],
-            'ram': ram,
-            'tiles': tiles,
-            'enemies': enemies,
             'max_fitness':  self.max_fitness,
             'max_distance': self.max_distance,
             'total_steps': self.locals.get('total_timesteps', 0),
             'episode_rewards': self.locals.get('episode_rewards', 0),
             'episode_num': self.locals.get('num_episodes', 1),
-            'mario': self.mario,
         }
         self.data_queue.put(data)
         return True
