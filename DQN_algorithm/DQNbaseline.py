@@ -198,7 +198,7 @@ class DQNMario(Mario):
                     exploration_initial_eps=self.epsilon_start,
                     train_freq=self.train_freq,
                     batch_size=self.batch_size,
-                    target_network_update_freq = self.sync_network_rate,
+                    target_update_interval= self.sync_network_rate,
                     verbose=1,
                     tensorboard_log= "../monitor_logs/DQNtbFromBaseline",
                     policy_kwargs = policy_kwargs
