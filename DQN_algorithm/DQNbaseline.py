@@ -15,8 +15,27 @@ from gym.spaces import Box, Discrete
 from utils import SMB, StaticTileType, EnemyType
 import retro
 
+from gym.spaces import Space
+import numpy as np
 
-class InputSpaceReduction(gym.Wrapper):
+class CustomBox(Space):
+    def __init__(self, low, high, shape, dtype=np.float32):
+        super().__init__(shape, dtype)
+        self.low = low
+        self.high = high
+
+    def sample(self):
+        return np.random.uniform(self.low, self.high, size=self.shape).astype(self.dtype)
+
+    def contains(self, x):
+        return np.all(x >= self.low) and np.all(x <= self.high)
+
+    def __repr__(self):
+        return f"CustomBox(low={self.low}, high={self.high}, shape={self.shape}, dtype={self.dtype})"
+
+
+
+class InputSpaceReduction(gym.ObservationWrapper):
     def __init__(self, env, config):
         super().__init__(env)
         self.action_space = self.env.action_space
@@ -28,18 +47,9 @@ class InputSpaceReduction(gym.Wrapper):
 
         encoded_row_size = self._height if self._encode_row else 0
 
-        self.observation_space = Box(low=-1.0, high=1.0, shape=(10,), dtype=np.float32)
-
-
-    def reset(self):
-        self.env.reset()
-        return self._reduce_dim()
-
-    def step(self, action):
-        _, reward, done, info = self.env.step(action)
-        return self._reduce_dim(), reward, done, info
+        self.observation_space = Box(shape=(self._height * self._width + encoded_row_size, 1), low=-1, high=1)
     
-    def _reduce_dim(self):
+    def _observation(self, obs):
         ram = self.env.get_ram()
         
         mario_row, mario_col = SMB.get_mario_row_col(ram)
