@@ -24,6 +24,11 @@ import gym
 import numpy as np
 from gym import spaces
 
+  
+###
+# This is an implentation of a DQN Agent using stable-baselines
+
+
 def get_torch_activation_by_name(name: str):
     activations = {
         'relu': nn.ReLU,
@@ -32,6 +37,12 @@ def get_torch_activation_by_name(name: str):
         'leaky_relu': nn.LeakyReLU,
     }
     return activations.get(name.lower(), None)
+
+
+## Restricts the DQN's output to a subset of available actions (ie from 9 to 6)
+# This is to match the DQN's output layer to the size of the GA's output layer
+# Also reduces the input dimentionality to match that of the GA
+
 
 class InputSpaceReduction(gym.Env):
     def __init__(self, env, config):
@@ -48,6 +59,10 @@ class InputSpaceReduction(gym.Env):
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
         )
+
+        self.valid_actions = [4, 5, 6, 7, 8, 0]
+        self.action_space = gym.spaces.Discrete(len(self.valid_actions))
+
         
       
         
@@ -56,6 +71,17 @@ class InputSpaceReduction(gym.Env):
         return self._observation(obs)
     
     def step(self, action):
+
+        output_to_keys_map = {
+            0: 4,  # U
+            1: 5,  # D
+            2: 6,  # L
+            3: 7,  # R
+            4: 8,  # A
+            5: 0   # B
+        }
+
+        action = output_to_keys_map[action]
         obs, reward, done, info = self.env.step(action)  
         return self._observation(obs), reward, done, info  
 
@@ -99,36 +125,6 @@ class InputSpaceReduction(gym.Env):
             input_array = np.vstack([input_array, one_hot.reshape((-1, 1))])
 
         return input_array.flatten()
-
-
-
-
-  
-###
-# This is an implentation of a DQN Agent using stable-baselines
-
-## Restricts the DQN's output to a subset of available actions (ie from 9 to 6)
-# This is to match the DQN's output layer to the size of the GA's output layer
-class ActionDiscretizer(gym.Wrapper):
-    def __init__(self, env):
-        super().__init__(env)
-        self.valid_actions = [4, 5, 6, 7, 8, 0]
-
-        # Change the env's action space
-        self.action_space = gym.spaces.Discrete(len(self.valid_actions))
-
-
-    def step(self, action):
-        output_to_keys_map = {
-            0: 4,  # U
-            1: 5,  # D
-            2: 6,  # L
-            3: 7,  # R
-            4: 8,  # A
-            5: 0   # B
-        } 
-        action = output_to_keys_map[action]
-        return self.env.step(action)
 
 
 
