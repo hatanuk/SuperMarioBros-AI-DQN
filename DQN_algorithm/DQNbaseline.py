@@ -82,8 +82,8 @@ class InputSpaceReduction(gym.Env):
         }
 
         action = [output_to_keys_map[action]]
-        obs, reward, done, trunc, info = self.env.step(action)  
-        return self._observation(obs), reward, done, trunc, info  
+        obs, reward, done, _, info = self.env.step(action)  
+        return self._observation(obs), reward, done, info  
 
     
     def _observation(self, obs):
