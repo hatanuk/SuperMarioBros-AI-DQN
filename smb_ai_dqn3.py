@@ -1,10 +1,11 @@
 import re
 import retro
-from PyQt5 import QtGui, QtWidgets
-from PyQt5.QtGui import QPainter, QBrush, QPen, QPolygonF, QColor, QImage, QPixmap
-from PyQt5.QtCore import Qt, QPointF, QTimer, QRect
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
+# Removed PyQt5 imports
+# from PyQt5 import QtGui, QtWidgets
+# from PyQt5.QtGui import QPainter, QBrush, QPen, QPolygonF, QColor, QImage, QPixmap
+# from PyQt5.QtCore import Qt, QPointF, QTimer, QRect
+# from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel
+# from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
 
 from typing import Tuple, List, Optional
 import random
@@ -32,15 +33,11 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 
 import multiprocessing
 import queue
+import time  # Added time module for sleep
 
 import atexit
 
 from torch.utils.tensorboard import SummaryWriter
-
-
-normal_font = QtGui.QFont('Times', 11, QtGui.QFont.Normal)
-font_bold = QtGui.QFont('Times', 11, QtGui.QFont.Bold)
-
 
 class Logger:
     def __init__(self, ga_writer, dqn_writer, config):
@@ -48,548 +45,23 @@ class Logger:
         self.dqn_writer = dqn_writer
         self.config = config
         self.step_counter = 0
-    
+
     def log_ga_metrics(self, max_fitness, max_distance, generation, total_steps):
-        if total_steps % config.Statistics.log_interval == 0:
+        if total_steps % self.config.Statistics.log_interval == 0:
             self.ga_writer.add_scalar('max_fitness', max_fitness, total_steps)
             self.ga_writer.add_scalar('max_distance', max_distance, total_steps)
             self.ga_writer.add_scalar('total_steps', total_steps, total_steps)
-        
-    
+
     def log_dqn_metrics(self, max_fitness, max_distance, episode_reward, episode_num, total_steps):
-        if total_steps % config.Statistics.log_interval == 0:
+        if total_steps % self.config.Statistics.log_interval == 0:
             self.dqn_writer.add_scalar('max_fitness', max_fitness, total_steps)
             self.dqn_writer.add_scalar('max_distance', max_distance, total_steps)
             self.dqn_writer.add_scalar('total_steps', total_steps, total_steps)
-
+        
         self.dqn_writer.add_scalar('episode_reward', episode_reward, episode_num)
 
     def increment_step(self):
         self.step_counter += 1
-
-
-class Visualizer(QtWidgets.QWidget):
-    def __init__(self, parent, size, config: Config, nn_viz: NeuralNetworkViz):
-        super().__init__(parent)
-        self.size = size
-        self.config = config
-        self.nn_viz = nn_viz
-        self.ram = None
-        self.x_offset = 150
-        self.tile_width, self.tile_height = self.config.Graphics.tile_size
-        self.tiles = None
-        self.enemies = None
-        self._should_update = True
-
-    def _draw_region_of_interest(self, painter: QPainter) -> None:
-        _, mario_col = SMB.get_mario_row_col(self.ram)
-        x = mario_col
-
-        color = QColor(255, 0, 217)
-        painter.setPen(QPen(color, 3.0, Qt.SolidLine))
-        painter.setBrush(Qt.NoBrush)
-
-        start_row, viz_width, viz_height = self.config.NeuralNetworkGA.input_dims
-
-        rect_x = int(x * self.tile_width + 5 + self.x_offset)
-        rect_y = int(start_row * self.tile_height + 5)
-        rect_width = int(viz_width * self.tile_width)
-        rect_height = int(viz_height * self.tile_height)
-
-        painter.drawRect(rect_x, rect_y, rect_width, rect_height)
-
-
-
-    def draw_tiles(self, painter: QPainter):
-        if not self.tiles:
-            return
-        for row in range(15):
-            for col in range(16):
-                painter.setPen(QPen(Qt.black, 1, Qt.SolidLine))
-                painter.setBrush(QBrush(Qt.white, Qt.SolidPattern))
-                x_start = int(5 + (self.tile_width * col) + self.x_offset)
-                y_start = int(5 + (self.tile_height * row))
-
-                loc = (row, col)
-                tile = self.tiles[loc]
-
-                if isinstance(tile, (StaticTileType, DynamicTileType, EnemyType)):
-                    rgb = ColorMap[tile.name].value
-                    color = QColor(*rgb)
-                    painter.setBrush(QBrush(color))
-                else:
-                    pass
-
-                painter.drawRect(x_start, y_start, int(self.tile_width), int(self.tile_height))
-
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        try:
-            if self._should_update:
-                draw_border(painter, self.size)
-                if self.ram is not None:
-                    self.draw_tiles(painter)
-                    self._draw_region_of_interest(painter)
-                    self.nn_viz.show_network(painter)
-            else:
-                painter.setPen(QColor(0, 0, 0))
-                painter.setFont(QtGui.QFont('Times', 30, QtGui.QFont.Normal))
-                txt = 'Display is hidden.\nHit Ctrl+V to show\n'
-                painter.drawText(event.rect(), Qt.AlignCenter, txt)
-        finally:
-            painter.end()
-
-    def _update(self):
-        self.update()
-
-
-
-class GameWindow(QtWidgets.QWidget):
-    def __init__(self, parent, size, config: Config):
-        super().__init__(parent)
-        self._should_update = True
-        self.size = size
-        self.config = config
-        self.screen = None
-        self.img_label = QtWidgets.QLabel(self)
-        self.layout = QtWidgets.QVBoxLayout()
-        self.layout.addWidget(self.img_label)
-        self.setLayout(self.layout)
-        
- 
-    def paintEvent(self, event):
-        # Hopefully this should stop complaining now
-        painter = QPainter(self)
-        try:
-            if self._should_update:
-                draw_border(painter, self.size)
-                if self.screen is not None:
-                    height, width, channel = self.screen.shape
-                    bytesPerLine = 3 * width
-                    qImg = QImage(self.screen.data, width, height, bytesPerLine, QImage.Format_RGB888)
-                    self.img_label.setPixmap(QPixmap.fromImage(qImg))
-            else:
-                painter.setPen(QColor(0, 0, 0))
-                painter.setFont(QtGui.QFont('Times', 30, QtGui.QFont.Normal))
-                txt = 'Display is hidden.\nHit Ctrl+V to show\n'
-                painter.drawText(event.rect(), Qt.AlignCenter, txt)
-        finally:
-            painter.end()
-
-
-    def _update(self):
-        self.update()
-
-class InformationWidget(QtWidgets.QWidget):
-    def __init__(self, parent, size, config):
-        super().__init__(parent)
-        self.size = size
-        self.config = config
-
-        self.grid = QtWidgets.QGridLayout()
-        self.grid.setContentsMargins(0, 0, 0, 0)
-        # self.grid.setSpacing(20)
-        self.setLayout(self.grid)
-
-        self.init_ga_info()
-        self.init_dqn_info()
-
-
-    def get_info_ga(self):
-
-        lifespan = self.config.Selection.lifespan
-        lifespan_txt = 'Infinite' if lifespan == np.inf else str(lifespan)
-
-        selection_type = self.config.Selection.selection_type
-        num_parents = self.config.Selection.num_parents
-        num_offspring = self.config.Selection.num_offspring
-        if selection_type == 'comma':
-            selection_txt = '{}, {}'.format(num_parents, num_offspring)
-        elif selection_type == 'plus':
-            selection_txt = '{} + {}'.format(num_parents, num_offspring)
-        else:
-            raise Exception('Unkown Selection type "{}"'.format(selection_type))
-
-        num_inputs = get_num_inputs(self.config)
-        hidden = self.config.NeuralNetworkGA.hidden_layer_architecture
-        num_outputs = 6
-        L = [num_inputs] + hidden + [num_outputs]
-        layers_txt = '[' + ', '.join(str(nodes) for nodes in L) + ']'
-
-        mutation_rate = self.config.Mutation.mutation_rate
-        mutation_type = self.config.Mutation.mutation_rate_type.capitalize()
-        mutation_txt = '{} {}% '.format(mutation_type, str(round(mutation_rate*100, 2)))
-
-        crossover_selection = self.config.Crossover.crossover_selection
-        if crossover_selection == 'roulette':
-            crossover_txt = 'Roulette'
-        elif crossover_selection == 'tournament':
-            crossover_txt = 'Tournament({})'.format(self.config.Crossover.tournament_size)
-        else:
-            raise Exception('Unknown crossover selection "{}"'.format(crossover_selection))
-
-        info_dict = {
-            "Generation": '0',
-            "Individual": '0',
-            "Best Fitness": '0',
-            "Max Distance": '0',
-            "Total Steps": '0',
-            "Num Inputs": str(get_num_inputs(self.config)),
-            "Trainable Params": str(get_num_trainable_parameters(self.config)),
-            "Offspring": selection_txt,
-            "Lifespan": lifespan_txt,
-            "Mutation": mutation_txt,
-            "Crossover": crossover_txt,
-            "SBX Eta": str(self.config.Crossover.sbx_eta),
-            "Layers": layers_txt
-        }
-
-        return info_dict
-
-    def get_dqn_info(self):
-
-        num_inputs = get_num_inputs(self.config)
-        hidden = self.config.NeuralNetworkDQN.hidden_layer_architecture
-        num_outputs = 6
-        L = [num_inputs] + hidden + [num_outputs]
-        layers_txt = '[' + ', '.join(str(nodes) for nodes in L) + ']'
-
-        learning_rate_txt = str(self.config.DQN.learning_rate)
-
-        # Prepare info_dict
-        info_dict = {
-            "Episodes": '0',
-            "Loss": '0',
-            "Best Fitness": '0',
-            "Max Distance": '0',
-            "Total Steps": '0',
-            "Learning Rate": learning_rate_txt, 
-            "Layers": layers_txt,
-        }
-
-        return info_dict
-
-    
-    def init_ga_info(self):
-        self.ga_vbox = QVBoxLayout()
-        self.ga_vbox.setContentsMargins(0, 0, 0, 0)
-        ga_info_dict = self.get_info_ga()
-        self._create_info_section(ga_info_dict, self.ga_vbox, prefix='ga_')
-
-        self.grid.addLayout(self.ga_vbox, 0, 0) #1st column
-     
-    
-    def init_dqn_info(self):
-        dqn_info_dict = self.get_dqn_info()
-        self.dqn_vbox = QVBoxLayout()
-        self.dqn_vbox.setContentsMargins(0, 0, 0, 0)
-        self._create_info_section(dqn_info_dict, self.dqn_vbox, prefix='dqn_')
-
-        self.grid.addLayout(self.dqn_vbox, 0, 1) #2nd column
-        
-
-    @staticmethod
-    def to_attribute_name(input_string):
-        input_string = input_string.replace(" ", "_")
-        cleaned_string = re.sub(r'[^a-zA-Z_]', '', input_string)
-        return cleaned_string.lower()
-
-
-    def _create_info_section(self, info_dict, vbox, prefix=''):
-      
-        for key in info_dict.keys():
-
-            label_title = QLabel()
-            label_title.setFont(font_bold)
-            label_title.setText(key)
-            label_title.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-
-            label_value = QLabel()
-            label_value.setFont(normal_font)
-            label_value.setText(info_dict[key])
-            label_value.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-            
-            # add the value label as an attribute to allow external modification
-            attribute_name = f'{prefix}{self.to_attribute_name(key)}'
-            setattr(self, attribute_name, label_value)
-
-            hbox = QHBoxLayout()
-            hbox.setContentsMargins(5, 0, 0, 0)
-            hbox.addWidget(label_title, 1)
-            hbox.addWidget(label_value, 1)
-            vbox.addLayout(hbox)
-
-
-    def _create_hbox(self, title: str, title_font: QtGui.QFont,
-                     content: str, content_font: QtGui.QFont) -> QHBoxLayout:
-        title_label = QLabel()
-        title_label.setFont(title_font)
-        title_label.setText(title)
-        title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        
-        content_label = QLabel()
-        content_label.setFont(content_font)
-        content_label.setText(content)
-        content_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-
-        hbox = QHBoxLayout()
-        hbox.setContentsMargins(5, 0, 0, 0)
-        hbox.addWidget(title_label, 1)
-        hbox.addWidget(content_label, 1)
-        return hbox
-
-
-class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, config: Optional[Config] = None):
-
-        super().__init__()
-        self.config = config
-        self.top = 150
-        self.left = 150
-        self.width = 1100
-        self.height = 700
-
-        self.title = 'Super Mario Bros AI - GA vs DQN'
-        self.setWindowTitle(self.title)
-        self.setGeometry(self.left, self.top, self.width, self.height)
-
-        self.current_generation = 0
-        self._true_zero_gen = 0
-        self._should_display = True
-
-        # Keys correspond with B, NULL, SELECT, START, U, D, L, R, A
-        # index                0  1     2       3      4  5  6  7  8
-        self.keys = np.array([0, 0,    0,      0,     0, 0, 0, 0, 0], np.int8)
-
-        # I only allow U, D, L, R, A, B and those are the indices in which the output will be generated
-        # We need a mapping from the output to the keys above
-        self.ouput_to_keys_map = {
-            0: 4,  # U
-            1: 5,  # D
-            2: 6,  # L
-            3: 7,  # R
-            4: 8,  # A
-            5: 0   # B
-        }
-
-        # Initialize agents and environments
-        self.init_agents()
-
-        # Then the GUI
-        self.init_gui()
-
-        # Start the update timer
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self._update)
-        self._timer.start(1000 // 60)  # 60 FPS
-
-        self.show()
-
-    #QWidget override
-    def closeEvent(self, event):
-        self.cleanup()
-        event.accept()
-
-    def init_agents(self):
-
-        ga_writer = SummaryWriter(log_dir=self.config.Statistics.ga_tensorboard)
-        dqn_writer = SummaryWriter(log_dir=self.config.Statistics.dqn_tensorboard)
-
-        self.logger = Logger(ga_writer, dqn_writer, self.config)
-
-        # Queues for GUI updates
-        self.ga_data_queue = multiprocessing.Queue()
-        self.dqn_data_queue = multiprocessing.Queue()
-
-        self.ga_process = multiprocessing.Process(target=run_ga_agent, args=(self.config, self.ga_data_queue))
-        self.ga_process.start()
-
-        self.dqn_process = multiprocessing.Process(target=run_dqn_agent, args=(self.config, self.dqn_data_queue, args.load_dqn_model))
-        self.dqn_process.start()
-
-        # multiprocessing cleanup
-        atexit.register(self.cleanup)
-
-    def cleanup(self):
-        self.ga_process.terminate()
-        self.dqn_process.terminate()
-        self.ga_process.join() 
-        self.dqn_process.join()
-        self.ga_data_queue.close()
-        self.dqn_data_queue.close()
-
-        self.logger.ga_writer.close()
-        self.logger.dqn_writer.close()
-
-        for widget in QApplication.allWidgets():
-            if widget.isVisible():
-                widget.close()
-        QApplication.quit()
-
-    def init_gui(self):
-        self.centralWidget = QtWidgets.QWidget(self)
-        self.setCentralWidget(self.centralWidget)
-        
-        # Layouts
-        self.main_layout = QtWidgets.QVBoxLayout()
-        self.algo_container = QtWidgets.QHBoxLayout()
-
-        # Info Widget
-        self.info_window = InformationWidget(self.centralWidget, (512, 200), self.config)
-        self.info_window.setObjectName('info_window')
-        self.info_window.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
-        
-        # GA Widgets
-        self.ga_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
-        self.ga_game_window.setObjectName('ga_game_window')
-        self.ga_viz_window = Visualizer(
-            self.centralWidget,
-            (1100-514, 700),
-            self.config,
-            NeuralNetworkViz(
-                self.centralWidget,
-                None,
-                (1100-514, 700),
-                self.config,
-                nn_params=self.config.NeuralNetworkGA
-            )
-        )
-        self.ga_viz_window.setObjectName('ga_viz_window')
-
-        # DQN Widgets
-        self.dqn_game_window = GameWindow(self.centralWidget, (512, 448), self.config)
-        self.dqn_game_window.setObjectName('dqn_game_window')
-        self.dqn_viz_window = Visualizer(
-            self.centralWidget,
-            (1100-514, 700),
-            self.config,
-            NeuralNetworkViz(
-                self.centralWidget,
-                None,
-                (1100-514, 700),
-                self.config,
-                nn_params=self.config.NeuralNetworkDQN
-            )
-        )
-        self.dqn_viz_window.setObjectName('dqn_viz_window')
-
-        self.ga_layout = QtWidgets.QHBoxLayout()
-        self.ga_layout.addWidget(self.ga_viz_window)
-        self.ga_layout.addWidget(self.ga_game_window)
-
-        self.dqn_layout = QtWidgets.QHBoxLayout()
-        self.dqn_layout.addWidget(self.dqn_viz_window)
-        self.dqn_layout.addWidget(self.dqn_game_window)
-
-        self.algo_container.addLayout(self.ga_layout)
-        self.algo_container.addLayout(self.dqn_layout)
-
-        self.main_layout.addLayout(self.algo_container)
-        self.main_layout.addWidget(self.info_window)
-
-        self.centralWidget.setLayout(self.main_layout)
-
-    def _update(self):
-        # Get data from GA agent
-        try:
-            while True:
-                ga_data = self.ga_data_queue.get_nowait()
-
-                # add to tensorboard
-                self.logger.log_ga_metrics(
-                    ga_data['max_fitness'],
-                    ga_data['max_distance'],
-                    ga_data['current_generation'],
-                    ga_data['total_steps']
-                )
-
-                if not args.no_display:
-                    if self._should_display:
-                        self.ga_game_window.screen = ga_data['screen']
-                        self.ga_game_window._should_update = True    
-                    else:
-                        self.ga_game_window._should_update = False
-                    self.ga_game_window._update()
-
-                if not args.no_display:
-                    self.info_window.show()
-                else:
-                    self.info_window.hide()
-
-                if not args.no_display:
-                    if self._should_display:
-                        self.ga_viz_window.ram = ga_data['ram']
-                        self.ga_viz_window.tiles = ga_data['tiles']
-                        self.ga_viz_window.enemies = ga_data['enemies']
-                        self.ga_viz_window.nn_viz.mario = ga_data['mario'] 
-                        self.ga_viz_window._should_update = True
-                        self.ga_viz_window.ram = ga_data['ram']
-                    else:
-                        self.ga_viz_window._should_update = False
-                    self.ga_viz_window._update()
-
-                self.info_window.ga_best_fitness.setText('{:.2f}'.format(ga_data['max_fitness']))
-                self.info_window.ga_max_distance.setText(str(ga_data['max_distance']))
-                self.info_window.ga_total_steps.setText(str(ga_data['total_steps']))
-                self.info_window.ga_generation.setText(str(ga_data['current_generation']))
-                self.info_window.ga_individual.setText(str(ga_data['current_individual']))
-
-        except queue.Empty:
-            pass
-
-        # Get data from DQN agent
-        try:
-            while True:
-                dqn_data = self.dqn_data_queue.get_nowait()
-
-                # add to tensorboard
-                self.logger.log_dqn_metrics(
-                    dqn_data['max_fitness'],
-                    dqn_data['max_distance'],
-                    dqn_data['episode_rewards'],
-                    dqn_data['episode_num'],
-                    dqn_data['total_steps']
-                )
-
-                if not args.no_display:
-                    if self._should_display:
-                        self.dqn_game_window.screen = dqn_data['screen']
-                        self.dqn_game_window._should_update = True    
-                    else:
-                        self.dqn_game_window._should_update = False
-                    self.dqn_game_window._update()
-
-                if not args.no_display:
-                    if self._should_display:
-                        self.dqn_viz_window.ram = dqn_data['ram']
-                        self.dqn_viz_window.tiles = dqn_data['tiles']
-                        self.dqn_viz_window.enemies = dqn_data['enemies']
-                        self.dqn_viz_window.nn_viz.mario = dqn_data['mario'] 
-                        self.dqn_viz_window._should_update = True
-                        self.dqn_viz_window.ram = dqn_data['ram']
-                    else:
-                        self.dqn_viz_window._should_update = False
-                    self.dqn_viz_window._update()
-
-                self.info_window.dqn_best_fitness.setText('{:.2f}'.format(dqn_data['max_fitness']))
-                self.info_window.dqn_max_distance.setText(str(dqn_data['max_distance']))
-                self.info_window.dqn_total_steps.setText(str(dqn_data['total_steps']))
-                self.info_window.dqn_episodes.setText(str(dqn_data['dqn_episodes']))
-                self.info_window.dqn_loss.setText(str(dqn_data['loss']))
-
-        except queue.Empty:
-            pass
-
-    def keyPressEvent(self, event):
-        k = event.key()
-        modifier = int(event.modifiers())
-        if modifier == Qt.CTRL:
-            if k == Qt.Key_P:
-                if self._timer.isActive():
-                    self._timer.stop()
-                else:
-                    self._timer.start(1000 // 60)
 
 
 def run_ga_agent(config, data_queue):
@@ -604,15 +76,12 @@ def run_ga_agent(config, data_queue):
     max_distance_GA = 0
     current_generation = 0
     _current_individual = 0
-    _true_zero_gen = 0
     total_steps_GA = 0
 
     # Keys correspond with B, NULL, SELECT, START, U, D, L, R, A
-    # index                0  1     2       3      4  5  6  7  8
-    keys = np.array([0, 0,    0,      0,     0, 0, 0, 0, 0], np.int8)
+    keys = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0], np.int8)
 
-    # I only allow U, D, L, R, A, B and those are the indices in which the output will be generated
-    # We need a mapping from the output to the keys above
+    # Mapping from output to keys
     ouput_to_keys_map = {
         0: 4,  # U
         1: 5,  # D
@@ -634,8 +103,6 @@ def run_ga_agent(config, data_queue):
     env.reset()
 
     while True:
-
-
         # Update agent
         ram = env.get_ram()
         tiles = SMB.get_tiles(ram)
@@ -715,16 +182,11 @@ def run_ga_agent(config, data_queue):
 
         # Prepare data to send back
         data = {
-            'screen': ret[0],
-            'ram': ram,
-            'tiles': tiles,
-            'enemies': enemies,
             'max_fitness': best_fitness_GA,
             'max_distance': max_distance_GA,
             'total_steps': total_steps_GA,
             'current_generation': current_generation,
             'current_individual': _current_individual,
-            'mario': mario_GA
         }
 
         # Send data to main process
@@ -736,8 +198,6 @@ def run_dqn_agent(config, data_queue, dqn_model):
     env = ActionDiscretizer(env)
     env = DummyVecEnv([lambda: env])
 
-
-
     # Initialize DQN agent
     mario_DQN = DQNMario(config, env)
 
@@ -745,9 +205,9 @@ def run_dqn_agent(config, data_queue, dqn_model):
         try:
             model = DQN.load(dqn_model, env=env)
             mario_DQN.model = model
-        except:
-            Exception(f'Failed to find model at {args.load_dqn_model}')
-        ## Add an inference loop here later
+        except Exception as e:
+            raise Exception(f'Failed to find model at {dqn_model}') from e
+        # Add an inference loop here later
     else:
         callback = DQNCallback(data_queue, mario_DQN, config, verbose=1)
         mario_DQN.model.learn(total_timesteps=config.DQN.total_timesteps, callback=callback)
@@ -761,7 +221,7 @@ def _initialize_population(config):
     output_activation = config.NeuralNetworkGA.output_activation
     encode_row = config.NeuralNetworkGA.encode_row
     lifespan = config.Selection.lifespan
-        
+
     for _ in range(num_parents):
         individual = Mario(config, None, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan)
         individuals.append(individual)
@@ -786,34 +246,29 @@ def _crossover_and_mutate(p1, p2, config, current_generation):
     L = len(p1.network.layer_nodes)
     c1_params = {}
     c2_params = {}
-    
-    # Each W_l and b_l are treated as their own chromosome.
-    # Because of this I need to perform crossover/mutation on each chromosome between parents
+
+    # Perform crossover and mutation on each chromosome between parents
     for l in range(1, L):
         p1_W_l = p1.network.params['W' + str(l)]
-        p2_W_l = p2.network.params['W' + str(l)]  
+        p2_W_l = p2.network.params['W' + str(l)]
         p1_b_l = p1.network.params['b' + str(l)]
         p2_b_l = p2.network.params['b' + str(l)]
 
         # Crossover
-        # @NOTE: I am choosing to perform the same type of crossover on the weights and the bias.
         eta = config.Crossover.sbx_eta
         c1_W_l, c2_W_l = SBX(p1_W_l, p2_W_l, eta)
-        c1_b_l, c2_b_l =  SBX(p1_b_l, p2_b_l, eta)
+        c1_b_l, c2_b_l = SBX(p1_b_l, p2_b_l, eta)
 
         # Mutation
-        # @NOTE: I am choosing to perform the same type of mutation on the weights and the bias.
         mutation_rate = config.Mutation.mutation_rate
         scale = config.Mutation.gaussian_mutation_scale
 
         if config.Mutation.mutation_rate_type == 'dynamic':
             mutation_rate = mutation_rate / math.sqrt(current_generation + 1)
 
-        # Mutate weights
+        # Mutate weights and biases
         gaussian_mutation(c1_W_l, mutation_rate, scale=scale)
         gaussian_mutation(c2_W_l, mutation_rate, scale=scale)
-
-        # Mutate bias
         gaussian_mutation(c1_b_l, mutation_rate, scale=scale)
         gaussian_mutation(c2_b_l, mutation_rate, scale=scale)
 
@@ -823,7 +278,7 @@ def _crossover_and_mutate(p1, p2, config, current_generation):
         c1_params['b' + str(l)] = c1_b_l
         c2_params['b' + str(l)] = c2_b_l
 
-        #  Clip to [-1, 1]
+        # Clip to [-1, 1]
         np.clip(c1_params['W' + str(l)], -1, 1, out=c1_params['W' + str(l)])
         np.clip(c2_params['W' + str(l)], -1, 1, out=c2_params['W' + str(l)])
         np.clip(c1_params['b' + str(l)], -1, 1, out=c1_params['b' + str(l)])
@@ -832,24 +287,84 @@ def _crossover_and_mutate(p1, p2, config, current_generation):
     return c1_params, c2_params
 
 def get_stats(mario):
-        # returns the game's stats for reward calculation
-        frames = mario._frames if mario._frames is not None else 0
-        distance = mario.x_dist if mario.x_dist is not None else 0
-        game_score = mario.game_score if mario.game_score is not None else 0
-        return [frames, distance, game_score]
+    # Returns the game's stats for reward calculation
+    frames = mario._frames if mario._frames is not None else 0
+    distance = mario.x_dist if mario.x_dist is not None else 0
+    game_score = mario.game_score if mario.game_score is not None else 0
+    return [frames, distance, game_score]
 
 if __name__ == "__main__":
-
     multiprocessing.set_start_method("spawn", force=True)
     sys.stdout = sys.stderr
 
-    global args
     args = parse_args()
     config = None
     if args.config:
         config = Config(args.config)
 
-    app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow(config)
-    app.aboutToQuit.connect(window.cleanup)
-    sys.exit(app.exec_())
+    # Initialize Logger
+    ga_writer = SummaryWriter(log_dir=config.Statistics.ga_tensorboard)
+    dqn_writer = SummaryWriter(log_dir=config.Statistics.dqn_tensorboard)
+
+    logger = Logger(ga_writer, dqn_writer, config)
+
+    # Queues for data exchange
+    ga_data_queue = multiprocessing.Queue()
+    dqn_data_queue = multiprocessing.Queue()
+
+    # Start processes
+    ga_process = multiprocessing.Process(target=run_ga_agent, args=(config, ga_data_queue))
+    ga_process.start()
+
+    dqn_process = multiprocessing.Process(target=run_dqn_agent, args=(config, dqn_data_queue, args.load_dqn_model))
+    dqn_process.start()
+
+    # Function to clean up processes
+    def cleanup():
+        ga_process.terminate()
+        dqn_process.terminate()
+        ga_process.join()
+        dqn_process.join()
+        ga_data_queue.close()
+        dqn_data_queue.close()
+        logger.ga_writer.close()
+        logger.dqn_writer.close()
+
+    atexit.register(cleanup)
+
+    try:
+        while True:
+            # Process data from GA agent
+            try:
+                while True:
+                    ga_data = ga_data_queue.get_nowait()
+                    # Log GA metrics
+                    logger.log_ga_metrics(
+                        ga_data['max_fitness'],
+                        ga_data['max_distance'],
+                        ga_data['current_generation'],
+                        ga_data['total_steps']
+                    )
+            except queue.Empty:
+                pass
+
+            # Process data from DQN agent
+            try:
+                while True:
+                    dqn_data = dqn_data_queue.get_nowait()
+                    # Log DQN metrics
+                    logger.log_dqn_metrics(
+                        dqn_data['max_fitness'],
+                        dqn_data['max_distance'],
+                        dqn_data['episode_rewards'],
+                        dqn_data['episode_num'],
+                        dqn_data['total_steps']
+                    )
+            except queue.Empty:
+                pass
+
+            # Sleep briefly to prevent tight loop
+            time.sleep(0.1)
+
+    except KeyboardInterrupt:
+        cleanup()
