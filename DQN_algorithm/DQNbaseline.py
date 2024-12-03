@@ -67,6 +67,7 @@ class InputSpaceReduction(gym.Env):
 
         mario_row, mario_col = SMB.get_mario_row_col(ram)
         tiles = SMB.get_tiles(ram)
+        print(tiles)
         arr = []
         
         for row in range(self._start_row, self._start_row + self._height):
