@@ -47,7 +47,7 @@ class InputSpaceReduction(gym.ObservationWrapper):
 
         encoded_row_size = self._height if self._encode_row else 0
 
-        self.observation_space = Box(shape=(self._height * self._width + encoded_row_size), low=0, high=1)
+        self.observation_space = Box(shape=(self._height * self._width + encoded_row_size,), low=-1, high=1)
     
     def _observation(self, obs):
         ram = self.env.get_ram()
@@ -82,7 +82,7 @@ class InputSpaceReduction(gym.ObservationWrapper):
                 one_hot[row, 0] = 1
             input_array = np.vstack([input_array, one_hot.reshape((-1, 1))])
 
-        return input_array
+        return input_array.reshape(-1)
 
  
 
