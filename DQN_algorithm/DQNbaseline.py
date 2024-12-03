@@ -28,7 +28,7 @@ class InputSpaceReduction(gym.Wrapper):
 
         encoded_row_size = self._height if self._encode_row else 0
 
-        self.observation_space = Box(low=-1, high=1, shape=(self._height * self._width + encoded_row_size, 1), dtype=np.int8)
+        self.observation_space = Box(low=-1, high=1, shape=(self._height * self._width + encoded_row_size, 1), dtype=np.float32)
 
 
     def reset(self):
