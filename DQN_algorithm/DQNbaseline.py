@@ -170,7 +170,7 @@ class DQNMario(Mario):
         nn_params = self.config.NeuralNetworkDQN
         
         Mario.__init__(self, config, None, nn_params.hidden_layer_architecture, nn_params.hidden_node_activation,
-         nn_params.output_node_activation, nn_params.encode_rows, np.inf, name, debug)
+         nn_params.output_node_activation, nn_params.encode_row, np.inf, name, debug)
 
         print(f"Network Architecture: {self.network_architecture}")
 
