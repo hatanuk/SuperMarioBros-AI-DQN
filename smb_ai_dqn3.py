@@ -217,8 +217,8 @@ def _initialize_population(config):
     num_parents = config.Selection.num_parents
 
     hidden_layer_architecture = config.NeuralNetworkGA.hidden_layer_architecture
-    hidden_activation = config.NeuralNetworkGA.hidden_activation
-    output_activation = config.NeuralNetworkGA.output_activation
+    hidden_activation = config.NeuralNetworkGA.hidden_node_activation
+    output_activation = config.NeuralNetworkGA.output_node_activation
     encode_row = config.NeuralNetworkGA.encode_row
     lifespan = config.Selection.lifespan
 
