@@ -24,7 +24,7 @@ from genetic_algorithm.selection import elitism_selection, tournament_selection,
 from genetic_algorithm.crossover import simulated_binary_crossover as SBX
 from genetic_algorithm.mutation import gaussian_mutation
 
-from DQN_algorithm.DQNbaseline import ActionDiscretizer, DQNCallback, DQNMario
+from DQN_algorithm.DQNbaseline import ActionDiscretizer, DQNCallback, DQNMario, InputSpaceReduction
 
 from smb_ai import draw_border, parse_args
 
@@ -196,6 +196,7 @@ def run_dqn_agent(config, data_queue, dqn_model):
     # Initialize environment
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
     env = ActionDiscretizer(env)
+    env = InputSpaceReduction(env)
     env = DummyVecEnv([lambda: env])
 
     # Initialize DQN agent

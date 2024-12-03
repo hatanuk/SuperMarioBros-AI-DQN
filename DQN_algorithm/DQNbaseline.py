@@ -10,8 +10,70 @@ from utils import SMB
 from mario import get_num_inputs
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import BaseCallback
-import gym
+import gymnasium as gym
+from gym.spaces import Box, Discrete
+from utils import SMB, StaticTileType, EnemyType
 import retro
+
+
+class InputSpaceReduction(gym.Wrapper):
+    def __init__(self, env, config):
+        super().__init__(env)
+        self.action_space = self.env.action_space
+        self.observation_space = self.env.observation_space
+        self._start_row = config.NeuralNetworkDQN.input_dims[0]
+        self._width = config.NeuralNetworkDQN.input_dims[1]
+        self._height = config.NeuralNetworkDQN.input_dims[2]
+        self._encode_row = config.NeuralNetworkDQN.encode_row
+
+        self.observation_space = Box(low=-1, high=1, shape=(self._width, self._height, 1), dtype=np.int8)
+
+
+    def reset(self):
+        self.env.reset()
+        return self._reduce_dim()
+
+    def step(self, action):
+        _, reward, done, info = self.env.step(action)
+        return self._reduce_dim(), reward, done, info
+    
+    def _reduce_dim(self):
+        ram = self.env.get_ram()
+        
+        mario_row, mario_col = SMB.get_mario_row_col(ram)
+        tiles = SMB.get_tiles(ram)
+        arr = []
+        
+        for row in range(self._start_row, self._start_row + self._height):
+            for col in range(mario_col, mario_col + self._width):
+                try:
+                    t = tiles[(row, col)]
+                    if isinstance(t, StaticTileType):
+                        if t.value == 0:
+                            arr.append(0)
+                        else:
+                            arr.append(1)
+                    elif isinstance(t, EnemyType):
+                        arr.append(-1)
+                    else:
+                        raise Exception("This should never happen")
+                except KeyError:
+                    t = StaticTileType(0x00)
+                    arr.append(0) 
+
+        input_array = np.array(arr).reshape((-1, 1)) 
+        
+        if self._encode_row:
+            row = mario_row - self._start_row
+            one_hot = np.zeros((self._height, 1))
+            if row >= 0 and row < self._height:
+                one_hot[row, 0] = 1
+            input_array = np.vstack([input_array, one_hot.reshape((-1, 1))])
+
+        return input_array
+
+ 
+
 
 
   
