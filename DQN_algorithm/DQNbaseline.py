@@ -28,16 +28,18 @@ class InputSpaceReduction(gym.Env):
         super().__init__()
         
         self.env = env  
+
+        self._start_row = config.NeuralNetworkDQN.input_dims[0]
+        self._width = config.NeuralNetworkDQN.input_dims[1]
+        self._height = config.NeuralNetworkDQN.input_dims[2]
+        self._encode_row = config.NeuralNetworkDQN.encode_row
         
         self.action_space = self.env.action_space
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
         )
         
-        self._start_row = config.NeuralNetworkDQN.input_dims[0]
-        self._width = config.NeuralNetworkDQN.input_dims[1]
-        self._height = config.NeuralNetworkDQN.input_dims[2]
-        self._encode_row = config.NeuralNetworkDQN.encode_row
+      
         
     def reset(self):
         obs = self.env.reset()  
