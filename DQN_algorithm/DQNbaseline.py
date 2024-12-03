@@ -26,7 +26,9 @@ class InputSpaceReduction(gym.Wrapper):
         self._height = config.NeuralNetworkDQN.input_dims[2]
         self._encode_row = config.NeuralNetworkDQN.encode_row
 
-        self.observation_space = Box(low=-1, high=1, shape=(self._width, self._height, 1), dtype=np.int8)
+        encoded_row_size = self._height if self._encode_row else 0
+
+        self.observation_space = Box(low=-1, high=1, shape=(self._height * self._width + encoded_row_size, 1), dtype=np.int8)
 
 
     def reset(self):
