@@ -64,7 +64,8 @@ class InputSpaceReduction(gym.Env):
         self.action_space = gym.spaces.Discrete(len(self.valid_actions))
 
         
-      
+    def get_ram(self):
+        return self.env.get_ram()
         
     def reset(self):
         obs = self.env.reset()  
