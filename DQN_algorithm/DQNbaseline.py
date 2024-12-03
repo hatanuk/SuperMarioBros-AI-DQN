@@ -47,6 +47,7 @@ class InputSpaceReduction(gym.ObservationWrapper):
 #
         encoded_row_size = self._height if self._encode_row else 0
         print( self.observation_space )
+        print("hi")
         self.observation_space = Box(shape=(self._height * self._width + encoded_row_size, 1, 1), low=0, high=255, dtype=np.int8)
     
     def _observation(self, obs):
