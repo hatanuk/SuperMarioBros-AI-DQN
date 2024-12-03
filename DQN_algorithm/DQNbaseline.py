@@ -23,7 +23,7 @@ import gym
 import numpy as np
 from gym import spaces
 
-class InputSpaceReductionEnv(gym.Env):
+class InputSpaceReduction(gym.Env):
     def __init__(self, env, config):
         super().__init__()
         
