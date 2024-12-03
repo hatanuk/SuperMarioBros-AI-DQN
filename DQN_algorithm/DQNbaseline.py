@@ -195,7 +195,7 @@ class DQNMario(Mario):
         self.train_freq = self.config.DQN.train_freq
 
         # specifies the model architecture for the DQN
-        policy_kwargs = dict(activation_fn=self.hidden_activation, net_arch=self.hidden_layer_architecture)
+        policy_kwargs = dict(activation_fn=get_activation_by_name(self.hidden_activation), net_arch=self.hidden_layer_architecture)
 
         self.model = DQN('MlpPolicy', 
                     env, 
