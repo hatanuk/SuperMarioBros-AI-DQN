@@ -14,6 +14,7 @@ import gymnasium as gym
 from gym.spaces import Box, Discrete
 from utils import SMB, StaticTileType, EnemyType
 import retro
+import torch.nn as nn
 
 from gym.spaces import Space
 import numpy as np
@@ -22,6 +23,15 @@ import numpy as np
 import gym
 import numpy as np
 from gym import spaces
+
+def get_torch_activation_by_name(name: str):
+    activations = {
+        'relu': nn.ReLU(),
+        'tanh': nn.Tanh(),
+        'sigmoid': nn.Sigmoid(),
+        'leaky_relu': nn.LeakyReLU(),
+    }
+    return activations.get(name.lower(), None)
 
 class InputSpaceReduction(gym.Env):
     def __init__(self, env, config):
@@ -195,7 +205,7 @@ class DQNMario(Mario):
         self.train_freq = self.config.DQN.train_freq
 
         # specifies the model architecture for the DQN
-        policy_kwargs = dict(activation_fn=get_activation_by_name(self.hidden_activation), net_arch=self.hidden_layer_architecture)
+        policy_kwargs = dict(activation_fn=get_torch_activation_by_name(self.hidden_activation), net_arch=self.hidden_layer_architecture)
 
         self.model = DQN('MlpPolicy', 
                     env, 
