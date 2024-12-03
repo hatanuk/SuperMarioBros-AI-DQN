@@ -44,7 +44,7 @@ class InputSpaceReduction(gym.ObservationWrapper):
         self._width = config.NeuralNetworkDQN.input_dims[1]
         self._height = config.NeuralNetworkDQN.input_dims[2]
         self._encode_row = config.NeuralNetworkDQN.encode_row
-
+#
         encoded_row_size = self._height if self._encode_row else 0
         print( self.observation_space )
         self.observation_space = Box(shape=(self._height * self._width + encoded_row_size, 1, 1), low=0, high=255, dtype=np.int8)
