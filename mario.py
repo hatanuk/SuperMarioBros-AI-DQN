@@ -17,6 +17,7 @@ class Mario(Individual):
                  hidden_layer_architecture: List[int] = [12, 9],
                  hidden_activation: Optional[ActivationFunction] = 'relu',
                  output_activation: Optional[ActivationFunction] = 'sigmoid',
+                 encode_row: Optional[bool] = True,
                  lifespan: Union[int, float] = np.inf,
                  name: Optional[str] = None,
                  debug: Optional[bool] = False,
@@ -35,13 +36,14 @@ class Mario(Individual):
         self._frames_since_progress = 0  # Number of frames since Mario has made progress towards the goal
         self._frames = 0  # Number of frames Mario has been alive
         
-        self.hidden_layer_architecture = self.config.NeuralNetworkGA.hidden_layer_architecture
-        self.hidden_activation = self.config.NeuralNetworkGA.hidden_node_activation
-        self.output_activation = self.config.NeuralNetworkGA.output_node_activation
+        self.hidden_layer_architecture = hidden_layer_architecture
+        self.hidden_activation = hidden_activation
+        self.output_activation = output_activation
+        self.encode_row = encode_row
 
         self.start_row, self.viz_width, self.viz_height = self.config.NeuralNetworkGA.input_dims
 
-        if self.config.NeuralNetworkGA.encode_row:
+        if self.encode_row:
             num_inputs = self.viz_width * self.viz_height + self.viz_height
         else:
             num_inputs = self.viz_width * self.viz_height

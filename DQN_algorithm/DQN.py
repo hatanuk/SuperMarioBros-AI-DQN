@@ -14,11 +14,8 @@ from mario import get_num_inputs
 
 
 
-# TO DO:
-### Ensure DQNAgent overrides the methods in Individual ie. the equivalent choose_action methods
-
-
-
+###
+# This is a custom implementation of a DQN Agent
 
 class ReplayBuffer:
     

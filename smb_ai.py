@@ -779,6 +779,10 @@ def parse_args():
     parser.add_argument('--replay-file', dest='replay_file', required=False, default=None, help='/path/to/population that you want to replay from')
     parser.add_argument('--replay-inds', dest='replay_inds', required=False, default=None, help='[start,stop] (inclusive) or ind1,ind2,ind50,... or [start,] that you wish to replay from file')
 
+    # DQN args
+    parser.add_argument('--load_dqn_model', dest='load_dqn_model', required=False, default=None, help='/path/to/model.zip to load trained DQN model')
+
+
     args = parser.parse_args()
     
     load_from_file = bool(args.load_file) and bool(args.load_inds)

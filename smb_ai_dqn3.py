@@ -23,17 +23,49 @@ from genetic_algorithm.selection import elitism_selection, tournament_selection,
 from genetic_algorithm.crossover import simulated_binary_crossover as SBX
 from genetic_algorithm.mutation import gaussian_mutation
 
-from DQN_algorithm.DQN import DQNMario
+from DQN_algorithm.DQNbaseline import ActionDiscretizer, DQNCallback, DQNMario
 
 from smb_ai import draw_border, parse_args
+
+from stable_baselines import DQN
+from stable_baselines.bench.monitor import Monitor
 
 import multiprocessing
 import queue
 
 import atexit
 
+from torch.utils.tensorboard import SummaryWriter
+
+
 normal_font = QtGui.QFont('Times', 11, QtGui.QFont.Normal)
 font_bold = QtGui.QFont('Times', 11, QtGui.QFont.Bold)
+
+
+class Logger:
+    def __init__(self, ga_writer, dqn_writer, config):
+        self.ga_writer = ga_writer
+        self.dqn_writer = dqn_writer
+        self.config = config
+        self.step_counter = 0
+    
+    def log_ga_metrics(self, max_fitness, max_distance, generation, total_steps):
+        if total_steps % config.Statistics.log_interval == 0:
+            self.ga_writer.add_scalar('max_fitness', max_fitness, total_steps)
+            self.ga_writer.add_scalar('max_distance', max_distance, total_steps)
+            self.ga_writer.add_scalar('total_steps', total_steps, total_steps)
+        
+    
+    def log_dqn_metrics(self, max_fitness, max_distance, episode_reward, episode_num, total_steps):
+        if total_steps % config.Statistics.log_interval == 0:
+            self.dqn_writer.add_scalar('max_fitness', max_fitness, total_steps)
+            self.dqn_writer.add_scalar('max_distance', max_distance, total_steps)
+            self.dqn_writer.add_scalar('total_steps', total_steps, total_steps)
+
+        self.dqn_writer.add_scalar('episode_reward', episode_reward, episode_num)
+
+    def increment_step(self):
+        self.step_counter += 1
 
 
 class Visualizer(QtWidgets.QWidget):
@@ -360,16 +392,20 @@ class MainWindow(QtWidgets.QMainWindow):
         event.accept()
 
     def init_agents(self):
-        # Queues for inter-process communication
+
+        ga_writer = SummaryWriter(log_dir=self.config.Statistics.ga_tensorboard)
+        dqn_writer = SummaryWriter(log_dir=self.config.Statistics.dqn_tensorboard)
+
+        self.logger = Logger(ga_writer, dqn_writer, self.config)
+
+        # Queues for GUI updates
         self.ga_data_queue = multiprocessing.Queue()
         self.dqn_data_queue = multiprocessing.Queue()
 
-        # Start the GA process
         self.ga_process = multiprocessing.Process(target=run_ga_agent, args=(self.config, self.ga_data_queue))
         self.ga_process.start()
 
-        # Start the DQN process
-        self.dqn_process = multiprocessing.Process(target=run_dqn_agent, args=(self.config, self.dqn_data_queue))
+        self.dqn_process = multiprocessing.Process(target=run_dqn_agent, args=(self.config, self.dqn_data_queue, args.load_dqn_model))
         self.dqn_process.start()
 
         # multiprocessing cleanup
@@ -382,6 +418,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dqn_process.join()
         self.ga_data_queue.close()
         self.dqn_data_queue.close()
+
+        self.logger.ga_writer.close()
+        self.logger.dqn_writer.close()
+        
         for widget in QApplication.allWidgets():
             if widget.isVisible():
                 widget.close()
@@ -455,6 +495,15 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             while True:
                 ga_data = self.ga_data_queue.get_nowait()
+
+                # add to tensorboard
+                self.logger.log_ga_metrics(
+                    ga_data['max_fitness'],
+                    ga_data['max_distance'],
+                    ga_data['current_generation'],
+                    ga_data['total_steps']
+                )
+
                 if not args.no_display:
                     if self._should_display:
                         self.ga_game_window.screen = ga_data['screen']
@@ -480,7 +529,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.ga_viz_window._should_update = False
                     self.ga_viz_window._update()
 
-                self.info_window.ga_best_fitness.setText('{:.2f}'.format(ga_data['best_fitness']))
+                self.info_window.ga_best_fitness.setText('{:.2f}'.format(ga_data['max_fitness']))
                 self.info_window.ga_max_distance.setText(str(ga_data['max_distance']))
                 self.info_window.ga_total_steps.setText(str(ga_data['total_steps']))
                 self.info_window.ga_generation.setText(str(ga_data['current_generation']))
@@ -493,6 +542,16 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             while True:
                 dqn_data = self.dqn_data_queue.get_nowait()
+
+                # add to tensorboard
+                self.logger.log_dqn_metrics(
+                    dqn_data['max_fitness'],
+                    dqn_data['max_distance'],
+                    dqn_data['episode_rewards'],
+                    dqn_data['episode_num'],
+                    dqn_data['total_steps']
+                )
+
                 if not args.no_display:
                     if self._should_display:
                         self.dqn_game_window.screen = dqn_data['screen']
@@ -513,7 +572,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.dqn_viz_window._should_update = False
                     self.dqn_viz_window._update()
 
-                self.info_window.dqn_best_fitness.setText('{:.2f}'.format(dqn_data['best_fitness']))
+                self.info_window.dqn_best_fitness.setText('{:.2f}'.format(dqn_data['max_fitness']))
                 self.info_window.dqn_max_distance.setText(str(dqn_data['max_distance']))
                 self.info_window.dqn_total_steps.setText(str(dqn_data['total_steps']))
                 self.info_window.dqn_episodes.setText(str(dqn_data['dqn_episodes']))
@@ -536,6 +595,8 @@ class MainWindow(QtWidgets.QMainWindow):
 def run_ga_agent(config, data_queue):
     # Initialize environment
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
+    env = Monitor(env, f'{config.Statistics.monitor_dir}/GAMonitor.csv')
+
 
     # Initialize population and agent
     individuals = _initialize_population(config)
@@ -660,7 +721,7 @@ def run_ga_agent(config, data_queue):
             'ram': ram,
             'tiles': tiles,
             'enemies': enemies,
-            'best_fitness': best_fitness_GA,
+            'max_fitness': best_fitness_GA,
             'max_distance': max_distance_GA,
             'total_steps': total_steps_GA,
             'current_generation': current_generation,
@@ -671,100 +732,26 @@ def run_ga_agent(config, data_queue):
         # Send data to main process
         data_queue.put(data)
 
-def run_dqn_agent(config, data_queue):
+def run_dqn_agent(config, data_queue, dqn_model):
     # Initialize environment
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
+    env = ActionDiscretizer(env)
+    env = Monitor(env, f'{config.Statistics.monitor_dir}/DQNMonitor.csv')
+
 
     # Initialize DQN agent
-    mario_DQN = DQNMario(config)
-    best_fitness_DQN = 0.0
-    max_distance_DQN = 0
-    dqn_episodes = 0
-    total_steps_DQN = 0
+    mario_DQN = DQNMario(config, env)
 
-    # Keys correspond with B, NULL, SELECT, START, U, D, L, R, A
-    # index                0  1     2       3      4  5  6  7  8
-    keys = np.array([0, 0,    0,      0,     0, 0, 0, 0, 0], np.int8)
-
-    # I only allow U, D, L, R, A, B and those are the indices in which the output will be generated
-    # We need a mapping from the output to the keys above
-    ouput_to_keys_map = {
-        0: 4,  # U
-        1: 5,  # D
-        2: 6,  # L
-        3: 7,  # R
-        4: 8,  # A
-        5: 0   # B
-    }
-
-    # Reset environment
-    env.reset()
-
-    while True:
-        ram = env.get_ram()
-        tiles = SMB.get_tiles(ram)
-        enemies = SMB.get_enemy_locations(ram)
-
-        curr_stats = get_stats(mario_DQN) # gets the x distance, frames, score, etc. for reward calculation
-        curr_state = mario_DQN.inputs_as_array
-
-        # Update the DQN agent to get the output
-        mario_DQN.update(ram, tiles, keys, ouput_to_keys_map)
-
-        # Take a step in the environment
-        ret = env.step(mario_DQN.buttons_to_press)
-        total_steps_DQN += 1
-
-        next_stats = get_stats(mario_DQN) # do not confuse this with state
-        next_state = mario_DQN.inputs_as_array
-
-
-        # Calculate reward
-        reward = mario_DQN.calculate_reward(curr_stats, next_stats)
-        #if mario_DQN.step_counter % 100 == 0:
-            #print(f"Step: {mario_DQN.step_counter}, Reward: {reward}, Current Stats: {curr_stats}, Next Stats: {next_stats}")  # Debug print
-        done = not mario_DQN.is_alive
-
-        # Experience replay buffer
-        mario_DQN.replay_buffer.append((curr_state, mario_DQN.buttons_to_press, next_state, reward, done))
-
-        # Perform learning step
-        mario_DQN.learn()
-        
-        # Check whether its time to transfer target network weights to online network
-        mario_DQN.sync_network()
-
-        mario_DQN.step_counter += 1
-        mario_DQN.decay_epsilon()
-
-        if mario_DQN.is_alive:
-            if mario_DQN.farthest_x > max_distance_DQN:
-                max_distance_DQN = mario_DQN.farthest_x
-            if mario_DQN.fitness > best_fitness_DQN:
-                best_fitness_DQN = mario_DQN.fitness
-        else:
-            # Episode ended
-            dqn_episodes += 1
-            mario_DQN.is_alive = True
-            env.reset()
-
- 
-        # Prepare data to send back
-        data = {
-            'screen': ret[0],
-            'ram': ram,
-            'tiles': tiles,
-            'enemies': enemies,
-            'best_fitness': best_fitness_DQN,
-            'max_distance': max_distance_DQN,
-            'total_steps': total_steps_DQN,
-            'dqn_episodes': dqn_episodes,
-            'mario': mario_DQN,
-            'loss': mario_DQN.curr_loss
-        }
-
-        # Send data to main process
-        data_queue.put(data)
+    if dqn_model:
+        try:
+            model = DQN.load(dqn_model, env=env)
+            mario_DQN.model = model
+        except:
+            Exception(f'Failed to find model at {args.load_dqn_model}')
+        ## Add an inference loop here later
+    else:
+        callback = DQNCallback(data_queue, mario_DQN, config, verbose=1)
+        mario_DQN.model.learn(total_timesteps=config.DQN.total_timesteps, callback=callback)
 
 def _initialize_population(config):
     individuals: List[Individual] = []
