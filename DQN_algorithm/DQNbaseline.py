@@ -63,6 +63,7 @@ class InputSpaceReduction(gym.Env):
     def _observation(self, obs):
         ram = self.env.get_ram()  
         print(ram)
+        print(ram.shape)
         
 
         mario_row, mario_col = SMB.get_mario_row_col(ram)
