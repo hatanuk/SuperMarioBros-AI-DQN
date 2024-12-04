@@ -338,6 +338,7 @@ if __name__ == "__main__":
             try:
                 while True:
                     ga_data = ga_data_queue.get_nowait()
+                    print("updating GA: ", ga_data)
                     # Log GA metrics
                     logger.log_ga_metrics(
                         ga_data['max_fitness'],
@@ -352,6 +353,7 @@ if __name__ == "__main__":
             try:
                 while True:
                     dqn_data = dqn_data_queue.get_nowait()
+                    print("updating DQN: ", dqn_data)
                     # Log DQN metrics
                     logger.log_dqn_metrics(
                         dqn_data['max_fitness'],
