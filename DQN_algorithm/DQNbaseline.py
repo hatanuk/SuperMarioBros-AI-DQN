@@ -161,14 +161,14 @@ class DQNCallback(BaseCallback):
 
   
 
-        if self.locals.get('total_timesteps', 0) % 100 == 0:
-            print(f'on step: {self.locals.get("total_timesteps")}')
+        if self.num_timesteps % 100 == 0:
+            print(f'on step: {self.num_timesteps}')
 
 
         data = {
             'max_fitness':  self.max_fitness,
             'max_distance': self.max_distance,
-            'total_steps': self.locals.get('total_timesteps', 0),
+            'total_steps': self.num_timesteps,
             'episode_rewards': self.locals.get('episode_rewards', 0),
             'episode_num': self.locals.get('num_episodes', 1),
         }
