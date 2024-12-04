@@ -142,6 +142,8 @@ class DQNCallback(BaseCallback):
         self.max_fitness = 0
 
     def _on_training_start(self) -> None:
+        for variable in self.locals:
+            print(variable)
         self.is_training = True
 
 
@@ -158,11 +160,6 @@ class DQNCallback(BaseCallback):
             self.max_distance = self.mario.farthest_x
         if self.mario.fitness >  self.max_fitness:
             self.max_fitness = self.mario.fitness
-
-  
-
-        if self.num_timesteps % 100 == 0:
-            print(f'on step: {self.num_timesteps}')
 
 
         data = {
