@@ -159,6 +159,9 @@ class DQNCallback(BaseCallback):
         if self.mario.fitness >  self.max_fitness:
             self.max_fitness = self.mario.fitness
 
+        for variable in self.locals():
+            print(variable)
+
         if self.locals.get('num_timesteps', 0) % 100 == 0:
             print(f'on step: {self.locals.get("num_timesteps")}')
 
