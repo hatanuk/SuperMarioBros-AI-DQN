@@ -83,7 +83,7 @@ class InputSpaceReduction(gym.Env):
                 
 
         self.action_space = spaces.Discrete(2 ** 9)
-        
+
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
         )
@@ -214,7 +214,7 @@ class DQNMario(Mario):
                  name: Optional[str] = "DQNAgent",
                  debug: Optional[bool] = False):
         self.config = config
-        self.reward_func = fitness_func
+        self.reward_fxc = fitness_func
         nn_params = self.config.NeuralNetworkDQN
         
         Mario.__init__(self, config, None, nn_params.hidden_layer_architecture, nn_params.hidden_node_activation,

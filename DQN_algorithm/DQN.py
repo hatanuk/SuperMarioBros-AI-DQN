@@ -74,12 +74,12 @@ class DQN(nn.Module, FeedForwardNetwork):
         # build hidden layers
         for l in range(1, L):
             net[f'L{l}'] = nn.Linear(self.layer_nodes[l-1], self.layer_nodes[l])
-            net[f'Afn{l}'] = self.to_torch_activation(self.hidden_activation)
+            net[f'Afn{l}'] = self.hidden_activation
             
         # build output layer
         print(self.output_activation)
         net[f'L{L}'] = nn.Linear(self.layer_nodes[L-1], self.layer_nodes[L])
-        net[f'Afn{L}'] =  self.to_torch_activation(self.output_activation)
+        net[f'Afn{L}'] =  self.output_activation
         
         return nn.Sequential(net)
           
