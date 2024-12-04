@@ -142,8 +142,7 @@ class DQNCallback(BaseCallback):
         self.max_fitness = 0
 
     def _on_training_start(self) -> None:
-        for variable in self.locals:
-            print(variable)
+    
         self.is_training = True
 
 
@@ -152,6 +151,9 @@ class DQNCallback(BaseCallback):
         ram = self.training_env.envs[0].get_ram()
         tiles = SMB.get_tiles(ram)
         enemies = SMB.get_enemy_locations(ram)
+
+        for variable in self.locals:
+            print(variable)
 
         # Update the DQN agent to get the output
         self.mario.update(ram, tiles)
