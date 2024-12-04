@@ -152,8 +152,6 @@ class DQNCallback(BaseCallback):
         tiles = SMB.get_tiles(ram)
         enemies = SMB.get_enemy_locations(ram)
 
-        if self.locals.get('actions'):
-            print(self.locals.get('actions'))
 
         # Update the DQN agent to get the output
         self.mario.update(ram, tiles)
