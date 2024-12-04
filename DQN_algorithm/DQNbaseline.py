@@ -80,10 +80,7 @@ class InputSpaceReduction(gym.Env):
         self._width = config.NeuralNetworkDQN.input_dims[1]
         self._height = config.NeuralNetworkDQN.input_dims[2]
         self._encode_row = config.NeuralNetworkDQN.encode_row
-
-        print(action_space)
-        
-        self.action_space = Discrete(2 ** 9)
+                
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
         )
