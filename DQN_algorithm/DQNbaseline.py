@@ -160,7 +160,7 @@ class DQNCallback(BaseCallback):
             self.max_fitness = self.mario.fitness
 
         if self.locals.get('num_timesteps') % 100 == 0:
-            print(f'on step: {self.locals.get('num_timesteps')}')
+            print(f'on step: {self.locals.get("num_timesteps")}')
 
 
         data = {
