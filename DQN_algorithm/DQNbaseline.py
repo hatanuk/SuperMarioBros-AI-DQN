@@ -60,9 +60,6 @@ class InputSpaceReduction(gym.Env):
             low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
         )
 
-        self.valid_actions = [4, 5, 6, 7, 8, 0]
-        self.action_space = gym.spaces.Discrete(len(self.valid_actions))
-
         
     def get_ram(self):
         return self.env.get_ram()
@@ -82,8 +79,13 @@ class InputSpaceReduction(gym.Env):
             5: 0   # B
         }
 
-        action = [output_to_keys_map[action]]
-        obs, reward, done, _, info = self.env.step(action)  
+        action = output_to_keys_map[action]
+
+        # size of the action space
+        one_hot_v = np.zeros(9)
+        one_hot_v[action] = 1
+
+        obs, reward, done, _, info = self.env.step(one_hot_v)  
         return self._observation(obs), reward, done, info  
 
     
