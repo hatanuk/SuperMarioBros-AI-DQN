@@ -16,6 +16,8 @@ from utils import SMB, StaticTileType, EnemyType
 import retro
 import torch.nn as nn
 
+from DQN_algorithm.DQN import DQN as CustomDQN
+
 from gym.spaces import Space
 import numpy as np
  
@@ -39,6 +41,30 @@ def get_torch_activation_by_name(name: str):
     return activations.get(name.lower(), None)
 
 
+    from stable_baselines3 import DQN
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+import torch as th
+import torch.nn as nn
+
+# force the sb3 network to use defined architecture
+class ModifiedDQN(DQN):
+    def __init__(self, *args, **kwargs):
+        super(ModifiedDQN, self).__init__(*args, **kwargs)
+
+        env = kwargs['env']
+
+        policy_kwargs = kwargs.get("policy_kwargs", {})
+        net_arch = policy_kwargs.get("net_arch", [64, 64]) 
+        activation_fn = policy_kwargs.get("activation_fn", nn.ReLU())  
+        output_a = policy_kwargs.get("output_a", 9) 
+        
+        input_size = env.observation_space.shape[0] 
+        layer_nodes = [input_size] + net_arch + [output_a]
+        
+        self.q_net = CustomDQN(layer_nodes, activation_fn, output_a, self.learning_rate)
+
+
+
 ## Restricts the DQN's output to a subset of available actions (ie from 9 to 6)
 # This is to match the DQN's output layer to the size of the GA's output layer
 # Also reduces the input dimentionality to match that of the GA
@@ -54,8 +80,10 @@ class InputSpaceReduction(gym.Env):
         self._width = config.NeuralNetworkDQN.input_dims[1]
         self._height = config.NeuralNetworkDQN.input_dims[2]
         self._encode_row = config.NeuralNetworkDQN.encode_row
+
+        print(action_space)
         
-        self.action_space = self.env.action_space
+        self.action_space = Discrete(2 ** 9)
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
         )
@@ -208,8 +236,8 @@ class DQNMario(Mario):
         # specifies the model architecture for the DQN
         policy_kwargs = dict(activation_fn=get_torch_activation_by_name(self.hidden_activation), net_arch=self.hidden_layer_architecture)
 
-        self.model = DQN('MlpPolicy', 
-                    env, 
+        self.model = ModifiedDQN('MlpPolicy', 
+                    env=env, 
                     gamma=self.discount_value, 
                     learning_rate=self.learning_rate,  
                     buffer_size=self.buffer_size,
