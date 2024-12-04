@@ -109,7 +109,6 @@ def run_ga_agent(config, data_queue):
         enemies = SMB.get_enemy_locations(ram)
 
         mario_GA.update(ram, tiles, keys, ouput_to_keys_map)
-        print(mario_GA.buttons_to_press)
         # Take a step in the environment
         ret = env.step(mario_GA.buttons_to_press)
         total_steps_GA += 1
