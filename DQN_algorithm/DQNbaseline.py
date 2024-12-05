@@ -54,10 +54,9 @@ class ModifiedDQN(DQN):
 
         env = kwargs['env']
 
-        policy_kwargs = kwargs.get("policy_kwargs", {})
-        net_arch = policy_kwargs.get("net_arch", [64, 64]) 
-        activation_fn = policy_kwargs.get("activation_fn", nn.ReLU())  
-        output_a = policy_kwargs.get("output_a", 9) 
+        net_arch = [9]
+        activation_fn = get_torch_activation_by_name('relu')
+        output_a = get_torch_activation_by_name('linear')
         
         input_size = env.observation_space.shape[0] 
         layer_nodes = [input_size] + net_arch + [output_a]
@@ -247,7 +246,7 @@ class DQNMario(Mario):
         self.train_freq = self.config.DQN.train_freq
 
         # specifies the model architecture for the DQN
-        policy_kwargs = dict(activation_fn=get_torch_activation_by_name(self.hidden_activation), net_arch=self.hidden_layer_architecture, output_a=get_torch_activation_by_name(self.output_activation))
+        policy_kwargs = dict(activation_fn=get_torch_activation_by_name(self.hidden_activation), net_arch=self.hidden_layer_architecture)
 
         self.model = ModifiedDQN('MlpPolicy', 
                     env=env, 
