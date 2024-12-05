@@ -38,6 +38,7 @@ def get_torch_activation_by_name(name: str):
         'tanh': nn.Tanh,
         'sigmoid': nn.Sigmoid,
         'leaky_relu': nn.LeakyReLU,
+        'linear': nn.Identity
     }
     return activations.get(name.lower(), None)
 
