@@ -40,6 +40,8 @@ class DQN(nn.Module, FeedForwardNetwork):
         nn.Module.__init__(self)
         self.lr = lr
         self.layer_nodes = layer_nodes
+        self.hidden_activation = hidden_activation
+        self.output_activation = output_activation
 
         print(f"output_activation: {output_activation}")
         
