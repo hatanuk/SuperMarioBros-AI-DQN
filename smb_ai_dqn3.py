@@ -111,6 +111,7 @@ def run_ga_agent(config, data_queue):
         mario_GA.update(ram, tiles, keys, ouput_to_keys_map)
         # Take a step in the environment
         ret = env.step(mario_GA.buttons_to_press)
+        print(ret)
         total_steps_GA += 1
 
         # Get new ram information
