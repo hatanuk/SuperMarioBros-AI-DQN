@@ -1,6 +1,5 @@
 import re
 import retro
-print(retro.data.get_file_path())
 # Removed PyQt5 imports
 # from PyQt5 import QtGui, QtWidgets
 # from PyQt5.QtGui import QPainter, QBrush, QPen, QPolygonF, QColor, QImage, QPixmap
