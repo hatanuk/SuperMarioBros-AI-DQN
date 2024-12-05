@@ -36,7 +36,7 @@ class ReplayBuffer:
 
 class DQN(nn.Module, FeedForwardNetwork):
     def __init__(self, layer_nodes, hidden_activation, output_activation, lr=0.01):
-        FeedForwardNetwork.__init__(self, layer_nodes, hidden_activation, output_activation)
+        #FeedForwardNetwork.__init__(self, layer_nodes, hidden_activation, output_activation)
         nn.Module.__init__(self)
         self.lr = lr
 
