@@ -16,6 +16,7 @@ from utils import SMB, StaticTileType, EnemyType
 import retro
 import torch.nn as nn
 
+
 from DQN_algorithm.DQN import DQN as CustomDQN
 
 from gym.spaces import Space
@@ -80,9 +81,10 @@ class InputSpaceReduction(gym.Env):
         self._width = config.NeuralNetworkDQN.input_dims[1]
         self._height = config.NeuralNetworkDQN.input_dims[2]
         self._encode_row = config.NeuralNetworkDQN.encode_row
-                
 
-        self.action_space = spaces.Discrete(2 ** 9)
+        self.episode_frames = 0
+
+        self.action_space = spaces.Box(low=0, high=1, shape=(9,), dtype=np.int8)
 
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
@@ -94,6 +96,7 @@ class InputSpaceReduction(gym.Env):
         
     def reset(self):
         obs = self.env.reset()  
+        self.episode_frames = 0
         return self._observation(obs)
     
     def step(self, action):
@@ -114,6 +117,13 @@ class InputSpaceReduction(gym.Env):
         one_hot_v[action] = 1
 
         obs, reward, done, _, info = self.env.step(one_hot_v)  
+        
+        # override env reward with the fitness func
+        reward = fitness_func(info.get('xscrollLo'), self.episode_frames , info.get('score'), done)
+        self.episode_frames += 1
+        if done:
+            self.episode_frames = 0
+
         return self._observation(obs), reward, done, info  
 
     
@@ -234,9 +244,9 @@ class DQNMario(Mario):
         self.train_freq = self.config.DQN.train_freq
 
         # specifies the model architecture for the DQN
-        policy_kwargs = dict(activation_fn=get_torch_activation_by_name(self.hidden_activation), net_arch=self.hidden_layer_architecture)
+        policy_kwargs = dict(activation_fn=self.hidden_activation, net_arch=self.hidden_layer_architecture)
 
-        self.model = ModifiedDQN('MlpPolicy', 
+        self.model = DQN('MlpPolicy', 
                     env=env, 
                     gamma=self.discount_value, 
                     learning_rate=self.learning_rate,  
