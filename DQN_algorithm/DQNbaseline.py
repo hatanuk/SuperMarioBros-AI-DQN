@@ -181,8 +181,6 @@ class DQNCallback(BaseCallback):
         self.max_distance = 0
         self.max_fitness = 0
 
-        self.episode_count = 0
-        self.epsisode_r
 
     def _on_training_start(self) -> None:
     
