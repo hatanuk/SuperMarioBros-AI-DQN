@@ -196,11 +196,13 @@ def run_dqn_agent(config, data_queue, dqn_model):
     # Initialize environment
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
     env = InputSpaceReduction(env, config)
-    env = DummyVecEnv([lambda: env])
 
     # Initialize DQN agent
     mario_DQN = DQNMario(config, env)
     env.mario = mario_DQN
+
+    env = DummyVecEnv([lambda: env])
+
 
     if dqn_model:
         try:
