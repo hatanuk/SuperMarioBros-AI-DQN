@@ -58,7 +58,7 @@ class Logger:
             self.dqn_writer.add_scalar('max_distance', max_distance, total_steps)
             self.dqn_writer.add_scalar('total_steps', total_steps, total_steps)
         
-        self.dqn_writer.add_scalar('episode_reward', episode_reward, episode_num)
+        #self.dqn_writer.add_scalar('episode_reward', episode_reward, episode_num)
 
     def increment_step(self):
         self.step_counter += 1
