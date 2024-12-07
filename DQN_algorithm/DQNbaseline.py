@@ -208,8 +208,8 @@ class DQNCallback(BaseCallback):
             'max_fitness':  self.max_fitness,
             'max_distance': self.max_distance,
             'total_steps': self.num_timesteps,
-            'episode_rewards': self.episode_rewards
-            'episode_num': self.locals.get('num_collected_episodes', 1),
+            'episode_rewards': self.episode_rewards,
+            'episode_num': self.locals.get('num_collected_episodes', 1)
         }
         self.data_queue.put(data)
         return True
