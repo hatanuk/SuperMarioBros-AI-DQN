@@ -107,6 +107,8 @@ class Mario(Individual):
             did_win=did_win
         )
 
+        return self._fitness 
+
     def set_input_as_array(self, ram, tiles) -> None:
         mario_row, mario_col = SMB.get_mario_row_col(ram)
         arr = []
