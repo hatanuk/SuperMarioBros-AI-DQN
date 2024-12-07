@@ -121,14 +121,14 @@ class InputSpaceReduction(gym.Env):
 
         obs, reward, done, _, info = self.env.step(one_hot_v)  
         
-        mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
+        self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
 
         if not mario.is_alive:
             done = True
             mario_is_alive = True
 
         #override env reward with the fitness func
-        reward = mario.calculate_fitness()
+        reward = self.mario.calculate_fitness()
 
         if episode_steps % 100 == 0:
             print(reward, done)
