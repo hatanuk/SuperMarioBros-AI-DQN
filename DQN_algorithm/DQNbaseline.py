@@ -121,8 +121,7 @@ class InputSpaceReduction(gym.Env):
 
         obs, reward, done, _, info = self.env.step(one_hot_v)  
 
-        prev_x = self.mario.x_dist
-        
+   
         self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
 
         if not self.mario.is_alive:
@@ -130,8 +129,6 @@ class InputSpaceReduction(gym.Env):
             self.mario.is_alive = True
 
         #override env reward with the fitness func
-
-        distance_moved = self.mario.x_dist - prev_x
 
         reward = self.mario.calculate_fitness()
 
