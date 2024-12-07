@@ -197,11 +197,8 @@ class DQNCallback(BaseCallback):
         # Update the DQN agent to get the output
         self.mario.update(ram, tiles)
 
-        print("mario fartherst x: ", self.mario.farthest_x)
-        print("mario max distance: ", self.max_distance)
 
         if self.mario.farthest_x > self.max_distance:
-            print("UPDATING TO ", self.mario.farthest_x)
             self.max_distance = self.mario.farthest_x
         if self.mario.fitness >  self.max_fitness:
             self.max_fitness = self.mario.fitness
