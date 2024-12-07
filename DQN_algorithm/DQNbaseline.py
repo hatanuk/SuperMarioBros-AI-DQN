@@ -271,7 +271,7 @@ class DQNMario(Mario):
                     )
         
         
-    def reset():
+    def reset(self):
         self._frames = 0
         self.is_alive = True
         self.farthest_x = 0
