@@ -52,7 +52,7 @@ class Logger:
             self.ga_writer.add_scalar('max_distance', max_distance, total_steps)
             self.ga_writer.add_scalar('total_steps', total_steps, total_steps)
 
-    def log_dqn_metrics(self, max_fitness, max_distance, episode_reward, episode_num, total_steps):
+    def log_dqn_metrics(self, max_fitness, max_distance, total_steps):
         if total_steps % self.config.Statistics.log_interval == 0:
             self.dqn_writer.add_scalar('max_fitness', max_fitness, total_steps)
             self.dqn_writer.add_scalar('max_distance', max_distance, total_steps)
@@ -363,8 +363,6 @@ if __name__ == "__main__":
                     logger.log_dqn_metrics(
                         dqn_data['max_fitness'],
                         dqn_data['max_distance'],
-                        dqn_data['episode_rewards'],
-                        dqn_data['episode_num'],
                         dqn_data['total_steps']
                     )
             except queue.Empty:
