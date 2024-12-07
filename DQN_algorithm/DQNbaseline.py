@@ -125,16 +125,16 @@ class InputSpaceReduction(gym.Env):
 
         if not self.mario.is_alive:
             done = True
-            mario_is_alive = True
+            self.mario.is_alive = True
 
         #override env reward with the fitness func
         reward = self.mario.calculate_fitness()
 
-        if episode_steps % 100 == 0:
+        if self.episode_steps % 100 == 0:
             print(reward, done)
 
         if done:
-            episode_steps = 0
+            self.episode_steps = 0
 
 
         return self._observation(obs), reward, done, info  
