@@ -120,9 +120,13 @@ class InputSpaceReduction(gym.Env):
         
         #override env reward with the fitness func
         #reward = fitness_func(info.get('xscrollLo'), self.episode_frames , info.get('score'), done)
-        #self.episode_frames += 1
-        #if done:
-            #self.episode_frames = 0
+
+        self.episode_frames += 1
+        if done:
+            self.episode_frames = 0
+
+        if episode_frames % 100 == 0:
+            print(one_hot_v)
 
         return self._observation(obs), reward, done, info  
 
