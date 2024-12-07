@@ -224,7 +224,7 @@ class DQNMario(Mario):
                  name: Optional[str] = "DQNAgent",
                  debug: Optional[bool] = False):
         self.config = config
-        self.reward_fxc = fitness_func
+        self.reward_func = fitness_func
         nn_params = self.config.NeuralNetworkDQN
         
         Mario.__init__(self, config, None, nn_params.hidden_layer_architecture, nn_params.hidden_node_activation,
@@ -263,28 +263,6 @@ class DQNMario(Mario):
                     )
         
         
-
-    def calculate_reward(self, prev_stats, next_stats):
-
-        prev_frames, prev_distance, game_score = prev_stats
-        next_frames, next_distance, game_score = next_stats
-        
-        did_win = self.did_win
-
-        prev_reward = self.reward_func(
-            frames=prev_frames,
-            distance=prev_distance,
-            game_score=game_score,
-            did_win=False
-        )
-        next_reward = self.reward_func(
-            frames=next_frames,
-            distance=next_distance,
-            game_score=game_score,
-            did_win=did_win
-        )
-
-        return next_reward - prev_reward
 
     # Mario Override
     def update(self, ram, tiles) -> bool:
