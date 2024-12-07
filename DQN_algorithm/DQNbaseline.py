@@ -84,9 +84,7 @@ class InputSpaceReduction(gym.Env):
 
         self.episode_frames = 0
 
-        self.action_space = spaces.Box(
-            low=0, high=1, shape=(9,), dtype=np.int8
-        )
+        self.action_space = spaces.Discrete(5)
 
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
@@ -251,7 +249,7 @@ class DQNMario(Mario):
         # specifies the model architecture for the DQN
         policy_kwargs = dict(activation_fn=get_torch_activation_by_name(self.hidden_activation), net_arch=self.hidden_layer_architecture)
 
-        self.model = ModifiedDQN('MlpPolicy', 
+        self.model = DQN('MlpPolicy', 
                     env=env, 
                     gamma=self.discount_value, 
                     learning_rate=self.learning_rate,  
