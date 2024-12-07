@@ -118,7 +118,7 @@ class InputSpaceReduction(gym.Env):
 
         obs, reward, done, _, info = self.env.step(one_hot_v)  
         
-        # override env reward with the fitness func
+        #override env reward with the fitness func
         #reward = fitness_func(info.get('xscrollLo'), self.episode_frames , info.get('score'), done)
         #self.episode_frames += 1
         #if done:
@@ -196,6 +196,10 @@ class DQNCallback(BaseCallback):
 
         # Update the DQN agent to get the output
         self.mario.update(ram, tiles)
+
+        if self.num_timesteps % 100 == 0:
+            print(self.locals.get('rewards')[-100:])
+            print(self.locals.get('actions')[-100:])
 
 
         if self.mario.farthest_x > self.max_distance:
