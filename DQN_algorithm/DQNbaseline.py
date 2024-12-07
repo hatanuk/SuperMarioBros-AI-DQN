@@ -84,7 +84,10 @@ class InputSpaceReduction(gym.Env):
 
         self.episode_frames = 0
 
-        self.action_space = spaces.Discrete(2**9)
+
+        self.action_spaces = spaces.Box(
+            low=0, high=1, shape=(9,), dtype=np.int8
+        )
 
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
