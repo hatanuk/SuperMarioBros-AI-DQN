@@ -84,8 +84,7 @@ class InputSpaceReduction(gym.Env):
 
         self.episode_frames = 0
 
-
-        self.action_spaces = spaces.Box(
+        self.action_space = spaces.Box(
             low=0, high=1, shape=(9,), dtype=np.int8
         )
 
