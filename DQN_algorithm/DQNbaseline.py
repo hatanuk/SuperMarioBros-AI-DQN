@@ -201,11 +201,6 @@ class DQNCallback(BaseCallback):
 
     def _on_step(self) -> bool:
 
-        ram = self.training_env.envs[0].get_ram()
-        tiles = SMB.get_tiles(ram)
-        enemies = SMB.get_enemy_locations(ram)
-
-
         if self.num_timesteps % 100 == 0:
             print(self.locals.get('rewards')[-100:])
             print(self.locals.get('actions')[-100:])
