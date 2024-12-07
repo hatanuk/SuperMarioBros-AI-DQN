@@ -125,7 +125,7 @@ class InputSpaceReduction(gym.Env):
         if done:
             self.episode_frames = 0
 
-        if episode_frames % 100 == 0:
+        if self.episode_frames % 100 == 0:
             print(one_hot_v)
 
         return self._observation(obs), reward, done, info  
