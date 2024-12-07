@@ -180,6 +180,7 @@ class DQNCallback(BaseCallback):
 
         self.max_distance = 0
         self.max_fitness = 0
+        self.episode_count = 0
 
     def _on_training_start(self) -> None:
     
@@ -192,12 +193,12 @@ class DQNCallback(BaseCallback):
         tiles = SMB.get_tiles(ram)
         enemies = SMB.get_enemy_locations(ram)
 
-        print(self.locals.keys())
 
         # Update the DQN agent to get the output
         self.mario.update(ram, tiles)
 
         if self.mario.farthest_x > self.max_distance:
+            print("UPDATING TO ", self.mario.farthest_x)
             self.max_distance = self.mario.farthest_x
         if self.mario.fitness >  self.max_fitness:
             self.max_fitness = self.mario.fitness
@@ -207,8 +208,8 @@ class DQNCallback(BaseCallback):
             'max_fitness':  self.max_fitness,
             'max_distance': self.max_distance,
             'total_steps': self.num_timesteps,
-            'episode_rewards': self.locals.get('episode_rewards', 0),
-            'episode_num': self.locals.get('num_episodes', 1),
+            'episode_rewards': self.episode_rewards
+            'episode_num': self.locals.get('num_collected_episodes', 1),
         }
         self.data_queue.put(data)
         return True
