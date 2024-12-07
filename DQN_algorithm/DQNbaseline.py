@@ -132,7 +132,7 @@ class InputSpaceReduction(gym.Env):
 
         reward = self.mario.calculate_fitness()
 
-        if self.episode_steps % 100 == 0:
+        if self.episode_steps % 10 == 0:
             (reward, done)
 
         if done:
