@@ -192,6 +192,9 @@ class DQNCallback(BaseCallback):
         tiles = SMB.get_tiles(ram)
         enemies = SMB.get_enemy_locations(ram)
 
+        print(self.locals)
+        print()
+
 
         # Update the DQN agent to get the output
         self.mario.update(ram, tiles)
@@ -277,6 +280,7 @@ class DQNMario(Mario):
         if self.is_alive:
             self._frames += 1
             self.x_dist = SMB.get_mario_location_in_level(ram).x
+            print("x_dist update: ", self.x_dist)
             self.game_score = SMB.get_mario_score(ram)
             # Sliding down flag pole
             if ram[0x001D] == 3:
