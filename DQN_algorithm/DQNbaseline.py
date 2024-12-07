@@ -124,13 +124,12 @@ class InputSpaceReduction(gym.Env):
    
         self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
 
+        #override env reward with the fitness func
+        reward = self.mario.calculate_fitness()
+
         if not self.mario.is_alive:
             done = True
-            self.mario.is_alive = True
-
-        #override env reward with the fitness func
-
-        reward = self.mario.calculate_fitness()
+            self.mario.reset()
 
         print(reward)
 
@@ -272,6 +271,13 @@ class DQNMario(Mario):
                     )
         
         
+    def reset():
+        self._frames = 0
+        self.is_alive = True
+        self.farthest_x = 0
+        self.x_dist = None
+        self.game_score = None
+        self.did_win = False
 
     # Mario Override
     def update(self, ram, tiles) -> bool:
