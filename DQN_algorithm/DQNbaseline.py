@@ -76,15 +76,16 @@ class InputSpaceReduction(gym.Env):
         super().__init__()
         
         self.env = env  
+        self.mario = None
 
         self._start_row = config.NeuralNetworkDQN.input_dims[0]
         self._width = config.NeuralNetworkDQN.input_dims[1]
         self._height = config.NeuralNetworkDQN.input_dims[2]
         self._encode_row = config.NeuralNetworkDQN.encode_row
 
-        self.episode_frames = 0
-
         self.action_space = spaces.Discrete(5)
+
+        self.episode_steps = 0
 
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
@@ -100,6 +101,8 @@ class InputSpaceReduction(gym.Env):
         return self._observation(obs)
     
     def step(self, action):
+
+        self.episode_steps += 1
 
         output_to_keys_map = {
             0: 4,  # U
@@ -118,23 +121,27 @@ class InputSpaceReduction(gym.Env):
 
         obs, reward, done, _, info = self.env.step(one_hot_v)  
         
+        mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
+
+        if not mario.is_alive:
+            done = True
+            mario_is_alive = True
+
         #override env reward with the fitness func
-        reward = fitness_func(info.get('xscrollLo'), self.episode_frames , info.get('score'), done)
+        reward = mario.calculate_fitness()
 
-        self.episode_frames += 1
+        if episode_steps % 100 == 0:
+            print(reward, done)
+
         if done:
-            self.episode_frames = 0
+            episode_steps = 0
 
-        if self.episode_frames % 100 == 0:
-            print(one_hot_v)
-            print(info.get('xscrollLo'), self.episode_frames , info.get('score'), done)
 
         return self._observation(obs), reward, done, info  
 
     
     def _observation(self, obs):
         ram = self.env.get_ram()  
-        
 
         mario_row, mario_col = SMB.get_mario_row_col(ram)
         tiles = SMB.get_tiles(ram)
@@ -198,9 +205,6 @@ class DQNCallback(BaseCallback):
         tiles = SMB.get_tiles(ram)
         enemies = SMB.get_enemy_locations(ram)
 
-
-        # Update the DQN agent to get the output
-        self.mario.update(ram, tiles)
 
         if self.num_timesteps % 100 == 0:
             print(self.locals.get('rewards')[-100:])
