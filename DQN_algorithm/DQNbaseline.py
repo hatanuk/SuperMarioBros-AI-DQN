@@ -131,10 +131,10 @@ class InputSpaceReduction(gym.Env):
             done = True
             self.mario.reset()
 
-        print(reward)
 
         if done:
             self.episode_steps = 0
+            print(reward)
 
 
         return self._observation(obs), reward, done, info  
