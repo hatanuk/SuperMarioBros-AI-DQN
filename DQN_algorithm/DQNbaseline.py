@@ -116,9 +116,6 @@ class InputSpaceReduction(gym.Env):
         one_hot_v = np.zeros(9)
         one_hot_v[action] = 1
 
-        # convert to discrete representation
-        action = int(''.join(one_hot_v.astype(str)), 2)
-
         obs, reward, done, _, info = self.env.step(action)  
         
         # override env reward with the fitness func
