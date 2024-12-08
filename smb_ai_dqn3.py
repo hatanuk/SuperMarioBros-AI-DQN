@@ -109,7 +109,7 @@ def run_ga_agent(config, data_queue):
     # Reset environment
     env.reset()
 
-    while True:
+    while current_generation <= self.config.GA.total_generations:
         # Update agent
         ram = env.get_ram()
         tiles = SMB.get_tiles(ram)
@@ -202,6 +202,10 @@ def run_ga_agent(config, data_queue):
 
         # Send data to main process
         data_queue.put(data)
+
+    # end while
+    print(f"Stopping training GA after {self.config.GA.total_generations} generation.")
+
  
 def run_dqn_agent(config, data_queue, dqn_model):
 
@@ -225,7 +229,7 @@ def run_dqn_agent(config, data_queue, dqn_model):
         # Add an inference loop here later
     else:
         callback = DQNCallback(data_queue, mario_DQN, config, verbose=1)
-        mario_DQN.model.learn(total_timesteps=config.DQN.training_steps, callback=callback, log_interval=1)
+        mario_DQN.model.learn(total_timesteps=int(1e6), callback=callback, log_interval=1)
 
 def _initialize_population(config):
     individuals: List[Individual] = []

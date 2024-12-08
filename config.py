@@ -40,6 +40,10 @@ _params = {
         'encode_row': bool,
     },
 
+    'GA': {
+        'total_generations': int,
+    }
+
     # NeuralNetwork Params for DQN 
     'NeuralNetworkDQN': {
         'input_dims': (tuple, int),
@@ -60,7 +64,7 @@ _params = {
         'epsilon_min': float,
         'epsilon_decay': float,
         'train_freq': int,
-        'training_steps': int,
+        'training_episodes': int,
     },
 
     ### GA Params

@@ -197,6 +197,8 @@ class DQNCallback(BaseCallback):
         self.max_fitness = 0
         self.episode = 0
 
+        self.max_episodes = self.config.DQN.total_episodes
+
 
     def _on_training_start(self) -> None:
     
@@ -211,6 +213,10 @@ class DQNCallback(BaseCallback):
             print("EPISODE: ", self.episode)
             self.episode += 1
             done = True
+
+            if self.episode_count >= self.max_episodes:
+                print(f"Stopping training DQN after {self.episode_count} episodes.")
+                return False  # Stops training
             
 
         if self.mario.farthest_x > self.max_distance:
