@@ -72,8 +72,10 @@ class Logger:
         self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
         self.writer.add_scalar('GA/avg_distance/generation', round(total_distance/num_individuals, 2), generation)
 
-    def log_dqn_episode(self, episode_reward, episode_num):
+    def log_dqn_episode(self, episode_reward, episode_num, max_fitness, max_distance):
         self.writer.add_scalar('DQN/reward/episode', episode_reward, episode_num)
+        self.writer.add_scalar('DQN/max_fitness/episode', max_fitness, episode_num)
+        self.writer.add_scalar('DQN/max_distance/episode', max_distance, episode_num)
 
 
 def evaluate_individual_in_separate_process(args):
@@ -169,7 +171,7 @@ def run_ga_agent(config, data_queue):
 
                 population.individuals[i]._fitness = res['current_fitness']
                 population.individuals[i].farthest_x = res['current_distance']
-                
+
                 total_fitness += res['current_fitness']
                 total_distance += res['current_distance']
 
@@ -242,6 +244,9 @@ def run_ga_agent(config, data_queue):
 
             current_generation += 1
 
+
+    best_individual = max(population.individuals, key=lambda ind: ind.fitness)
+    save_mario('GAindividuals', 'best_mario', best_individual)
     print(f"Stopping training GA after {config.GA.total_generations} generation.")
 
 
@@ -475,7 +480,9 @@ if __name__ == "__main__":
                     if dqn_data.get('done', False) == True:
                         logger.log_dqn_episode(
                             dqn_data['episode_reward'],
-                            dqn_data['episode_num']
+                            dqn_data['episode_num'],
+                            dqn_data['max_fitness'],
+                            dqn_data['max_distance']
                         )
 
             except queue.Empty:
