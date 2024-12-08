@@ -114,8 +114,7 @@ def run_ga_agent(config, data_queue):
     env.reset()
 
     while current_generation <= config.GA.total_generations:
-        print("GENERATION: ", current_generation)
-        
+
         # Update agent
         ram = env.get_ram()
         tiles = SMB.get_tiles(ram)
@@ -148,6 +147,7 @@ def run_ga_agent(config, data_queue):
 
             # Checks whether it's time to transition to a new generation
             if _current_individual >= len(population.individuals):
+                print("GENERATION: ", current_generation)
                 # Next generation
                 current_generation += 1
                 _current_individual = 0
