@@ -55,6 +55,7 @@ _params = {
 
     'GA': {
         'total_generations': int,
+        'parallel_processes': int,
     },
 
     # DQN Params
