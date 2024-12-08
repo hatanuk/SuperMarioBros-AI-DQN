@@ -370,7 +370,6 @@ if __name__ == "__main__":
                         logger.log_ga_step(
                             ga_data['max_fitness'],
                             ga_data['max_distance'],
-                            ga_data['current_generation'],
                             ga_data['total_steps']
                         )
             except queue.Empty:
