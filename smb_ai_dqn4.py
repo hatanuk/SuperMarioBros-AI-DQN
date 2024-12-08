@@ -72,8 +72,8 @@ class Logger:
         self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
         self.writer.add_scalar('GA/avg_distance/generation', round(total_distance/num_individuals, 2), generation)
 
-    def log_dqn_episode(self, episode_reward, episode_num, max_fitness, max_distance):
-        self.writer.add_scalar('DQN/reward/episode', episode_reward, episode_num)
+    def log_dqn_episode(self, episode_rewards, episode_steps, episode_num, max_fitness, max_distance):
+        self.writer.add_scalar('DQN/avg_reward/episode', round(episode_rewards / episode_steps, 2), episode_num)
         self.writer.add_scalar('DQN/max_fitness/episode', max_fitness, episode_num)
         self.writer.add_scalar('DQN/max_distance/episode', max_distance, episode_num)
 
@@ -478,7 +478,8 @@ if __name__ == "__main__":
 
                     if dqn_data.get('done', False) == True:
                         logger.log_dqn_episode(
-                            dqn_data['episode_reward'],
+                            dqn_data['episode_rewards'],
+                            dqn_data['episode_steps'],
                             dqn_data['episode_num'],
                             dqn_data['max_fitness'],
                             dqn_data['max_distance']
