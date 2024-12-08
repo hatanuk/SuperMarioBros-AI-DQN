@@ -188,16 +188,21 @@ def run_ga_agent(config, data_queue):
 
         # Prepare data to send back
         data = {
+            # Global
             'max_fitness': best_fitness_GA,
             'max_distance': max_distance_GA,
             'total_steps': total_steps_GA,
             'current_generation': current_generation,
+
+            # Per Individual
             'current_individual': _current_individual,
+            'current_fitness': mario_GA.fitness,
+            'current_distance': mario_GA.farthest_x,
         }
 
         # Send data to main process
         data_queue.put(data)
-
+ 
 def run_dqn_agent(config, data_queue, dqn_model):
 
     # Initialize environment
