@@ -367,7 +367,7 @@ if __name__ == "__main__":
                     # prevents redundancy
                     if ga_data['total_steps'] not in processed_steps_ga:
                         processed_steps_ga.add(ga_data['total_steps'])
-                        logger.log_ga_metrics(
+                        logger.log_ga_step(
                             ga_data['max_fitness'],
                             ga_data['max_distance'],
                             ga_data['current_generation'],
@@ -386,7 +386,7 @@ if __name__ == "__main__":
                     # Log DQN metrics
                     if dqn_data['total_steps'] not in processed_steps_dqn:
                         processed_steps_dqn.add(dqn_data['total_steps'])
-                        logger.log_dqn_metrics(
+                        logger.log_dqn_step(
                             dqn_data['max_fitness'],
                             dqn_data['max_distance'],
                             dqn_data['total_steps']
