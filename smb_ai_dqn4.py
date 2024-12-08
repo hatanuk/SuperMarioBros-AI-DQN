@@ -271,7 +271,7 @@ def run_dqn_agent(config, data_queue, dqn_model):
         # Add an inference loop here later
     else:
         callback = DQNCallback(data_queue, mario_DQN, config, verbose=1)
-        mario_DQN.model.learn(total_timesteps=int(1e6), callback=callback, log_interval=int(1e6))
+        mario_DQN.model.learn(total_timesteps=int(500*config.DQN.total_episodes + 1000), callback=callback, log_interval=int(1e6))
 
 
 def _initialize_population(config):
