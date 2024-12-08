@@ -68,7 +68,7 @@ _params = {
         'epsilon_min': float,
         'epsilon_decay': float,
         'train_freq': int,
-        'training_episodes': int,
+        'total_episodes': int,
     },
 
 
