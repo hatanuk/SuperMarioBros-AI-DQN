@@ -68,7 +68,7 @@ class Logger:
 
 def run_ga_agent(config, data_queue):
     # Initialize environment
-    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
 
     # Initialize population and agent
     individuals = _initialize_population(config)
@@ -196,7 +196,7 @@ def run_ga_agent(config, data_queue):
 def run_dqn_agent(config, data_queue, dqn_model):
 
     # Initialize environment
-    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}')
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
     env = InputSpaceReduction(env, config)
 
     # Initialize DQN agent
