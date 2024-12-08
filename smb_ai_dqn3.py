@@ -13,6 +13,7 @@ import sys
 import math
 import numpy as np
 import shutil
+import os
 
 from utils import SMB, EnemyType, StaticTileType, ColorMap, DynamicTileType
 from config import Config
