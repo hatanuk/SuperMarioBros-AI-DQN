@@ -214,8 +214,8 @@ class DQNCallback(BaseCallback):
             self.episode += 1
             done = True
 
-            if self.episode_count >= self.max_episodes:
-                print(f"Stopping training DQN after {self.episode_count} episodes.")
+            if self.episode >= self.max_episodes:
+                print(f"Stopping training DQN after {self.episode} episodes.")
                 return False  # Stops training
             
 

@@ -73,7 +73,7 @@ class Logger:
 
 def run_ga_agent(config, data_queue):
     # Initialize environment
-    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='human')
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
 
     # Initialize population and agent
     individuals = _initialize_population(config)
@@ -109,7 +109,7 @@ def run_ga_agent(config, data_queue):
     # Reset environment
     env.reset()
 
-    while current_generation <= self.config.GA.total_generations:
+    while current_generation <= config.GA.total_generations:
         # Update agent
         ram = env.get_ram()
         tiles = SMB.get_tiles(ram)
@@ -204,7 +204,7 @@ def run_ga_agent(config, data_queue):
         data_queue.put(data)
 
     # end while
-    print(f"Stopping training GA after {self.config.GA.total_generations} generation.")
+    print(f"Stopping training GA after {config.GA.total_generations} generation.")
 
  
 def run_dqn_agent(config, data_queue, dqn_model):
