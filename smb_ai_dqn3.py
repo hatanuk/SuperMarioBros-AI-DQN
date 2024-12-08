@@ -73,7 +73,7 @@ class Logger:
 
 def run_ga_agent(config, data_queue):
     # Initialize environment
-    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='human')
 
     # Initialize population and agent
     individuals = _initialize_population(config)
@@ -362,7 +362,7 @@ if __name__ == "__main__":
                 while True:
                     ga_data = ga_data_queue.get_nowait()
                     ga_counter += 1
-                    if ga_counter % 200 == 0:
+                    if ga_counter % 1000 == 0:
                         print("updating GA: ", ga_data)
                     # prevents redundancy
                     if ga_data['total_steps'] not in processed_steps_ga:
@@ -380,7 +380,7 @@ if __name__ == "__main__":
                 while True:
                     dqn_data = dqn_data_queue.get_nowait()
                     dqn_counter += 1
-                    if dqn_counter % 200 == 0:
+                    if dqn_counter % 1000 == 0:
                         print("updating DQN: ", dqn_data)
                     # Log DQN metrics
                     if dqn_data['total_steps'] not in processed_steps_dqn:

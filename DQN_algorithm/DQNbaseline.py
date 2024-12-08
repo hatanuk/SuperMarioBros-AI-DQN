@@ -124,6 +124,9 @@ class InputSpaceReduction(gym.Env):
    
         self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
 
+        if self.mario.did_win:
+            print("DQN WON")
+
         #override env reward with the fitness func
         reward = self.mario.calculate_fitness()
 
