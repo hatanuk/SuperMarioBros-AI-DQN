@@ -40,9 +40,7 @@ _params = {
         'encode_row': bool,
     },
 
-    'GA': {
-        'total_generations': int,
-    }
+
 
     # NeuralNetwork Params for DQN 
     'NeuralNetworkDQN': {
@@ -51,6 +49,12 @@ _params = {
         'hidden_node_activation': str,
         'output_node_activation': str,
         'encode_row': bool,
+    },
+
+    ### GA Params
+
+    'GA': {
+        'total_generations': int,
     },
 
     # DQN Params
@@ -67,7 +71,7 @@ _params = {
         'training_episodes': int,
     },
 
-    ### GA Params
+
 
     # Crossover Params
     'Crossover': {
