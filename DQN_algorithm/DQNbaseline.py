@@ -206,8 +206,8 @@ class DQNCallback(BaseCallback):
     def _on_step(self) -> bool:
 
         if self.locals['dones'] == True:
-            self.episode += 1
             print("EPISODE: ", self.episode)
+            self.episode += 1
             
 
 
@@ -221,7 +221,10 @@ class DQNCallback(BaseCallback):
             'max_fitness':  self.max_fitness,
             'max_distance': self.max_distance,
             'total_steps': self.num_timesteps,
+            'episode_num': self.episode,
+            'episode_reward': self.mario.fitness,
         }
+        
         self.data_queue.put(data)
         return True
 

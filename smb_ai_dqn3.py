@@ -356,15 +356,33 @@ if __name__ == "__main__":
         processed_steps_ga = set()
         processed_steps_dqn = set()
 
+        # Generation stats
+        current_gen = 0
+        current_ind = 0
+        total_fitness = 0
+        total_distance = 0
+        max_fitness = 0
+        max_distance = 0
+
+        def reset_generation_stats():
+            nonlocal current_ind, total_fitness, total_distance, max_fitness, max_distance
+            current_ind = 0
+            total_fitness = 0
+            total_distance = 0
+            max_fitness = 0
+            max_distance = 0
+
+
         while True:
             # Process data from GA agent
             try:
                 while True:
                     ga_data = ga_data_queue.get_nowait()
                     ga_counter += 1
+
                     if ga_counter % 1000 == 0:
                         print("updating GA: ", ga_data)
-                    # prevents redundancy
+
                     if ga_data['total_steps'] not in processed_steps_ga:
                         processed_steps_ga.add(ga_data['total_steps'])
                         logger.log_ga_step(
@@ -372,6 +390,28 @@ if __name__ == "__main__":
                             ga_data['max_distance'],
                             ga_data['total_steps']
                         )
+
+                        if current_ind != ga_data['current_individual']:
+                            # Individual changed, collect stats
+                            current_ind = ga_data['current_individual']
+                            total_fitness += ga_data['current_fitness']
+                            total_distance += ga_data['current_distance']
+
+                    if current_gen !=  ga_data['current_generation']
+                        # Generation changed, log the stats
+                        current_gen = ga_data['current_generation']
+                       
+                        logger.log_ga_generation(
+                            total_fitness,
+                            total_distance,
+                            current_ind + 1,
+                            max_fitness,
+                            max_distance,
+                            current_gen
+                        )
+                        reset_generation_stats()
+
+
             except queue.Empty:
                 pass
 
@@ -390,6 +430,13 @@ if __name__ == "__main__":
                             dqn_data['max_distance'],
                             dqn_data['total_steps']
                         )
+
+                    if dqn_data['done'] == True:
+                        logger.log_dqn_episode(
+                            dqn_data['episode_reward'],
+                            dqn_data['episode_num']
+                        )
+                        
             except queue.Empty:
                 pass
 
