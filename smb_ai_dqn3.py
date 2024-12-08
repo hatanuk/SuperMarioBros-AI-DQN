@@ -12,6 +12,7 @@ import random
 import sys
 import math
 import numpy as np
+import shutil
 
 from utils import SMB, EnemyType, StaticTileType, ColorMap, DynamicTileType
 from config import Config
@@ -48,15 +49,15 @@ class Logger:
 
     def log_ga_metrics(self, max_fitness, max_distance, generation, total_steps):
         if total_steps % self.config.Statistics.log_interval == 0:
-            self.ga_writer.add_scalar('max_fitness', max_fitness, total_steps)
-            self.ga_writer.add_scalar('max_distance', max_distance, total_steps)
-            self.ga_writer.add_scalar('total_steps', total_steps, total_steps)
+            self.ga_writer.add_scalar('GA/max_fitness', max_fitness, total_steps)
+            self.ga_writer.add_scalar('GA/max_distance', max_distance, total_steps)
+            self.ga_writer.add_scalar('GA/total_steps', total_steps, total_steps)
 
     def log_dqn_metrics(self, max_fitness, max_distance, total_steps):
         if total_steps % self.config.Statistics.log_interval == 0:
-            self.dqn_writer.add_scalar('max_fitness', max_fitness, total_steps)
-            self.dqn_writer.add_scalar('max_distance', max_distance, total_steps)
-            self.dqn_writer.add_scalar('total_steps', total_steps, total_steps)
+            self.dqn_writer.add_scalar('DQN/max_fitness', max_fitness, total_steps)
+            self.dqn_writer.add_scalar('DQN/max_distance', max_distance, total_steps)
+            self.dqn_writer.add_scalar('DQN/total_steps', total_steps, total_steps)
         
         #self.dqn_writer.add_scalar('episode_reward', episode_reward, episode_num)
 
@@ -305,6 +306,10 @@ if __name__ == "__main__":
     if args.config:
         config = Config(args.config)
 
+    # clear prior tensorboard logs
+    clear_tensorboard_log_dir(config.Statistics.ga_tensorboard)
+    clear_tensorboard_log_dir(config.Statistics.dqn_tensorboard)
+
     # Initialize Logger
     ga_writer = SummaryWriter(log_dir=config.Statistics.ga_tensorboard)
     dqn_writer = SummaryWriter(log_dir=config.Statistics.dqn_tensorboard)
@@ -338,6 +343,9 @@ if __name__ == "__main__":
     try:
         ga_counter = 0
         dqn_counter = 0
+        processed_steps_ga = set()
+        processed_steps_dqn = set()
+
         while True:
             # Process data from GA agent
             try:
@@ -346,13 +354,15 @@ if __name__ == "__main__":
                     ga_counter += 1
                     if ga_counter % 200 == 0:
                         print("updating GA: ", ga_data)
-                    # Log GA metrics
-                    logger.log_ga_metrics(
-                        ga_data['max_fitness'],
-                        ga_data['max_distance'],
-                        ga_data['current_generation'],
-                        ga_data['total_steps']
-                    )
+                    # prevents redundancy
+                    if data['total_steps'] not in processed_steps_ga:
+                        processed_steps_ga.add(data['total_steps'])
+                        logger.log_ga_metrics(
+                            ga_data['max_fitness'],
+                            ga_data['max_distance'],
+                            ga_data['current_generation'],
+                            ga_data['total_steps']
+                        )
             except queue.Empty:
                 pass
 
@@ -364,11 +374,13 @@ if __name__ == "__main__":
                     if dqn_counter % 200 == 0:
                         print("updating DQN: ", dqn_data)
                     # Log DQN metrics
-                    logger.log_dqn_metrics(
-                        dqn_data['max_fitness'],
-                        dqn_data['max_distance'],
-                        dqn_data['total_steps']
-                    )
+                    if dqn_data['total_steps'] not in processed_steps_dqn:
+                        processed_steps_dqn.add(dqn_data['total_steps'])
+                        logger.log_dqn_metrics(
+                            dqn_data['max_fitness'],
+                            dqn_data['max_distance'],
+                            dqn_data['total_steps']
+                        )
             except queue.Empty:
                 pass
 
@@ -377,3 +389,10 @@ if __name__ == "__main__":
 
     except KeyboardInterrupt:
         cleanup()
+
+
+def clear_tensorboard_log_dir(log_dir):
+    if os.path.exists(log_dir):
+        shutil.rmtree(log_dir) 
+        print(f"Cleared TensorBoard log directory: {log_dir}")
+    os.makedirs(log_dir, exist_ok=True)
