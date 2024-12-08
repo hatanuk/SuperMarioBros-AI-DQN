@@ -195,6 +195,9 @@ class DQNCallback(BaseCallback):
         self.max_distance = 0
         self.max_fitness = 0
         self.episode = 0
+        self.episode_rewards = 0
+        self.episode_steps = 0
+
 
         self.max_episodes = self.config.DQN.total_episodes
 
@@ -207,10 +210,20 @@ class DQNCallback(BaseCallback):
     def _on_step(self) -> bool:
 
         done = False
+        collected_rewards = 0
+        collected_steps = 0
 
-        if self.locals['dones'] and self.locals['dones'][0] == True:
+        self.episode_steps += 1
+        self.episode_rewards += self.locals['rewards'].sum()
+
+
+        if self.locals['dones'].any():
             print("EPISODE: ", self.episode)
             self.episode += 1
+            collected_rewards = self.episode_rewards
+            collected_steps = self.episode_steps
+            self.episode_rewards = 0 
+            self.episode_steps = 0 
             done = True
 
             if self.episode >= self.max_episodes:
@@ -229,7 +242,8 @@ class DQNCallback(BaseCallback):
             'max_distance': self.max_distance,
             'total_steps': self.num_timesteps,
             'episode_num': self.episode,
-            'episode_reward': self.mario.fitness,
+            'episode_rewards': collected_rewards,
+            'episode_steps': collected_steps,
             'done': done,
         }
 

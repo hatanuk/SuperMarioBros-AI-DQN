@@ -782,6 +782,9 @@ def parse_args():
     # DQN args
     parser.add_argument('--load_dqn_model', dest='load_dqn_model', required=False, default=None, help='/path/to/model.zip to load trained DQN model')
 
+    parser.add_argument('--no_dqn', dest='no_dqn', required=False, default=False, help='do not train a dqn model')
+    parser.add_argument('--no_ga', dest='no_ga', required=False, default=False, help='do not train a ga model')
+
 
     args = parser.parse_args()
     

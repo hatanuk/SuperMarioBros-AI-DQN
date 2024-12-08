@@ -70,8 +70,8 @@ class Logger:
         self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
         self.writer.add_scalar('GA/avg_distance/generation', round(total_distance/num_individuals, 2), generation)
 
-    def log_dqn_episode(self, episode_reward, episode_num):
-        self.writer.add_scalar('DQN/reward/episode', episode_reward, episode_num)
+    def log_dqn_episode(self, episode_rewards, episode_steps, episode_num):
+        self.writer.add_scalar('DQN/avg_reward/episode', round(episode_rewards / episode_steps, 2), episode_num)
 
 
 
@@ -342,25 +342,29 @@ if __name__ == "__main__":
 
     logger = Logger(writer, config)
 
-    # Queues for data exchange
-    ga_data_queue = multiprocessing.Queue()
-    dqn_data_queue = multiprocessing.Queue()
+
 
     # Start processes
-    ga_process = multiprocessing.Process(target=run_ga_agent, args=(config, ga_data_queue))
-    ga_process.start()
+    if !args.no_ga:
+        ga_data_queue = multiprocessing.Queue()
+        ga_process = multiprocessing.Process(target=run_ga_agent, args=(config, ga_data_queue))
+        ga_process.start()
 
-    dqn_process = multiprocessing.Process(target=run_dqn_agent, args=(config, dqn_data_queue, args.load_dqn_model))
-    dqn_process.start()
+    if !args.no_dqn:
+        dqn_data_queue = multiprocessing.Queue()
+        dqn_process = multiprocessing.Process(target=run_dqn_agent, args=(config, dqn_data_queue, args.load_dqn_model))
+        dqn_process.start()
 
     # Function to clean up processes
     def cleanup():
-        ga_process.terminate()
-        dqn_process.terminate()
-        ga_process.join()
-        dqn_process.join()
-        ga_data_queue.close()
-        dqn_data_queue.close()
+        if !args.no_ga:
+            ga_process.terminate()
+            ga_process.join()
+            ga_data_queue.close()
+        if !args.no_dqn:
+            dqn_process.terminate()
+            dqn_process.join()
+            dqn_data_queue.close()
         logger.writer.close()
 
     atexit.register(cleanup)
@@ -388,67 +392,77 @@ if __name__ == "__main__":
 
         while True:
             # Process data from GA agent
-            try:
-                while True:
-                    ga_data = ga_data_queue.get_nowait()
-                    ga_counter += 1
-
-
-                    if ga_data['total_steps'] not in processed_steps_ga:
-                        processed_steps_ga.add(ga_data['total_steps'])
-                        logger.log_ga_step(
-                            ga_data['max_fitness'],
-                            ga_data['max_distance'],
-                            ga_data['total_steps']
-                        )
-
-                        if gen_stats['current_ind'] != ga_data['current_individual']:
-                            # Individual changed, collect stats
-                            gen_stats['current_ind']= ga_data['current_individual']
-                            gen_stats['total_fitness'] += ga_data['current_fitness']
-                            gen_stats['total_distance'] += ga_data['current_distance']
-
-                    if gen_stats['current_gen'] !=  ga_data['current_generation']:
-                        # Generation changed, log the stats
-                        gen_stats['current_gen'] = ga_data['current_generation']
-                       
-                        logger.log_ga_generation(
-                            gen_stats['total_fitness'],
-                            gen_stats['total_distance'],
-                            gen_stats['current_ind'] + 1,
-                            ga_data['max_fitness'],
-                            ga_data['max_distance'],
-                            gen_stats['current_gen']
-                        )
-                        reset_generation_stats(gen_stats)
-
-
-            except queue.Empty:
+            if args.no_ga:
                 pass
+            else:
+                try:
+                    while True:
+                    
+                        ga_data = ga_data_queue.get_nowait()
+                        ga_counter += 1
+
+
+                        if ga_data['total_steps'] not in processed_steps_ga:
+                            processed_steps_ga.add(ga_data['total_steps'])
+                            logger.log_ga_step(
+                                ga_data['max_fitness'],
+                                ga_data['max_distance'],
+                                ga_data['total_steps']
+                            )
+
+                            if gen_stats['current_ind'] != ga_data['current_individual']:
+                                # Individual changed, collect stats
+                                gen_stats['current_ind']= ga_data['current_individual']
+                                gen_stats['total_fitness'] += ga_data['current_fitness']
+                                gen_stats['total_distance'] += ga_data['current_distance']
+
+                        if gen_stats['current_gen'] !=  ga_data['current_generation']:
+                            # Generation changed, log the stats
+                            gen_stats['current_gen'] = ga_data['current_generation']
+                        
+                            logger.log_ga_generation(
+                                gen_stats['total_fitness'],
+                                gen_stats['total_distance'],
+                                gen_stats['current_ind'] + 1,
+                                ga_data['max_fitness'],
+                                ga_data['max_distance'],
+                                gen_stats['current_gen']
+                            )
+                            reset_generation_stats(gen_stats)
+
+
+                except queue.Empty:
+                    pass
+         
 
             # Process data from DQN agent
-            try:
-                while True:
-                    dqn_data = dqn_data_queue.get_nowait()
-                    dqn_counter += 1
-    
-                    # Log DQN metrics
-                    if dqn_data['total_steps'] not in processed_steps_dqn:
-                        processed_steps_dqn.add(dqn_data['total_steps'])
-                        logger.log_dqn_step(
-                            dqn_data['max_fitness'],
-                            dqn_data['max_distance'],
-                            dqn_data['total_steps']
-                        )
 
-                    if dqn_data['done'] == True:
-                        logger.log_dqn_episode(
-                            dqn_data['episode_reward'],
-                            dqn_data['episode_num']
-                        )
-
-            except queue.Empty:
+            if args.no_dqn:
                 pass
+            else:
+                try:
+                    while True:
+                        dqn_data = dqn_data_queue.get_nowait()
+                        dqn_counter += 1
+        
+                        # Log DQN metrics
+                        if dqn_data['total_steps'] not in processed_steps_dqn:
+                            processed_steps_dqn.add(dqn_data['total_steps'])
+                            logger.log_dqn_step(
+                                dqn_data['max_fitness'],
+                                dqn_data['max_distance'],
+                                dqn_data['total_steps']
+                            )
+
+                        if dqn_data['done'] == True:
+                            logger.log_dqn_episode(
+                                dqn_data['episode_rewards'],
+                                dqn_data['episode_steps'],
+                                dqn_data['episode_num']
+                            )
+
+                except queue.Empty:
+                    pass
 
             # Sleep briefly to prevent tight loop
             time.sleep(0.1)
