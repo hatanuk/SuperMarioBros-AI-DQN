@@ -42,28 +42,24 @@ import atexit
 from torch.utils.tensorboard import SummaryWriter
 
 class Logger:
-    def __init__(self, ga_writer, dqn_writer, config):
-        self.ga_writer = ga_writer
-        self.dqn_writer = dqn_writer
+    def __init__(self, writer, config):
+        self.writer = writer
         self.config = config
-        self.step_counter = 0
 
     def log_ga_metrics(self, max_fitness, max_distance, generation, total_steps):
         if total_steps % self.config.Statistics.log_interval == 0:
-            self.ga_writer.add_scalar('GA/max_fitness', max_fitness, total_steps)
-            self.ga_writer.add_scalar('GA/max_distance', max_distance, total_steps)
-            self.ga_writer.add_scalar('GA/total_steps', total_steps, total_steps)
+            self.writer.add_scalar('GA/max_fitness', max_fitness, total_steps)
+            self.writer.add_scalar('GA/max_distance', max_distance, total_steps)
+            self.writer.add_scalar('GA/total_steps', total_steps, total_steps)
 
     def log_dqn_metrics(self, max_fitness, max_distance, total_steps):
         if total_steps % self.config.Statistics.log_interval == 0:
-            self.dqn_writer.add_scalar('DQN/max_fitness', max_fitness, total_steps)
-            self.dqn_writer.add_scalar('DQN/max_distance', max_distance, total_steps)
-            self.dqn_writer.add_scalar('DQN/total_steps', total_steps, total_steps)
+            self.writer.add_scalar('DQN/max_fitness', max_fitness, total_steps)
+            self.writer.add_scalar('DQN/max_distance', max_distance, total_steps)
+            self.writer.add_scalar('DQN/total_steps', total_steps, total_steps)
         
         #self.dqn_writer.add_scalar('episode_reward', episode_reward, episode_num)
 
-    def increment_step(self):
-        self.step_counter += 1
 
 
 def run_ga_agent(config, data_queue):
@@ -314,15 +310,13 @@ if __name__ == "__main__":
         config = Config(args.config)
 
     # clear prior tensorboard logs
-    clear_tensorboard_log_dir(config.Statistics.ga_tensorboard)
-    clear_tensorboard_log_dir(config.Statistics.dqn_tensorboard)
+    clear_tensorboard_log_dir(config.Statistics.tensorboard_dir)
     clear_tensorboard_log_dir('./monitor_logs/DQNtbFromBaseline')
 
     # Initialize Logger
-    ga_writer = SummaryWriter(log_dir=config.Statistics.ga_tensorboard)
-    dqn_writer = SummaryWriter(log_dir=config.Statistics.dqn_tensorboard)
+    writer = SummaryWriter(log_dir=config.Statistics.tensorboard_dir)
 
-    logger = Logger(ga_writer, dqn_writer, config)
+    logger = Logger(writer, config)
 
     # Queues for data exchange
     ga_data_queue = multiprocessing.Queue()
@@ -343,8 +337,7 @@ if __name__ == "__main__":
         dqn_process.join()
         ga_data_queue.close()
         dqn_data_queue.close()
-        logger.ga_writer.close()
-        logger.dqn_writer.close()
+        logger.writer.close()
 
     atexit.register(cleanup)
 

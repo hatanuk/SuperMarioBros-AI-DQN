@@ -23,8 +23,7 @@ _params = {
         'monitor_dir': str,
         'dqn_save_dir': str,
         'dqn_model_name': str,
-        'ga_tensorboard': str,
-        'dqn_tensorboard': str,
+        'tensorboard_dir': str,
         'log_interval': int
     },
 
