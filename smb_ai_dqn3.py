@@ -356,21 +356,19 @@ if __name__ == "__main__":
         processed_steps_ga = set()
         processed_steps_dqn = set()
 
-        # Generation stats
-        current_gen = 0
-        current_ind = 0
-        total_fitness = 0
-        total_distance = 0
-        max_fitness = 0
-        max_distance = 0
+        # stats specific to a generation
+        gen_stats = {
+            "current_gen": 0,
+            "current_ind": 0,
+            "total_fitness": 0,
+            "total_distance": 0,
+        }
 
-        def reset_generation_stats():
-            nonlocal current_ind, total_fitness, total_distance, max_fitness, max_distance
-            current_ind = 0
-            total_fitness = 0
-            total_distance = 0
-            max_fitness = 0
-            max_distance = 0
+        def reset_generation_stats(stats):
+            stats["current_ind"] = 0
+            stats["total_fitness"] = 0
+            stats["total_distance"] = 0
+
 
 
         while True:
@@ -391,25 +389,25 @@ if __name__ == "__main__":
                             ga_data['total_steps']
                         )
 
-                        if current_ind != ga_data['current_individual']:
+                        if gen_stats['current_ind'] != ga_data['current_individual']:
                             # Individual changed, collect stats
-                            current_ind = ga_data['current_individual']
-                            total_fitness += ga_data['current_fitness']
-                            total_distance += ga_data['current_distance']
+                            gen_stats['current_ind']= ga_data['current_individual']
+                            gen_stats['total_fitness'] += ga_data['current_fitness']
+                            gen_stats['total_distance'] += ga_data['current_distance']
 
-                    if current_gen !=  ga_data['current_generation']:
+                    if gen_stats['current_gen'] !=  ga_data['current_generation']:
                         # Generation changed, log the stats
-                        current_gen = ga_data['current_generation']
+                        gen_stats['current_gen'] = ga_data['current_generation']
                        
                         logger.log_ga_generation(
-                            total_fitness,
-                            total_distance,
-                            current_ind + 1,
-                            max_fitness,
-                            max_distance,
-                            current_gen
+                            gen_stats['total_fitness'],
+                            gen_stats['total_distance'],
+                            gen_stats['current_ind'] + 1,
+                            ga_data['max_fitness'],
+                            ga_data['max_distance'],
+                            gen_stats['current_gen']
                         )
-                        reset_generation_stats()
+                        reset_generation_stats(gen_stats)
 
 
             except queue.Empty:
