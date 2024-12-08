@@ -8,7 +8,7 @@ def performance_func(distance, frames, game_score, did_win):
     - frames * (1/60)
     + int(did_win) * 1_000)
 
-    return max(score, 0)
+    return max(score, 0.0001)
 
 
 
