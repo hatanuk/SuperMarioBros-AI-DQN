@@ -223,7 +223,7 @@ class DQNCallback(BaseCallback):
 
     def _on_training_end(self) -> None:
         self.is_training = False
-        self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.DQN_model_name}')
+        self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}')
 
 class DQNMario(Mario):
     def __init__(self, 
