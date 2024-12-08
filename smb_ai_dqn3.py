@@ -46,19 +46,28 @@ class Logger:
         self.writer = writer
         self.config = config
 
-    def log_ga_metrics(self, max_fitness, max_distance, generation, total_steps):
+    def log_ga_step(self, max_fitness, max_distance, total_steps):
         if total_steps % self.config.Statistics.log_interval == 0:
             self.writer.add_scalar('GA/max_fitness', max_fitness, total_steps)
             self.writer.add_scalar('GA/max_distance', max_distance, total_steps)
             self.writer.add_scalar('GA/total_steps', total_steps, total_steps)
 
-    def log_dqn_metrics(self, max_fitness, max_distance, total_steps):
+    def log_dqn_step(self, max_fitness, max_distance, total_steps):
         if total_steps % self.config.Statistics.log_interval == 0:
             self.writer.add_scalar('DQN/max_fitness', max_fitness, total_steps)
             self.writer.add_scalar('DQN/max_distance', max_distance, total_steps)
             self.writer.add_scalar('DQN/total_steps', total_steps, total_steps)
         
         #self.dqn_writer.add_scalar('episode_reward', episode_reward, episode_num)
+
+    def log_ga_generation(self, total_fitness, total_distance, num_individuals, max_fitness, max_distance, generation):
+        self.writer.add_scalar('GA/max_fitness/generation', max_fitness, generation)
+        self.writer.add_scalar('GA/avg_fitness/generation', round(total_fitness/num_individuals, 2), generation)
+        self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
+        self.writer.add_scalar('GA/avg_distance/generation', round(total_distance/num_individuals, 2), generation)
+
+    def log_dqn_episode(self, episode_reward, episode_num):
+        self.writer.add_scalar('DQN/reward/episode', episode_reward, episode_num)
 
 
 

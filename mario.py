@@ -8,7 +8,7 @@ from genetic_algorithm.individual import Individual
 from genetic_algorithm.population import Population
 from neural_network import FeedForwardNetwork, linear, sigmoid, tanh, relu, leaky_relu, ActivationFunction, get_activation_by_name
 from utils import SMB, StaticTileType, EnemyType
-from config import Config, fitness_func
+from config import Config, performance_func
 
 class Mario(Individual):
     def __init__(self,
@@ -26,7 +26,7 @@ class Mario(Individual):
         
 
         self.config = config
-        self.fitness_func = fitness_func
+        self.fitness_func = performance_func
 
         self.lifespan = lifespan
         self.name = name
@@ -190,12 +190,10 @@ class Mario(Individual):
 
         # Calculate the output
         output = self.network.feed_forward(self.inputs_as_array)
-        threshold = np.where(output > 0.5)[0]
+        action_index = np.argmax(output)
         self.buttons_to_press.fill(0)  # Clear
 
-        # Set buttons
-        for b in threshold:
-            self.buttons_to_press[ouput_to_buttons_map[b]] = 1
+        self.buttons_to_press[ouput_to_buttons_map[action_index]] = 1
 
         return True
     

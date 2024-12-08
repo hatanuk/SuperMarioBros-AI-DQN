@@ -3,8 +3,12 @@ import os
 from typing import Any, Dict
 
 # Temporarily hardcoded
-def fitness_func(distance, frames, game_score, did_win):
-    return max(distance ** 1.8 - frames ** 1.5 + min(max(distance - 50, 0), 1) * 2500 + int(did_win) * 1e6, 0.00001)
+def performance_func(distance, frames, game_score, did_win):
+    score = (distance ** 1.1
+    - frames * (1/60)
+    + int(did_win) * 1_000)
+
+    return max(score, 0)
 
 
 

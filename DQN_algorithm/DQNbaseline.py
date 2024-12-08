@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 from random import sample
 from collections import deque, OrderedDict
-from config import Config, fitness_func
+from config import Config, performance_func
 from mario import Mario
 from neural_network import FeedForwardNetwork, get_activation_by_name, sigmoid, tanh, relu, leaky_relu, linear, ActivationFunction
 from utils import SMB
@@ -192,6 +192,7 @@ class DQNCallback(BaseCallback):
 
         self.max_distance = 0
         self.max_fitness = 0
+        self.episode = 0
 
 
     def _on_training_start(self) -> None:
@@ -200,6 +201,11 @@ class DQNCallback(BaseCallback):
 
 
     def _on_step(self) -> bool:
+
+        if self.locals['dones'] == True:
+            self.episode += 1
+            print("EPISODE: ", self.episode)
+            
 
 
         if self.mario.farthest_x > self.max_distance:
@@ -228,7 +234,7 @@ class DQNMario(Mario):
                  name: Optional[str] = "DQNAgent",
                  debug: Optional[bool] = False):
         self.config = config
-        self.reward_func = fitness_func
+        self.reward_func = performance_func
         nn_params = self.config.NeuralNetworkDQN
         
         Mario.__init__(self, config, None, nn_params.hidden_layer_architecture, nn_params.hidden_node_activation,
