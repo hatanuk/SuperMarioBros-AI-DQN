@@ -297,6 +297,12 @@ def get_stats(mario):
     game_score = mario.game_score if mario.game_score is not None else 0
     return [frames, distance, game_score]
 
+def clear_tensorboard_log_dir(log_dir):
+    if os.path.exists(log_dir):
+        shutil.rmtree(log_dir) 
+        print(f"Cleared TensorBoard log directory: {log_dir}")
+    os.makedirs(log_dir, exist_ok=True)
+
 if __name__ == "__main__":
     multiprocessing.set_start_method("spawn", force=True)
     sys.stdout = sys.stderr
@@ -392,8 +398,3 @@ if __name__ == "__main__":
         cleanup()
 
 
-def clear_tensorboard_log_dir(log_dir):
-    if os.path.exists(log_dir):
-        shutil.rmtree(log_dir) 
-        print(f"Cleared TensorBoard log directory: {log_dir}")
-    os.makedirs(log_dir, exist_ok=True)
