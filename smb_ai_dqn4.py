@@ -144,7 +144,7 @@ def run_ga_agent(config, data_queue):
     current_generation = 0
     _current_individual = 0
     total_steps_GA = 0
-    
+
     # Determine the size of the next generation
     if config.Selection.selection_type == 'plus':
         _next_gen_size = config.Selection.num_parents + config.Selection.num_offspring
@@ -262,7 +262,7 @@ def run_dqn_agent(config, data_queue, dqn_model):
         # Add an inference loop here later
     else:
         callback = DQNCallback(data_queue, mario_DQN, config, verbose=1)
-        mario_DQN.model.learn(total_timesteps=int(1e6), callback=callback, log_interval=1)
+        mario_DQN.model.learn(total_timesteps=int(1e6), callback=callback, log_interval=int(1e6))
 
 
 def _initialize_population(config):
