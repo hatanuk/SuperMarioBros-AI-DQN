@@ -397,7 +397,7 @@ if __name__ == "__main__":
                             total_fitness += ga_data['current_fitness']
                             total_distance += ga_data['current_distance']
 
-                    if current_gen !=  ga_data['current_generation']
+                    if current_gen !=  ga_data['current_generation']:
                         # Generation changed, log the stats
                         current_gen = ga_data['current_generation']
                        
@@ -436,7 +436,7 @@ if __name__ == "__main__":
                             dqn_data['episode_reward'],
                             dqn_data['episode_num']
                         )
-                        
+
             except queue.Empty:
                 pass
 
