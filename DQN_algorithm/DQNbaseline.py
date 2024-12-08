@@ -183,7 +183,7 @@ class DQNCallback(BaseCallback):
 
     :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
     """
-    def __init__(self, data_queue, mario, config, verbose=0):
+    def __init__(self, data_queue, mario, config, verbose=1):
         super(DQNCallback, self).__init__(verbose)
         self.data_queue = data_queue
         self.mario = mario
