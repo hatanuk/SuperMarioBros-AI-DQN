@@ -228,7 +228,6 @@ def run_ga_agent(config, data_queue):
                 if selection == 'tournament':
                     p1, p2 = tournament_selection(population, 2, config.Crossover.tournament_size)
                 elif selection == 'roulette':
-                    print(population)
                     p1, p2 = roulette_wheel_selection(population, 2)
                 else:
                     raise Exception(f'Unknown crossover selection: {selection}')

@@ -13,7 +13,6 @@ def elitism_selection(population: Population, num_individuals: int) -> List[Indi
 def roulette_wheel_selection(population: Population, num_individuals: int) -> List[Individual]:
     selection = []
     wheel = sum(individual.fitness for individual in population.individuals)
-    print([individual.fitness for individual in population.individuals])
     for _ in range(num_individuals):
         pick = random.uniform(0, wheel)
         current = 0
