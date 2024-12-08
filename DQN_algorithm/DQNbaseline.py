@@ -201,10 +201,6 @@ class DQNCallback(BaseCallback):
 
     def _on_step(self) -> bool:
 
-        if self.num_timesteps % 100 == 0:
-            print(self.locals.get('rewards')[-100:])
-            print(self.locals.get('actions')[-100:])
-
 
         if self.mario.farthest_x > self.max_distance:
             self.max_distance = self.mario.farthest_x
@@ -220,7 +216,7 @@ class DQNCallback(BaseCallback):
         self.data_queue.put(data)
         return True
 
-
+ 
     def _on_training_end(self) -> None:
         self.is_training = False
         self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}')
