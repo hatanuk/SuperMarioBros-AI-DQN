@@ -380,23 +380,23 @@ if __name__ == "__main__":
     logger = Logger(writer, config)
 
     # Start processes
-    if !args.no_ga:
+    if not args.no_ga:
         ga_data_queue = multiprocessing.Queue()
         ga_process = multiprocessing.Process(target=run_ga_agent, args=(config, ga_data_queue))
         ga_process.start()
 
-    if !args.no_dqn:
+    if not args.no_dqn:
         dqn_data_queue = multiprocessing.Queue()
         dqn_process = multiprocessing.Process(target=run_dqn_agent, args=(config, dqn_data_queue, args.load_dqn_model))
         dqn_process.start()
 
     # Function to clean up processes
     def cleanup():
-        if !args.no_ga:
+        if not args.no_ga:
             ga_process.terminate()
             ga_process.join()
             ga_data_queue.close()
-        if !args.no_dqn:
+        if not args.no_dqn:
             dqn_process.terminate()
             dqn_process.join()
             dqn_data_queue.close()
