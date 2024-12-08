@@ -166,6 +166,10 @@ def run_ga_agent(config, data_queue):
             total_fitness = 0
             total_distance = 0
             for i, res in enumerate(results):
+
+                population.individuals[i]._fitness = res['current_fitness']
+                population.individuals[i].farthest_x = res['current_distance']
+                
                 total_fitness += res['current_fitness']
                 total_distance += res['current_distance']
 
