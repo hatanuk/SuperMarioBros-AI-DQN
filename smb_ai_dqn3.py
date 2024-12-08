@@ -213,7 +213,7 @@ def run_dqn_agent(config, data_queue, dqn_model):
         # Add an inference loop here later
     else:
         callback = DQNCallback(data_queue, mario_DQN, config, verbose=1)
-        mario_DQN.model.learn(total_timesteps=config.DQN.training_steps, callback=callback)
+        mario_DQN.model.learn(total_timesteps=config.DQN.training_steps, callback=callback, log_interval=10)
 
 def _initialize_population(config):
     individuals: List[Individual] = []
