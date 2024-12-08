@@ -41,6 +41,10 @@ import atexit
 
 from torch.utils.tensorboard import SummaryWriter
 
+import logging
+
+logging.basicConfig(level=logging.CRITICAL) 
+
 class Logger:
     def __init__(self, writer, config):
         self.writer = writer
@@ -110,6 +114,8 @@ def run_ga_agent(config, data_queue):
     env.reset()
 
     while current_generation <= config.GA.total_generations:
+        print("GENERATION: ", current_generation)
+        
         # Update agent
         ram = env.get_ram()
         tiles = SMB.get_tiles(ram)
@@ -387,8 +393,6 @@ if __name__ == "__main__":
                     ga_data = ga_data_queue.get_nowait()
                     ga_counter += 1
 
-                    if ga_counter % 1000 == 0:
-                        print("updating GA: ", ga_data)
 
                     if ga_data['total_steps'] not in processed_steps_ga:
                         processed_steps_ga.add(ga_data['total_steps'])
@@ -427,8 +431,7 @@ if __name__ == "__main__":
                 while True:
                     dqn_data = dqn_data_queue.get_nowait()
                     dqn_counter += 1
-                    if dqn_counter % 1000 == 0:
-                        print("updating DQN: ", dqn_data)
+    
                     # Log DQN metrics
                     if dqn_data['total_steps'] not in processed_steps_dqn:
                         processed_steps_dqn.add(dqn_data['total_steps'])
