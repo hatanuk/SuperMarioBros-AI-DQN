@@ -364,7 +364,7 @@ if __name__ == "__main__":
                         print("updating GA: ", ga_data)
                     # prevents redundancy
                     if ga_data['total_steps'] not in processed_steps_ga:
-                        processed_steps_ga.add(data['total_steps'])
+                        processed_steps_ga.add(ga_data['total_steps'])
                         logger.log_ga_metrics(
                             ga_data['max_fitness'],
                             ga_data['max_distance'],
