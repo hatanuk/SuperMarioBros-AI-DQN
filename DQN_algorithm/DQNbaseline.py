@@ -137,7 +137,6 @@ class InputSpaceReduction(gym.Env):
 
         if done:
             self.episode_steps = 0
-            print(reward)
 
 
         return self._observation(obs), reward, done, info  
