@@ -309,6 +309,7 @@ if __name__ == "__main__":
     # clear prior tensorboard logs
     clear_tensorboard_log_dir(config.Statistics.ga_tensorboard)
     clear_tensorboard_log_dir(config.Statistics.dqn_tensorboard)
+    clear_tensorboard_log_dir('./monitor_logs/DQNtbFromBaseline')
 
     # Initialize Logger
     ga_writer = SummaryWriter(log_dir=config.Statistics.ga_tensorboard)
