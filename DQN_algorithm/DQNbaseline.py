@@ -197,6 +197,7 @@ class DQNCallback(BaseCallback):
         self.episode = 0
         self.episode_rewards = 0
         self.episode_steps = 0
+        self.recent_distance = 0
 
 
         self.max_episodes = self.config.DQN.total_episodes
@@ -237,6 +238,7 @@ class DQNCallback(BaseCallback):
             self.max_fitness = self.mario.fitness
 
 
+
         data = {
             'max_fitness':  self.max_fitness,
             'max_distance': self.max_distance,
@@ -244,9 +246,11 @@ class DQNCallback(BaseCallback):
             'episode_num': self.episode,
             'episode_rewards': collected_rewards,
             'episode_steps': collected_steps,
-            'episode_distance': self.mario.farthest_x,
+            'episode_distance': self.recent_distance,
             'done': done,
         }
+
+        self.recent_distance = self.mario.farthest_x
 
         self.data_queue.put(data)
         return True
