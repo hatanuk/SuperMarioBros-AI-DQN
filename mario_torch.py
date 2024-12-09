@@ -246,7 +246,7 @@ class MarioTorch(Individual):
         return True
 
 
-def save_mario(population_folder: str, individual_name: str, mario: Mario) -> None:
+def save_mario(population_folder: str, individual_name: str, mario: MarioTorch) -> None:
     # Make population folder if it doesnt exist
     if not os.path.exists(population_folder):
         os.makedirs(population_folder)
@@ -264,7 +264,7 @@ def save_mario(population_folder: str, individual_name: str, mario: Mario) -> No
     for param_name, param_val in chromosome.items():
         np.save(os.path.join(individual_dir, param_name), param_val)
     
-def load_mario(population_folder: str, individual_name: str, config: Optional[Config] = None) -> Mario:
+def load_mario(population_folder: str, individual_name: str, config: Optional[Config] = None) -> MarioTorch:
     if not os.path.exists(os.path.join(population_folder, individual_name)):
         raise Exception(f'{individual_name} not found inside {population_folder}')
 
