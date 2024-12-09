@@ -4,7 +4,7 @@ import numpy as np
 from random import sample
 from collections import deque, OrderedDict
 from config import Config, performance_func
-from mario import Mario
+from mario_torch import MarioTorch as Mario
 from neural_network import FeedForwardNetwork, get_activation_by_name, sigmoid, tanh, relu, leaky_relu, linear, ActivationFunction
 from utils import SMB
 from mario import get_num_inputs

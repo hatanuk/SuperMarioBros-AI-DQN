@@ -20,7 +20,8 @@ import os
 from utils import SMB, EnemyType, StaticTileType, ColorMap, DynamicTileType
 from config import Config
 from nn_viz import NeuralNetworkViz
-from mario import Mario, save_mario, save_stats, get_num_trainable_parameters, get_num_inputs, load_mario
+from mario_torch import MarioTorch as Mario, 
+from mario_torch import save_mario, save_stats, get_num_trainable_parameters, get_num_inputs, load_mario
 
 from genetic_algorithm.individual import Individual
 from genetic_algorithm.population import Population
