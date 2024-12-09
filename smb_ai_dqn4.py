@@ -487,6 +487,7 @@ if __name__ == "__main__":
                             logger.log_dqn_episode(
                                 dqn_data['episode_rewards'],
                                 dqn_data['episode_steps'],
+                                dqn_data['episode_distance'],
                                 dqn_data['episode_num'],
                                 dqn_data['max_fitness'],
                                 dqn_data['max_distance']
