@@ -298,7 +298,8 @@ class DQNMario(Mario):
                     target_update_interval= self.sync_network_rate,
                     verbose=1,
                     tensorboard_log= None,
-                    policy_kwargs = policy_kwargs
+                    policy_kwargs = policy_kwargs,
+                    device="cpu"
                     )
         
         

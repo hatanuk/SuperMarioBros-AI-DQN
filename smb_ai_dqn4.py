@@ -76,6 +76,8 @@ class Logger:
         self.writer.add_scalar('DQN/avg_reward/episode', round(episode_rewards / episode_steps, 2), episode_num)
         self.writer.add_scalar('DQN/max_fitness/episode', max_fitness, episode_num)
         self.writer.add_scalar('DQN/max_distance/episode', max_distance, episode_num)
+        self.writer.add_scalar('DQN/distance/episode', episode_distance, episode_num)
+
 
 
 def evaluate_individual_in_separate_process(args):
@@ -364,6 +366,8 @@ def clear_tensorboard_log_dir(log_dir):
 if __name__ == "__main__":
     multiprocessing.set_start_method("spawn", force=True)
     sys.stdout = sys.stderr
+
+    print("cores at disposal: ", multiprocessing.cpu_count())
 
     args = parse_args()
     config = None
