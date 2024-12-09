@@ -92,7 +92,7 @@ class MarioTorch(Individual):
         self.network_architecture.append(6)  # Outputs: U, D, L, R, A, B
 
         # Create a PyTorch model
-        self.model = PyTorchFeedForwardModel(
+        self.network = PyTorchFeedForwardModel(
             layer_sizes=self.network_architecture,
             hidden_activation=self.hidden_activation,
             output_activation=self.output_activation
@@ -133,7 +133,7 @@ class MarioTorch(Individual):
         # Extract PyTorch parameters into a dictionary of NumPy arrays
         chromosome = {}
         idx = 0
-        for i, layer in enumerate(self.model.layers):
+        for i, layer in enumerate(self.network.layers):
             w_name = f"W{i+1}"
             b_name = f"b{i+1}"
             weights = layer.weight.detach().numpy()
@@ -145,7 +145,7 @@ class MarioTorch(Individual):
     def _load_chromosome(self, chromosome: Dict[str, np.ndarray]):
         # Load the chromosome (weights & biases) into the PyTorch model
         with torch.no_grad():
-            for i, layer in enumerate(self.model.layers):
+            for i, layer in enumerate(self.network.layers):
                 w_name = f"W{i+1}"
                 b_name = f"b{i+1}"
                 layer.weight.data = torch.from_numpy(chromosome[w_name]).float()

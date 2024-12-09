@@ -295,7 +295,7 @@ def _initialize_population(config):
 def individual_to_agent(population, config):
     agents = []
     for individual in population:
-        chromosome = individual.network.params
+        chromosome = individual.chromosome
         hidden_layer_architecture = individual.hidden_layer_architecture
         hidden_activation = individual.hidden_activation
         output_activation = individual.output_activation
@@ -308,28 +308,29 @@ def individual_to_agent(population, config):
     return agents
 
 def _crossover_and_mutate(p1, p2, config, current_generation):
-    L = len(p1.network.layer_nodes)
+    L = len(p1.model.layers)  # number of layers
     c1_params = {}
     c2_params = {}
 
-    # Perform crossover and mutation on each chromosome between parents
-    for l in range(1, L):
-        p1_W_l = p1.network.params['W' + str(l)]
-        p2_W_l = p2.network.params['W' + str(l)]
-        p1_b_l = p1.network.params['b' + str(l)]
-        p2_b_l = p2.network.params['b' + str(l)]
+    # Extract parameters from PyTorch layers into NumPy arrays
+    for l in range(L):
+        # Parents
+        p1_W_l = p1.model.layers[l].weight.data.cpu().numpy()
+        p2_W_l = p2.model.layers[l].weight.data.cpu().numpy()
+        p1_b_l = p1.model.layers[l].bias.data.cpu().numpy()
+        p2_b_l = p2.model.layers[l].bias.data.cpu().numpy()
 
         # Crossover
         eta = config.Crossover.sbx_eta
         c1_W_l, c2_W_l = SBX(p1_W_l, p2_W_l, eta)
         c1_b_l, c2_b_l = SBX(p1_b_l, p2_b_l, eta)
 
-        # Mutation
+        # Mutation rate
         mutation_rate = config.Mutation.mutation_rate
-        scale = config.Mutation.gaussian_mutation_scale
-
         if config.Mutation.mutation_rate_type == 'dynamic':
             mutation_rate = mutation_rate / math.sqrt(current_generation + 1)
+
+        scale = config.Mutation.gaussian_mutation_scale
 
         # Mutate weights and biases
         gaussian_mutation(c1_W_l, mutation_rate, scale=scale)
@@ -337,17 +338,17 @@ def _crossover_and_mutate(p1, p2, config, current_generation):
         gaussian_mutation(c1_b_l, mutation_rate, scale=scale)
         gaussian_mutation(c2_b_l, mutation_rate, scale=scale)
 
-        # Assign children from crossover/mutation
-        c1_params['W' + str(l)] = c1_W_l
-        c2_params['W' + str(l)] = c2_W_l
-        c1_params['b' + str(l)] = c1_b_l
-        c2_params['b' + str(l)] = c2_b_l
-
         # Clip to [-1, 1]
-        np.clip(c1_params['W' + str(l)], -1, 1, out=c1_params['W' + str(l)])
-        np.clip(c2_params['W' + str(l)], -1, 1, out=c2_params['W' + str(l)])
-        np.clip(c1_params['b' + str(l)], -1, 1, out=c1_params['b' + str(l)])
-        np.clip(c2_params['b' + str(l)], -1, 1, out=c2_params['b' + str(l)])
+        np.clip(c1_W_l, -1, 1, out=c1_W_l)
+        np.clip(c2_W_l, -1, 1, out=c2_W_l)
+        np.clip(c1_b_l, -1, 1, out=c1_b_l)
+        np.clip(c2_b_l, -1, 1, out=c2_b_l)
+
+        # Store parameters for child 1 and child 2
+        c1_params['W' + str(l+1)] = c1_W_l
+        c2_params['W' + str(l+1)] = c2_W_l
+        c1_params['b' + str(l+1)] = c1_b_l
+        c2_params['b' + str(l+1)] = c2_b_l
 
     return c1_params, c2_params
 
