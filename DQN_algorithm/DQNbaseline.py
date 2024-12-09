@@ -244,6 +244,7 @@ class DQNCallback(BaseCallback):
             'episode_num': self.episode,
             'episode_rewards': collected_rewards,
             'episode_steps': collected_steps,
+            'episode_distance': self.mario.farthest_x,
             'done': done,
         }
 
