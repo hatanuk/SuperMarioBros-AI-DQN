@@ -98,7 +98,7 @@ class MarioTorch(Individual):
         )
 
         
-        print(self.model)
+
 
         # If chromosome is provided, load weights
         if chromosome:

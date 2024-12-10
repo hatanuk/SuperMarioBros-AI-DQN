@@ -302,7 +302,6 @@ class DQNMario(Mario):
                     policy_kwargs = policy_kwargs,
                     device=device
                     )
-        print(f"Network Architecture: {self.model.policy}")
 
         
         
