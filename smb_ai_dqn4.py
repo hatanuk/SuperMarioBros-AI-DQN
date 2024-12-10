@@ -432,7 +432,7 @@ if __name__ == "__main__":
             "max_fitness": 0,
             "max_distance": 0,
             "current_ind": 0,
-            "action_counts": [0] * 5
+            "action_counts": [0] * 6
 
         }
 
@@ -442,7 +442,7 @@ if __name__ == "__main__":
             stats["max_fitness"] = 0
             stats["max_distance"] = 0
             stats["current_ind"] = 0
-            stats["action_counts"] = [0] * 5
+            stats["action_counts"] = [0] * 6
 
 
         while True:

@@ -84,7 +84,7 @@ class InputSpaceReduction(gym.Env):
         self._height = config.NeuralNetworkDQN.input_dims[2]
         self._encode_row = config.NeuralNetworkDQN.encode_row
 
-        self.action_space = spaces.Discrete(5)
+        self.action_space = spaces.Discrete(6)
 
         self.output_to_keys_map = {
             0: 4,  # U
@@ -211,7 +211,7 @@ class DQNCallback(BaseCallback):
 
         done = True if self.locals['dones'].any() else False
 
-        actions = self.locals['actions']:
+        actions = self.locals['actions']
         for action in actions:
             self.action_counts[action] += 1
         
@@ -235,11 +235,13 @@ class DQNCallback(BaseCallback):
                 'max_fitness':  self.max_fitness,
                 'max_distance': self.max_distance,
                 'episode_num': self.episode,
-                'episode_rewards': collected_rewards,
-                'episode_steps': collected_steps,
-                'episode_distance': collected_distance,
+                'episode_rewards': self.episode_rewards,
+                'episode_steps': self.episode_steps,
+                'episode_distance': self.recent_distance,
                 'done': done,
             }
+
+            self.data_queue.put(data)
 
             if self.episode >= self.max_episodes:
                 print(f"Stopping training DQN after {self.episode} episodes.")
@@ -247,7 +249,6 @@ class DQNCallback(BaseCallback):
 
         self.recent_distance = self.mario.farthest_x
 
-        self.data_queue.put(data)
         return True
 
  
