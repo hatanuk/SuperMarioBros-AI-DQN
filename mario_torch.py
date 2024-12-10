@@ -43,6 +43,8 @@ class SequentialModel(nn.Module):
                 self.layers.append(get_torch_activation(output_activation)())
         
         self.model = nn.Sequential(*self.layers)
+
+        self.layers = [layer for layer in self.layers if hasattr(layer, 'weight')]
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
