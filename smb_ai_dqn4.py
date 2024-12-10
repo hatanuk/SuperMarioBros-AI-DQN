@@ -112,10 +112,8 @@ def evaluate_individual_in_separate_process(args):
         5: 0   # B
     }
 
-    print(f"[DEBUG] Starting episode for individual with initial fitness={individual.fitness}")
-
     # attempt to offload model to GPU
-    #individual.to_cuda()
+    individual.to_cuda()
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
     env = InputSpaceReduction(env, config)
