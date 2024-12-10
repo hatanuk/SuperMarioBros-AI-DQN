@@ -97,8 +97,6 @@ class MarioTorch(Individual):
             output_activation=self.output_activation
         )
 
-        if torch.cuda.is_available():
-            self.model.to('cuda')
         
         print(self.model)
 
@@ -154,12 +152,15 @@ class MarioTorch(Individual):
                 layer.weight.data = torch.from_numpy(chromosome[w_name]).float()
                 layer.bias.data = torch.from_numpy(chromosome[b_name]).float()
 
-                if torch.cuda.is_available():
-                    layer.weight.data = layer.weight.data.to('cuda')
-                    layer.bias.data = layer.bias.data.to('cuda')
+                #if torch.cuda.is_available():
+                    #layer.weight.data = layer.weight.data.to('cuda')
+                    #layer.bias.data = layer.bias.data.to('cuda')
 
     
-    
+    def to_cuda(self):
+        if torch.cuda.is_available():
+            self.model.to('cuda')
+
     def calculate_fitness(self):
         frames = self._frames
         distance = self.x_dist
