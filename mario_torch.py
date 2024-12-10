@@ -36,13 +36,13 @@ class SequentialModel(nn.Module):
         
         self.layers = []
         for i in range(len(layer_sizes) - 1):
-            layers.append(nn.Linear(layer_sizes[i], layer_sizes[i + 1]))
+            self.layers.append(nn.Linear(layer_sizes[i], layer_sizes[i + 1]))
             if i < len(layer_sizes) - 2: 
-                layers.append(get_torch_activation(hidden_activation)())
+                self.layers.append(get_torch_activation(hidden_activation)())
             else: 
-                layers.append(get_torch_activation(output_activation)())
+                self.layers.append(get_torch_activation(output_activation)())
         
-        self.model = nn.Sequential(*layers)
+        self.model = nn.Sequential(*self.layers)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
