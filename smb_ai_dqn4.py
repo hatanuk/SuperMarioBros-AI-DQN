@@ -503,6 +503,7 @@ if __name__ == "__main__":
                                 episode_num=dqn_data['episode_num'] + 1,
                                 max_fitness=dqn_data['max_fitness'],
                                 max_distance=dqn_data['max_distance']
+                                action_counts=dqn_data['action_counts']
                             )  
 
 
