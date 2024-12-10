@@ -30,24 +30,23 @@ def get_torch_activation(activation_name: str):
     else:
         return nn.ReLU
 
-class PyTorchFeedForwardModel(nn.Module):
+class SequentialModel(nn.Module):
     def __init__(self, layer_sizes: List[int], hidden_activation: str, output_activation: str):
-        super(PyTorchFeedForwardModel, self).__init__()
-        self.layers = nn.ModuleList()
-
-        for i in range(len(layer_sizes) - 1):
-            in_dim = layer_sizes[i]
-            out_dim = layer_sizes[i + 1]
-            self.layers.append(nn.Linear(in_dim, out_dim))
+        super(SequentialModel, self).__init__()
         
-        self.hidden_activation_fn = get_torch_activation(hidden_activation)()
-        self.output_activation_fn = get_torch_activation(output_activation)()
-
+        layers = []
+        for i in range(len(layer_sizes) - 1):
+            layers.append(nn.Linear(layer_sizes[i], layer_sizes[i + 1]))
+            if i < len(layer_sizes) - 2: 
+                layers.append(get_torch_activation(hidden_activation)())
+            else: 
+                layers.append(get_torch_activation(output_activation)())
+        
+        self.model = nn.Sequential(*layers)
+        
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        for i in range(len(self.layers) - 1):
-            x = self.hidden_activation_fn(self.layers[i](x))
-        x = self.output_activation_fn(self.layers[-1](x))
-        return x
+        return self.model(x)
+
 
 # Reimplementation of mario using PyTorch instead of FeedForwardNetwork
 class MarioTorch(Individual):
@@ -92,11 +91,16 @@ class MarioTorch(Individual):
         self.network_architecture.append(6)  # Outputs: U, D, L, R, A, B
 
         # Create a PyTorch model
-        self.model = PyTorchFeedForwardModel(
+        self.model = SequentialModel(
             layer_sizes=self.network_architecture,
             hidden_activation=self.hidden_activation,
             output_activation=self.output_activation
         )
+
+        if torch.cuda.is_available():
+            self.model.to('cuda')
+        
+        print(self.model)
 
         # If chromosome is provided, load weights
         if chromosome:
@@ -110,7 +114,6 @@ class MarioTorch(Individual):
         self.additional_timesteps = 0
         self.max_additional_timesteps = int(60 * 2.5)
         self._printed = False
-        self.buttons_to_press = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0], np.int8)
         self.farthest_x = 0
 
     @property
@@ -136,8 +139,8 @@ class MarioTorch(Individual):
         for i, layer in enumerate(self.model.layers):
             w_name = f"W{i+1}"
             b_name = f"b{i+1}"
-            weights = layer.weight.detach().numpy()
-            bias = layer.bias.detach().numpy()
+            weights = layer.weight.detach().cpu().numpy()
+            bias = layer.bias.detach().cpu().numpy()
             chromosome[w_name] = weights
             chromosome[b_name] = bias
         return chromosome
@@ -151,6 +154,12 @@ class MarioTorch(Individual):
                 layer.weight.data = torch.from_numpy(chromosome[w_name]).float()
                 layer.bias.data = torch.from_numpy(chromosome[b_name]).float()
 
+                if torch.cuda.is_available():
+                    layer.weight.data = layer.weight.data.to('cuda')
+                    layer.bias.data = layer.bias.data.to('cuda')
+
+    
+    
     def calculate_fitness(self):
         frames = self._frames
         distance = self.x_dist
@@ -165,31 +174,18 @@ class MarioTorch(Individual):
         )
         return self._fitness
 
-    def set_input_as_array(self, ram, tiles) -> None:
-        mario_row, mario_col = SMB.get_mario_row_col(ram)
-        arr = []
-        
-        for row in range(self.start_row, self.start_row + self.viz_height):
-            for col in range(mario_col, mario_col + self.viz_width):
-                try:
-                    t = tiles[(row, col)]
-                    if isinstance(t, StaticTileType):
-                        arr.append(0 if t.value == 0 else 1)
-                    elif isinstance(t, EnemyType):
-                        arr.append(-1)
-                    else:
-                        raise Exception("Unexpected tile type.")
-                except:
-                    arr.append(0)  # Empty
-                
-        self.inputs_as_array[:self.viz_height*self.viz_width, :] = np.array(arr).reshape((-1, 1))
+    def reset():
+        # for DQN functionality
+        pass
 
-        if self.encode_row:
-            row = mario_row - self.start_row
-            one_hot = np.zeros((self.viz_height, 1))
-            if 0 <= row < self.viz_height:
-                one_hot[row, 0] = 1
-            self.inputs_as_array[self.viz_height*self.viz_width:, :] = one_hot.reshape((-1, 1))
+    def get_action(self, obs):
+        x = torch.from_numpy(obs).float()
+        if next(self.model.parameters()).is_cuda:
+            x = x.to('cuda')
+        output = self.model.forward(x)
+        output = output.detach().cpu().numpy().flatten()
+        action_index = np.argmax(output)
+
 
     def update(self, ram, tiles, buttons, ouput_to_buttons_map) -> bool:
         if self.is_alive:
@@ -231,17 +227,6 @@ class MarioTorch(Individual):
         if ram[0x0E] in (0x0B, 0x06) or ram[0xB5] == 2:
             self.is_alive = False
             return False
-
-        self.set_input_as_array(ram, tiles)
-
-        # Torch forward pass
-        x = torch.from_numpy(self.inputs_as_array.T).float()  # shape (1, num_inputs)
-        output = self.model.forward(x)  # shape (1, 6)
-        output = output.detach().numpy().flatten()  # convert to numpy
-        action_index = np.argmax(output)
-        
-        self.buttons_to_press.fill(0)
-        self.buttons_to_press[ouput_to_buttons_map[action_index]] = 1
 
         return True
 

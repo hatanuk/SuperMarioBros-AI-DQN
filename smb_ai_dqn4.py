@@ -1,5 +1,10 @@
 # multiparallel ga test
 
+
+# fix the GA logging
+# make it log every individual's episode stats
+# remove the per-step axis
+
 import re
 import retro
 # Removed PyQt5 imports
@@ -16,6 +21,7 @@ import math
 import numpy as np
 import shutil
 import os
+from tqdm import tqdm
 
 from utils import SMB, EnemyType, StaticTileType, ColorMap, DynamicTileType
 from config import Config
@@ -53,35 +59,48 @@ class Logger:
         self.writer = writer
         self.config = config
 
-    def log_ga_step(self, max_fitness, max_distance, total_steps):
-        if total_steps % self.config.Statistics.log_interval == 0:
-            self.writer.add_scalar('GA/max_fitness', max_fitness, total_steps)
-            self.writer.add_scalar('GA/max_distance', max_distance, total_steps)
-            self.writer.add_scalar('GA/total_steps', total_steps, total_steps)
+        self.actions_to_keys_map = {
+            0: "U", 
+            1: "D", 
+            2: "L",  
+            3: "R", 
+            4: "A", 
+            5: "B"   
+        }
 
-    def log_dqn_step(self, max_fitness, max_distance, total_steps):
-        if total_steps % self.config.Statistics.log_interval == 0:
-            self.writer.add_scalar('DQN/max_fitness', max_fitness, total_steps)
-            self.writer.add_scalar('DQN/max_distance', max_distance, total_steps)
-            self.writer.add_scalar('DQN/total_steps', total_steps, total_steps)
-        
-        #self.dqn_writer.add_scalar('episode_reward', episode_reward, episode_num)
-
-    def log_ga_generation(self, total_fitness, total_distance, num_individuals, max_fitness, max_distance, generation):
+    def log_ga_generation(self, total_fitness, total_distance, num_individuals, max_fitness, max_distance, generation, action_counts):
         self.writer.add_scalar('GA/max_fitness/generation', max_fitness, generation)
         self.writer.add_scalar('GA/avg_fitness/generation', round(total_fitness/num_individuals, 2), generation)
         self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
         self.writer.add_scalar('GA/avg_distance/generation', round(total_distance/num_individuals, 2), generation)
 
-    def log_dqn_episode(self, episode_rewards, episode_steps, episode_distance, episode_num, max_fitness, max_distance):
+        action_dict = {f'{self.actions_to_keys_map[i]}_key': count for i, count in enumerate(action_counts)}
+        self.writer.add_scalars('GA/action_counts/generation', action_dict, generation)
+
+        values = [action_id for action_id, count in enumerate(action_counts) for _ in range(count)]
+        if generation % 10 == 0 and values:
+            self.writer.add_histogram('GA/action_distribution/generation', np.array(values), generation)
+
+
+    def log_dqn_episode(self, episode_rewards, episode_steps, episode_distance, episode_num, max_fitness, max_distance, action_counts):
         self.writer.add_scalar('DQN/avg_reward/episode', round(episode_rewards / episode_steps, 2), episode_num)
         self.writer.add_scalar('DQN/max_fitness/episode', max_fitness, episode_num)
         self.writer.add_scalar('DQN/max_distance/episode', max_distance, episode_num)
         self.writer.add_scalar('DQN/distance/episode', episode_distance, episode_num)
 
+        action_dict = {f'{self.actions_to_keys_map[i]}_key': count for i, count in enumerate(action_counts)}
+        self.writer.add_scalars('DQN/action_counts/episode', action_dict, episode_num)
+
+        values = [action_id for action_id, count in enumerate(action_counts) for _ in range(count)]
+        if episode_num % 10 == 0 and values:
+            self.writer.add_histogram('DQN/action_distribution/episode', np.array(values), episode_num)
+
+
 
 
 def evaluate_individual_in_separate_process(args):
+
+
   
     individual, config = args
 
@@ -95,33 +114,33 @@ def evaluate_individual_in_separate_process(args):
         5: 0   # B
     }
 
-    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
-    env.reset()
+    print(f"[DEBUG] Starting episode for individual with initial fitness={individual.fitness}")
 
-    total_steps = 0
-    best_fitness = 0.0
+
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
+    env = InputSpaceReduction(env, config)
+    env.mario = individual
+    obs = env.reset()
+
+    best_fitness = 0
     max_distance = 0
 
+    action_counts = [0] * env.action_space.n
+
+    done = False
+
     # We run until the individual is no longer alive (done)
-    while individual.is_alive:
-        ram = env.get_ram()
-        tiles = SMB.get_tiles(ram)
-        enemies = SMB.get_enemy_locations(ram)
-        individual.update(ram, tiles, None, ouput_to_keys_map)
+    while not done:
 
-        # Take a step in the environment
-        ret = env.step(individual.buttons_to_press)
-        obs, reward, done, _, info = ret
-        total_steps += 1
-
-        ram = env.get_ram()
-        tiles = SMB.get_tiles(ram)
-        enemies = SMB.get_enemy_locations(ram)
+        # Take a step in the environment (mario is updated in wrapper)
+        action = individual.get_action(obs)
+        action_counts[action] += 1
+        obs, reward, done, _ = env.step(action)
 
         if individual.farthest_x > max_distance:
             max_distance = individual.farthest_x
 
-        if done or not individual.is_alive:
+        if done:
             individual.calculate_fitness()
             if individual.fitness > best_fitness:
                 best_fitness = individual.fitness
@@ -132,10 +151,11 @@ def evaluate_individual_in_separate_process(args):
     data = {
         'max_fitness': best_fitness,
         'max_distance': max_distance,
-        'total_steps': total_steps,
         'current_fitness': individual.fitness,
-        'current_distance': individual.farthest_x
+        'current_distance': individual.farthest_x,
+        'action_counts': action_counts
     }
+
     return data
 
 
@@ -148,7 +168,6 @@ def run_ga_agent(config, data_queue):
     max_distance_GA = 0
     current_generation = 0
     _current_individual = 0
-    total_steps_GA = 0
 
     # Determine the size of the next generation
     if config.Selection.selection_type == 'plus':
@@ -165,7 +184,9 @@ def run_ga_agent(config, data_queue):
 
             # Evaluate all individuals in parallel
             args = [(ind, config) for ind in population.individuals]
-            results = pool.map(evaluate_individual_in_separate_process, args)
+            results = []
+            for res in tqdm(pool.imap(evaluate_individual_in_separate_process, args), desc=f"GENERATION: {current_generation}", total=len(args)):
+                results.append(res)
 
             # Process results for logging and stats
             total_fitness = 0
@@ -173,7 +194,7 @@ def run_ga_agent(config, data_queue):
             for i, res in enumerate(results):
 
                 population.individuals[i]._fitness = res['current_fitness']
-                population.individuals[i].farthest_x = res['current_distance']
+                population.individuals[i].farthest_x = res['max_distance']
 
                 total_fitness += res['current_fitness']
                 total_distance += res['current_distance']
@@ -184,34 +205,23 @@ def run_ga_agent(config, data_queue):
                 if res['max_distance'] > max_distance_GA:
                     max_distance_GA = res['max_distance']
 
-                total_steps_GA += res['total_steps']
+            
 
                 # Send data to main process queue for logging steps
                 data = {
                     # Global
                     'max_fitness': best_fitness_GA,
                     'max_distance': max_distance_GA,
-                    'total_steps': total_steps_GA,
                     'current_generation': current_generation,
 
                     # Per Individual
                     'current_individual': i,
                     'current_fitness': res['current_fitness'],
                     'current_distance': res['current_distance'],
+                    'action_counts': res['action_counts']
                 }
                 data_queue.put(data)
 
-            # End of generation: log generation-level stats
-            data = {
-                'max_fitness': best_fitness_GA,
-                'max_distance': max_distance_GA,
-                'total_steps': total_steps_GA,
-                'current_generation': current_generation,
-                'current_individual': len(population.individuals) - 1,
-                'current_fitness': 0,
-                'current_distance': 0
-            }
-            data_queue.put(data)
 
             # Selection for next generation
             population.individuals = elitism_selection(population, config.Selection.num_parents)
@@ -413,21 +423,26 @@ if __name__ == "__main__":
     try:
         ga_counter = 0
         dqn_counter = 0
-        processed_steps_ga = set()
-        processed_steps_dqn = set()
 
         # stats specific to a generation
         gen_stats = {
             "current_gen": 0,
-            "current_ind": 0,
             "total_fitness": 0,
             "total_distance": 0,
+            "max_fitness": 0,
+            "max_distance": 0,
+            "current_ind": 0,
+            "action_counts" = [0] * 5
+
         }
 
         def reset_generation_stats(stats):
-            stats["current_ind"] = 0
             stats["total_fitness"] = 0
             stats["total_distance"] = 0
+            stats["max_fitness"] = 0
+            stats["max_distance"] = 0
+            stats["current_ind"] = 0
+            stats["action_counts"] = [0] * 5
 
 
         while True:
@@ -440,32 +455,31 @@ if __name__ == "__main__":
                         ga_data = ga_data_queue.get_nowait()
                         ga_counter += 1
 
-                        if ga_data['total_steps'] not in processed_steps_ga:
-                            processed_steps_ga.add(ga_data['total_steps'])
-                            logger.log_ga_step(
-                                ga_data['max_fitness'],
-                                ga_data['max_distance'],
-                                ga_data['total_steps']
-                            )
+                        gen_stats['total_fitness'] += ga_data['current_fitness']
+                        gen_stats['total_distance'] += ga_data['current_distance']
+                        gen_stats['max_fitness'] = ga_data['max_fitness']
+                        gen_stats['max_distance'] = ga_data['max_distance']
+                        gen_stats['current_ind'] = ga_data['current_individual']
 
-                            if gen_stats['current_ind'] != ga_data['current_individual']:
-                                # Individual changed, collect stats
-                                gen_stats['current_ind']= ga_data['current_individual']
-                                gen_stats['total_fitness'] += ga_data['current_fitness']
-                                gen_stats['total_distance'] += ga_data['current_distance']
+                        for i, action_count in enumerate(ga_data['action_counts']):
+                            gen_stats['action_counts'][i] += action_count
+                            
 
-                        if gen_stats['current_gen'] !=  ga_data['current_generation']:
-                            # Generation changed, log the stats
-                            gen_stats['current_gen'] = ga_data['current_generation']
+                        if gen_stats['current_gen'] != ga_data['current_generation']:
+                            # Generation changed, log the old generation's stats
                         
                             logger.log_ga_generation(
-                                gen_stats['total_fitness'],
-                                gen_stats['total_distance'],
-                                gen_stats['current_ind'] + 1,
-                                ga_data['max_fitness'],
-                                ga_data['max_distance'],
-                                gen_stats['current_gen']
+                                total_fitness=gen_stats['total_fitness'],
+                                total_distance=gen_stats['total_distance'],
+                                num_individuals=gen_stats['current_ind'] + 1, # needed to get num. of individuals in generation
+                                max_fitness=gen_stats['max_fitness'],
+                                max_distance=gen_stats['max_distance'],
+                                generation=gen_stats['current_gen'] + 1,
+                                action_counts=gen_stats['action_counts']
                             )
+
+                            gen_stats['current_gen'] = ga_data['current_generation']
+
                             reset_generation_stats(gen_stats)
 
 
@@ -479,25 +493,18 @@ if __name__ == "__main__":
                     while True:
                         dqn_data = dqn_data_queue.get_nowait()
                         dqn_counter += 1
-        
-                        # Log DQN metrics
-                        if dqn_data['total_steps'] not in processed_steps_dqn:
-                            processed_steps_dqn.add(dqn_data['total_steps'])
-                            logger.log_dqn_step(
-                                dqn_data['max_fitness'],
-                                dqn_data['max_distance'],
-                                dqn_data['total_steps']
-                            )
 
                         if dqn_data.get('done', False) == True:
                             logger.log_dqn_episode(
-                                dqn_data['episode_rewards'],
-                                dqn_data['episode_steps'],
-                                dqn_data['episode_distance'],
-                                dqn_data['episode_num'],
-                                dqn_data['max_fitness'],
-                                dqn_data['max_distance']
-                            )
+
+                                episode_rewards=dqn_data['episode_rewards'],
+                                episode_steps=dqn_data['episode_steps'],
+                                episode_distance=dqn_data['episode_distance'],
+                                episode_num=dqn_data['episode_num'] + 1,
+                                max_fitness=dqn_data['max_fitness'],
+                                max_distance=dqn_data['max_distance']
+                            )  
+
 
                 except queue.Empty:
                     pass

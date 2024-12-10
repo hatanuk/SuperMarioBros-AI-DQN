@@ -15,6 +15,7 @@ from gym.spaces import Box, Discrete
 from utils import SMB, StaticTileType, EnemyType
 import retro
 import torch.nn as nn
+import torch
 
 
 from DQN_algorithm.DQN import DQN as CustomDQN
@@ -85,6 +86,15 @@ class InputSpaceReduction(gym.Env):
 
         self.action_space = spaces.Discrete(5)
 
+        self.output_to_keys_map = {
+            0: 4,  # U
+            1: 5,  # D
+            2: 6,  # L
+            3: 7,  # R
+            4: 8,  # A
+            5: 0   # B
+        }
+
         self.episode_steps = 0
 
         self.observation_space = spaces.Box(
@@ -96,24 +106,20 @@ class InputSpaceReduction(gym.Env):
         return self.env.get_ram()
         
     def reset(self):
+
+        self.mario.reset()
+        self.episode_steps = 0
+
         obs = self.env.reset()  
-        self.episode_frames = 0
+        self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
+        
         return self._observation(obs)
     
     def step(self, action):
 
         self.episode_steps += 1
 
-        output_to_keys_map = {
-            0: 4,  # U
-            1: 5,  # D
-            2: 6,  # L
-            3: 7,  # R
-            4: 8,  # A
-            5: 0   # B
-        }
-
-        action = output_to_keys_map[action]
+        action = self.output_to_keys_map[action]
 
         # size of the action space
         one_hot_v = np.zeros(9)
@@ -121,23 +127,16 @@ class InputSpaceReduction(gym.Env):
 
         obs, reward, done, _, info = self.env.step(one_hot_v)  
 
-   
         self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
 
         if self.mario.did_win:
-            print("DQN WON")
+            print("WE HAVE A WINNEr")
 
         #override env reward with the fitness func
         reward = self.mario.calculate_fitness()
 
         if not self.mario.is_alive:
             done = True
-            self.mario.reset()
-
-
-        if done:
-            self.episode_steps = 0
-
 
         return self._observation(obs), reward, done, info  
 
@@ -198,7 +197,7 @@ class DQNCallback(BaseCallback):
         self.episode_rewards = 0
         self.episode_steps = 0
         self.recent_distance = 0
-
+        self.action_counts = [0] * self.env.action_space.n
 
         self.max_episodes = self.config.DQN.total_episodes
 
@@ -210,45 +209,41 @@ class DQNCallback(BaseCallback):
 
     def _on_step(self) -> bool:
 
-        done = False
-        collected_rewards = 0
-        collected_steps = 0
+        done = True if self.locals['dones'].any() else False
+
+        actions = self.locals['actions']:
+        for action in actions:
+            self.action_counts[action] += 1
+        
 
         self.episode_steps += 1
         self.episode_rewards += self.locals['rewards'].sum()
-
-
-        if self.locals['dones'].any():
-            print("EPISODE: ", self.episode)
-            self.episode += 1
-            collected_rewards = self.episode_rewards
-            collected_steps = self.episode_steps
-            self.episode_rewards = 0 
-            self.episode_steps = 0 
-            done = True
-
-            if self.episode >= self.max_episodes:
-                print(f"Stopping training DQN after {self.episode} episodes.")
-                return False  # Stops training
-            
 
         if self.mario.farthest_x > self.max_distance:
             self.max_distance = self.mario.farthest_x
         if self.mario.fitness >  self.max_fitness:
             self.max_fitness = self.mario.fitness
 
+        if done:
+            print("EPISODE: ", self.episode)
+            self.episode += 1
+            self.episode_rewards = 0 
+            self.episode_steps = 0 
+            self.recent_distance = 0
 
+            data = {
+                'max_fitness':  self.max_fitness,
+                'max_distance': self.max_distance,
+                'episode_num': self.episode,
+                'episode_rewards': collected_rewards,
+                'episode_steps': collected_steps,
+                'episode_distance': collected_distance,
+                'done': done,
+            }
 
-        data = {
-            'max_fitness':  self.max_fitness,
-            'max_distance': self.max_distance,
-            'total_steps': self.num_timesteps,
-            'episode_num': self.episode,
-            'episode_rewards': collected_rewards,
-            'episode_steps': collected_steps,
-            'episode_distance': self.recent_distance,
-            'done': done,
-        }
+            if self.episode >= self.max_episodes:
+                print(f"Stopping training DQN after {self.episode} episodes.")
+                return False  # Stops training
 
         self.recent_distance = self.mario.farthest_x
 
@@ -273,7 +268,6 @@ class DQNMario(Mario):
         Mario.__init__(self, config, None, nn_params.hidden_layer_architecture, nn_params.hidden_node_activation,
          nn_params.output_node_activation, nn_params.encode_row, np.inf, name, debug)
 
-        print(f"Network Architecture: {self.network_architecture}")
 
         ## Parameter initialisation
         self.learning_rate = self.config.DQN.learning_rate
@@ -289,6 +283,8 @@ class DQNMario(Mario):
         # specifies the model architecture for the DQN
         policy_kwargs = dict(activation_fn=get_torch_activation_by_name(self.hidden_activation), net_arch=self.hidden_layer_architecture)
 
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
         self.model = DQN('MlpPolicy', 
                     env=env, 
                     gamma=self.discount_value, 
@@ -303,8 +299,10 @@ class DQNMario(Mario):
                     verbose=1,
                     tensorboard_log= None,
                     policy_kwargs = policy_kwargs,
-                    device="cpu"
+                    device=device
                     )
+        print(f"Network Architecture: {self.model.policy}")
+
         
         
     def reset(self):
@@ -363,8 +361,6 @@ class DQNMario(Mario):
         if ram[0x0E] in (0x0B, 0x06) or ram[0xB5] == 2:
             self.is_alive = False
             return False
-
-        self.set_input_as_array(ram, tiles)
 
         # Updates the fitness value as well
         self._fitness = self.reward_func(
