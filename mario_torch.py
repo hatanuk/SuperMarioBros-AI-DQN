@@ -174,7 +174,7 @@ class MarioTorch(Individual):
         )
         return self._fitness
 
-    def reset():
+    def reset(self):
         # for DQN functionality
         pass
 

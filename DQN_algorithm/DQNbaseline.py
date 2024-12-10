@@ -197,7 +197,7 @@ class DQNCallback(BaseCallback):
         self.episode_rewards = 0
         self.episode_steps = 0
         self.recent_distance = 0
-        self.action_counts = [0] * self.env.action_space.n
+        self.action_counts = [0] * 6
 
         self.max_episodes = self.config.DQN.total_episodes
 
