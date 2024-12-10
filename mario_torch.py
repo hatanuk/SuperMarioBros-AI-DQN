@@ -188,7 +188,7 @@ class MarioTorch(Individual):
         action_index = np.argmax(output)
 
 
-    def update(self, ram, tiles, buttons, ouput_to_buttons_map) -> bool:
+    def update(self, ram, tiles) -> bool:
         if self.is_alive:
             self._frames += 1
             self.x_dist = SMB.get_mario_location_in_level(ram).x
