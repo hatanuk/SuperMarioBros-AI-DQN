@@ -186,6 +186,7 @@ class MarioTorch(Individual):
         output = self.model.forward(x)
         output = output.detach().cpu().numpy().flatten()
         action_index = np.argmax(output)
+        return action_index
 
 
     def update(self, ram, tiles) -> bool:
