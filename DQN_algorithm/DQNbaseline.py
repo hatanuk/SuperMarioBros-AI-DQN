@@ -238,6 +238,7 @@ class DQNCallback(BaseCallback):
                 'episode_rewards': self.episode_rewards,
                 'episode_steps': self.episode_steps,
                 'episode_distance': self.recent_distance,
+                'action_counts': self.action_counts,
                 'done': done,
             }
 
