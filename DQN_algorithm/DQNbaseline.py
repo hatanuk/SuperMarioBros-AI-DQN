@@ -225,11 +225,7 @@ class DQNCallback(BaseCallback):
             self.max_fitness = self.mario.fitness
 
         if done:
-            print("EPISODE: ", self.episode)
-            self.episode += 1
-            self.episode_rewards = 0 
-            self.episode_steps = 0 
-            self.recent_distance = 0
+        
 
             data = {
                 'max_fitness':  self.max_fitness,
@@ -241,8 +237,14 @@ class DQNCallback(BaseCallback):
                 'action_counts': self.action_counts,
                 'done': done,
             }
-
             self.data_queue.put(data)
+        
+            self.episode += 1
+            self.episode_rewards = 0 
+            self.episode_steps = 0 
+            self.recent_distance = 0
+            print("EPISODE: ", self.episode)
+
 
             if self.episode >= self.max_episodes:
                 print(f"Stopping training DQN after {self.episode} episodes.")
