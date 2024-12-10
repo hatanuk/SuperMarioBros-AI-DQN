@@ -503,7 +503,7 @@ if __name__ == "__main__":
                     pass
 
             # Sleep briefly to prevent tight loop
-            time.sleep(0.1)
+            time.sleep(0.0001)
 
     except KeyboardInterrupt:
         cleanup()

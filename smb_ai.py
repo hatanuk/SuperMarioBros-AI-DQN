@@ -430,7 +430,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.max_distance = 0  # Track farthest traveled in level
         self.max_fitness = 0.0
-        self.env = retro.make(game='SuperMarioBros-Nes', state=f'Level{self.config.Misc.level}')
+        self.env = retro.make(game='SuperMarioBros-Nes', state=f'Level{self.config.Misc.level}', render_mode="rgb_array")
 
         # Determine the size of the next generation based off selection type
         self._next_gen_size = None
@@ -726,6 +726,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.info_window.best_fitness.setText(max_fitness)
             # Next individual
             self._current_individual += 1
+            print(f'Individual {self._current_individual} fitness: {fitness}')
 
             # Are we replaying from a file?
             if args.replay_file:
@@ -741,6 +742,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.info_window.generation.setText(txt)
             else:
                 # Is it the next generation?
+                print(f'Current gen: {self.current_generation}, True Zero: {self._true_zero_gen}')
                 if (self.current_generation > self._true_zero_gen and self._current_individual == self._next_gen_size) or\
                     (self.current_generation == self._true_zero_gen and self._current_individual == self.config.Selection.num_parents):
                     self.next_generation()
