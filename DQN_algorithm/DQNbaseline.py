@@ -16,6 +16,7 @@ from utils import SMB, StaticTileType, EnemyType
 import retro
 import torch.nn as nn
 import torch
+import time
 
 
 from DQN_algorithm.DQN import DQN as CustomDQN
