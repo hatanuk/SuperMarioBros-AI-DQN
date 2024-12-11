@@ -113,8 +113,9 @@ def evaluate_individual_in_separate_process(args):
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
     env = InputSpaceReduction(env, input_dims=config.NeuralNetworkGA.input_dims, encode_row=config.NeuralNetworkGA.encode_row)
-    env = FrameSkipWrapper(env, skip=config.Misc.frame_skip)
     env.mario = individual
+    env = FrameSkipWrapper(env, skip=config.Misc.frame_skip)
+  
     obs = env.reset()
 
     best_fitness = 0
