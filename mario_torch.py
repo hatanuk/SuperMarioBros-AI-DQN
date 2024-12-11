@@ -50,7 +50,19 @@ class SequentialModel(nn.Module):
         return self.model(x)
 
     def save(self, path: str):
-        torch.save(self.state_dict(), path)
+        torch.save({
+    'state_dict': model.state_dict(),
+    'layer_sizes': self.layer_sizes,
+    'hidden_activation': self.hidden_activation,
+    'output_activation': self.output_activation
+        }, path)
+
+    @classmethod
+    def load(cls, path: str):
+        details = torch.load(path)
+        model = cls(details['layer_sizes'], details['hidden_activation'], details['output_activation'])
+        model.load_state_dict(details['state_dict'])
+        return model
 
 
 # Reimplementation of mario using PyTorch instead of FeedForwardNetwork
@@ -119,6 +131,7 @@ class MarioTorch(Individual):
         self._printed = False
         self.farthest_x = 0
 
+  
     @property
     def fitness(self):
         return self._fitness
@@ -248,7 +261,7 @@ def save_mario(population_folder: str, individual_name: str, mario: MarioTorch) 
     if not os.path.exists(individual_dir):
         os.makedirs(individual_dir)
 
-    mario.model.save(os.path.join(individual_dir, 'GAparams.pth'))
+    mario.model.save(os.path.join(individual_dir, 'GAparams.pt'))
     
 def load_mario(population_folder: str, individual_name: str, config: Optional[Config] = None) -> MarioTorch:
     if not os.path.exists(os.path.join(population_folder, individual_name)):

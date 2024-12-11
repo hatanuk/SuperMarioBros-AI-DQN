@@ -102,7 +102,8 @@ _params = {
     # Misc Params
     'Misc': {
         'level': str,
-        'allow_additional_time_for_flagpole': bool
+        'allow_additional_time_for_flagpole': bool,
+        'frame_skip': int,
     }
 }
 

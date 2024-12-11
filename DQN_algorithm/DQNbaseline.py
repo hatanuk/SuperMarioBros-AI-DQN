@@ -50,6 +50,20 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 import torch as th
 import torch.nn as nn
 
+class FrameSkipWrapper(gym.Wrapper):
+    def __init__(self, env, skip=4):
+        super().__init__(env)
+        self._skip = skip
+
+    def step(self, action):
+        total_reward = 0
+        for _ in range(self._skip):
+            obs, reward, done, info = self.env.step(action)
+            total_reward += reward
+            if done:
+                break
+        return obs, total_reward, done, info
+
 
 class EpsilonDecayScheduler:
     def __init__(self, initial_epsilon, final_epsilon, decay_fraction, total_episodes):
@@ -68,16 +82,17 @@ class EpsilonDecayScheduler:
 
 
 class InputSpaceReduction(gym.Env):
-    def __init__(self, env, config):
+    def __init__(self, env, input_dims, encode_row):
         super().__init__()
         
         self.env = env  
+        self.env.skip
         self.mario = None
 
-        self._start_row = config.NeuralNetworkDQN.input_dims[0]
-        self._width = config.NeuralNetworkDQN.input_dims[1]
-        self._height = config.NeuralNetworkDQN.input_dims[2]
-        self._encode_row = config.NeuralNetworkDQN.encode_row
+        self._start_row = input_dims[0]
+        self._width = input_dims[1]
+        self._height = input_dims[2]
+        self._encode_row = encode_row
 
         self.action_space = spaces.Discrete(6)
 
@@ -95,7 +110,6 @@ class InputSpaceReduction(gym.Env):
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
         )
-
         
     def get_ram(self):
         return self.env.get_ram()
@@ -126,7 +140,7 @@ class InputSpaceReduction(gym.Env):
      
 
         if self.mario.did_win:
-            print("WE HAVE A WINNEr")
+            print("WE HAVE A WINNER")
 
         #override env reward with the fitness func
         reward = self.mario.calculate_fitness()
@@ -256,7 +270,7 @@ class DQNCallback(BaseCallback):
             if self.episode % 50 == 0:
                 self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_CHECKPOINT')
                 policy_nn = self.model.policy
-                torch.save(self.model.policy.state_dict(), "DQNparams_CHECKPOINT.pt")
+                torch.save(self.model.policy.state_dict(), f"{self.config.Statistics.dqn_save_dir}/DQNparams_CHECKPOINT.pt")
 
 
             if self.episode >= self.max_episodes:

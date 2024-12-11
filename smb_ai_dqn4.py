@@ -35,7 +35,7 @@ from genetic_algorithm.selection import elitism_selection, tournament_selection,
 from genetic_algorithm.crossover import simulated_binary_crossover as SBX
 from genetic_algorithm.mutation import gaussian_mutation
 
-from DQN_algorithm.DQNbaseline import DQNCallback, DQNMario, InputSpaceReduction
+from DQN_algorithm.DQNbaseline import DQNCallback, DQNMario, InputSpaceReduction, FrameSkipWrapper
 
 from smb_ai import draw_border, parse_args
 
@@ -70,13 +70,14 @@ class Logger:
 
     def log_ga_generation(self, total_fitness, total_distance, num_individuals, max_fitness, max_distance, generation, action_counts):
 
-        print(f"avg distance GA: {round(total_fitness/num_individuals, 2)}")
+        print(f"avg distance GA: {round(total_distance/num_individuals, 2)}")
         self.writer.add_scalar('GA/max_fitness/generation', max_fitness, generation)
         self.writer.add_scalar('GA/avg_fitness/generation', round(total_fitness/num_individuals, 2), generation)
         self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
         self.writer.add_scalar('GA/avg_distance/generation', round(total_distance/num_individuals, 2), generation)
 
-        action_dict = {f'{self.actions_to_keys_map[i]}_key': count for i, count in enumerate(action_counts)}
+        action_total = sum(action_counts)
+        action_dict = {f'{self.actions_to_keys_map[i]}_key': round(count/action_total, 2) for i, count in enumerate(action_counts)}
         self.writer.add_scalars('GA/action_counts/generation', action_dict, generation)
 
         values = [action_id for action_id, count in enumerate(action_counts) for _ in range(count)]
@@ -93,7 +94,8 @@ class Logger:
 
         self.writer.add_scalar('DQN/epsilon/episode', round(epsilon, 3), episode_num)
 
-        action_dict = {f'{self.actions_to_keys_map[i]}_key': count for i, count in enumerate(action_counts)}
+        action_total = sum(action_counts)
+        action_dict = {f'{self.actions_to_keys_map[i]}_key': round(count/action_total, 2) for i, count in enumerate(action_counts)}
         self.writer.add_scalars('DQN/action_counts/episode', action_dict, episode_num)
 
         values = [action_id for action_id, count in enumerate(action_counts) for _ in range(count)]
@@ -110,7 +112,8 @@ def evaluate_individual_in_separate_process(args):
     start = time.time()
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
-    env = InputSpaceReduction(env, config)
+    env = InputSpaceReduction(env, input_dims=config.NeuralNetworkGA.input_dims, encode_row=config.NeuralNetworkGA.encode_row)
+    env = FrameSkipWrapper(env, skip=config.Misc.frame_skip)
     env.mario = individual
     obs = env.reset()
 
@@ -129,12 +132,12 @@ def evaluate_individual_in_separate_process(args):
         action_counts[action] += 1
 
         # Take a step in the environment (mario is updated in wrapper)
-        obs, reward, done, _ = env.step(action)
+        obs, rewards, dones, _ = env.step(action)
         
         if individual.farthest_x > max_distance:
             max_distance = individual.farthest_x
 
-        if done:
+        if dones.any():
             individual.calculate_fitness()
             if individual.fitness > best_fitness:
                 best_fitness = individual.fitness
@@ -270,15 +273,17 @@ def run_dqn_agent(config, data_queue, dqn_model):
 
     # Initialize environment
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
-    env = InputSpaceReduction(env, config)
+    env = InputSpaceReduction(env, input_dims=config.NeuralNetworkDQN.input_dims, encode_row=config.NeuralNetworkDQN.encode_row)
 
     # Initialize DQN agent
     mario_DQN = DQNMario(config, env)
     env.mario = mario_DQN
 
+    env = FrameSkipWrapper(env, skip=config.Misc.frame_skip)
+
     env = DummyVecEnv([lambda: env])
 
-
+    config = 
     if dqn_model:
         try:
             model = DQN.load(dqn_model, env=env)
