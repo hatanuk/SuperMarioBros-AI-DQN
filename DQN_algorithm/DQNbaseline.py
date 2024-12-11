@@ -29,7 +29,6 @@ import gym
 import numpy as np
 from gym import spaces
 
-  
 ###
 # This is an implentation of a DQN Agent using stable-baselines
 
@@ -45,10 +44,6 @@ def get_torch_activation_by_name(name: str):
     return activations.get(name.lower(), None)
 
 
-    from stable_baselines3 import DQN
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-import torch as th
-import torch.nn as nn
 
 class FrameSkipWrapper(gym.Wrapper):
     def __init__(self, env, skip=4):
@@ -86,7 +81,6 @@ class InputSpaceReduction(gym.Env):
         super().__init__()
         
         self.env = env  
-        self.env.skip
         self.mario = None
 
         self._start_row = input_dims[0]
