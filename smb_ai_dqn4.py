@@ -145,7 +145,7 @@ def evaluate_individual_in_separate_process(args):
         else:
             inf_loc = "CPU"
 
-        print(f"inference on {inf_loc} time: {(end - start).2f}")
+        print(f"inference on {inf_loc} time: {(end - start):.2f}")
 
         action_counts[action] += 1
         obs, reward, done, _ = env.step(action)
