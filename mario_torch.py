@@ -247,7 +247,8 @@ def save_mario(population_folder: str, individual_name: str, mario: MarioTorch) 
     
     # Make a directory for the individual
     individual_dir = os.path.join(population_folder, individual_name)
-    os.makedirs(individual_dir)
+    if not os.path.exists(individual_dir):
+        os.makedirs(individual_dir)
 
     mario.model.save(f'{individual_dir}_MODEL')
 
