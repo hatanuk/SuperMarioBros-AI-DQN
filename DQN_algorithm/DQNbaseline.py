@@ -126,19 +126,10 @@ class InputSpaceReduction(gym.Env):
         one_hot_v = np.zeros(9)
         one_hot_v[action] = 1
 
-        start = time.time()
         obs, reward, done, _, info = self.env.step(one_hot_v) 
-        end = time.time()
 
-
-        start_upd = time.time()
         self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
-        end_upd = time.time()
-
-        if random.random() < 0.001:
-            print("actual step time: ", end - start)
-            print("update time: ", end_upd - start_upd)
-
+     
 
         if self.mario.did_win:
             print("WE HAVE A WINNEr")
