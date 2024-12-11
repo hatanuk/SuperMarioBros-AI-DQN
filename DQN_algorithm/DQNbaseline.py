@@ -88,8 +88,6 @@ class InputSpaceReduction(gym.Env):
         self._height = input_dims[2]
         self._encode_row = encode_row
 
-        self.action_space = spaces.Discrete(6)
-
         self.output_to_keys_map = {
             0: 4,  # U
             1: 5,  # D
@@ -101,8 +99,12 @@ class InputSpaceReduction(gym.Env):
 
         self.episode_steps = 0
 
+        self.input_size = self._height * self._width + (self._height if self._encode_row else 0),
+        self.output_size = 6
+
+        self.action_space = self.output_size
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(self._height * self._width + (self._height if self._encode_row else 0),), dtype=np.float32
+            low=0, high=1, shape=(self.input_size), dtype=np.float32
         )
         
     def get_ram(self):
@@ -259,7 +261,7 @@ class DQNCallback(BaseCallback):
             self.recent_reward = 0
             print("EPISODE: ", self.episode)
 
-            if self.episode % 50 == 0:
+            if self.episode % 10 == 0:
                 self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_CHECKPOINT')
                 policy_nn = self.model.policy
                 self.save_model()
@@ -283,7 +285,7 @@ class DQNCallback(BaseCallback):
             return
         
         self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_FINAL')
-        layer_sizes = [self.model.env.observation_space.n] + [self.config.NeuralNetworkDQN.hidden_layer_architecture] + [self.model.env.action_space.n]
+        layer_sizes = [self.model.env.input_size] + [self.config.NeuralNetworkDQN.hidden_layer_architecture] + [self.model.env.output_size]
         torch.save({
         'state_dict': self.model.state_dict(),
         'layer_sizes': layer_sizes,
