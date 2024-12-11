@@ -69,6 +69,9 @@ class Logger:
         }
 
     def log_ga_generation(self, total_fitness, total_distance, num_individuals, max_fitness, max_distance, generation, action_counts):
+        print(f"total distance: {total_distance}")
+        print(f"num individuals: {num_individuals}")
+        print(f"total distance / num_individuals: {total_distance / num_individuals}")
         self.writer.add_scalar('GA/max_fitness/generation', max_fitness, generation)
         self.writer.add_scalar('GA/avg_fitness/generation', round(total_fitness/num_individuals, 2), generation)
         self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
@@ -82,11 +85,13 @@ class Logger:
             self.writer.add_histogram('GA/action_distribution/generation', np.array(values), generation)
 
 
-    def log_dqn_episode(self, episode_rewards, episode_steps, episode_distance, episode_num, max_fitness, max_distance, action_counts):
-        self.writer.add_scalar('DQN/avg_reward/episode', round(episode_rewards / episode_steps, 2), episode_num)
+    def log_dqn_episode(self, fitness, episode_steps, episode_distance, episode_num, max_fitness, max_distance, action_counts, epsilon):
+        self.writer.add_scalar('DQN/fitness/episode', fitness, episode_num)
+        self.writer.add_scalar('DQN/distance/episode', episode_distance, episode_num)
         self.writer.add_scalar('DQN/max_fitness/episode', max_fitness, episode_num)
         self.writer.add_scalar('DQN/max_distance/episode', max_distance, episode_num)
-        self.writer.add_scalar('DQN/distance/episode', episode_distance, episode_num)
+
+        self.writer.add_scalar('DQN/epsilon/episode', epsilon, episode_num)
 
         action_dict = {f'{self.actions_to_keys_map[i]}_key': count for i, count in enumerate(action_counts)}
         self.writer.add_scalars('DQN/action_counts/episode', action_dict, episode_num)
@@ -102,7 +107,6 @@ def evaluate_individual_in_separate_process(args):
 
     individual, config = args
 
-    start = time.time()
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
     env = InputSpaceReduction(env, config)
@@ -135,9 +139,6 @@ def evaluate_individual_in_separate_process(args):
                 best_fitness = individual.fitness
             break
 
-    env.close()
-
-    end = time.time()
 
 
     data = {
@@ -493,14 +494,15 @@ if __name__ == "__main__":
 
                         if dqn_data.get('done', False) == True:
                             logger.log_dqn_episode(
-
-                                episode_rewards=dqn_data['episode_rewards'],
+                                fitness=dqn_data['fitness'],
                                 episode_steps=dqn_data['episode_steps'],
                                 episode_distance=dqn_data['episode_distance'],
                                 episode_num=dqn_data['episode_num'] + 1,
                                 max_fitness=dqn_data['max_fitness'],
                                 max_distance=dqn_data['max_distance'],
-                                action_counts=dqn_data['action_counts']
+                                action_counts=dqn_data['action_counts'],
+                                epsilon=dqn_data['epsilon']
+
                             )  
 
 

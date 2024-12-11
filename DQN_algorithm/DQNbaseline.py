@@ -50,23 +50,19 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 import torch as th
 import torch.nn as nn
 
-# force the sb3 network to use defined architecture
-class ModifiedDQN(DQN):
-    def __init__(self, *args, **kwargs):
-        super(ModifiedDQN, self).__init__(*args, **kwargs)
 
-        env = kwargs['env']
+class EpsilonDecayScheduler:
+    def __init__(self, initial_epsilon, final_epsilon, max_episodes):
+        self.initial_epsilon = initial_epsilon
+        self.final_epsilon = final_epsilon
+        self.max_episodes = max_episodes
 
-        net_arch = [9]
-        activation_fn = get_torch_activation_by_name('relu')
-        output_a = get_torch_activation_by_name('linear')
-        
-        input_size = env.observation_space.shape[0] 
-        layer_nodes = [input_size] + net_arch + [output_a]
-        
-        self.q_net = CustomDQN(layer_nodes, activation_fn, output_a, self.learning_rate)
-
-
+    def get_epsilon(self, current_episode):
+        epsilon = max(
+            self.final_epsilon,
+            self.initial_epsilon - (current_episode / self.max_episodes) * (self.initial_epsilon - self.final_epsilon)
+        )
+        return epsilon
 
 ## Restricts the DQN's output to a subset of available actions (ie from 9 to 6)
 # This is to match the DQN's output layer to the size of the GA's output layer
@@ -200,8 +196,11 @@ class DQNCallback(BaseCallback):
         self.episode_steps = 0
         self.recent_distance = 0
         self.action_counts = [0] * 6
+        self.recent_reward = 0
 
         self.max_episodes = self.config.DQN.total_episodes
+
+        self.epsilon_scheduler = EpsilonDecayScheduler(config.DQN.epsilon_start, config.DQN.epsilon_min, self.max_episodes)
 
 
     def _on_training_start(self) -> None:
@@ -210,6 +209,8 @@ class DQNCallback(BaseCallback):
 
 
     def _on_step(self) -> bool:
+
+      
 
         done = True if self.locals['dones'].any() else False
 
@@ -220,6 +221,8 @@ class DQNCallback(BaseCallback):
 
         self.episode_steps += 1
         self.episode_rewards += self.locals['rewards'].sum()
+        self.recent_reward = self.locals['rewards'].sum()
+
 
         if self.mario.farthest_x > self.max_distance:
             self.max_distance = self.mario.farthest_x
@@ -227,9 +230,12 @@ class DQNCallback(BaseCallback):
             self.max_fitness = self.mario.fitness
 
         if done:
-        
+            # manually update epsilon
+            self.model.exploration_rate = self.epsilon_scheduler.get_epsilon(episode)
+            print("epsilon: ", self.model.exploration_rate)
 
             data = {
+                'fitness': self.recent_reward,
                 'max_fitness':  self.max_fitness,
                 'max_distance': self.max_distance,
                 'episode_num': self.episode,
@@ -237,6 +243,7 @@ class DQNCallback(BaseCallback):
                 'episode_steps': self.episode_steps,
                 'episode_distance': self.recent_distance,
                 'action_counts': self.action_counts,
+                'epsilon': self.model.exploration_rate,
                 'done': done,
             }
             self.data_queue.put(data)
@@ -245,6 +252,7 @@ class DQNCallback(BaseCallback):
             self.episode_rewards = 0 
             self.episode_steps = 0 
             self.recent_distance = 0
+            self.recent_reward = 0
             print("EPISODE: ", self.episode)
 
             if self.episode % 50 == 0:
