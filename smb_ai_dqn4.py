@@ -102,18 +102,6 @@ def evaluate_individual_in_separate_process(args):
 
     individual, config = args
 
-    # Keys correspond with B, NULL, SELECT, START, U, D, L, R, A
-    ouput_to_keys_map = {
-        0: 4,  # U
-        1: 5,  # D
-        2: 6,  # L
-        3: 7,  # R
-        4: 8,  # A
-        5: 0   # B
-    }
-
-    # attempt to offload model to GPU
-
     start = time.time()
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
@@ -131,12 +119,13 @@ def evaluate_individual_in_separate_process(args):
     # We run until the individual is no longer alive (done)
     while not done:
 
-        # Take a step in the environment (mario is updated in wrapper)
+        # inferencing
         action = individual.get_action(obs)
-
         action_counts[action] += 1
-        obs, reward, done, _ = env.step(action)
 
+        # Take a step in the environment (mario is updated in wrapper)
+        obs, reward, done, _ = env.step(action)
+        
         if individual.farthest_x > max_distance:
             max_distance = individual.farthest_x
 
@@ -264,10 +253,10 @@ def run_ga_agent(config, data_queue):
 
             current_generation += 1
 
+            if current_generation % 10 == 0:
+                best_individual = max(population.individuals, key=lambda ind: ind.fitness)
+                save_mario('GAindividuals', 'best_mario', best_individual)
 
-    best_individual = max(population.individuals, key=lambda ind: ind.fitness)
-    save_mario('GAindividuals', 'best_mario', best_individual)
-    print(f"Stopping training GA after {config.GA.total_generations} generation.")
 
 
 def run_dqn_agent(config, data_queue, dqn_model):

@@ -125,9 +125,19 @@ class InputSpaceReduction(gym.Env):
         one_hot_v = np.zeros(9)
         one_hot_v[action] = 1
 
-        obs, reward, done, _, info = self.env.step(one_hot_v)  
+        start = time.time()
+        obs, reward, done, _, info = self.env.step(one_hot_v) 
+        end = time.time()
 
+
+        start_upd = time.time()
         self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
+        end_upd = time.time()
+
+        if random.random() < 0.001:
+            print("actual step time: ", end - start)
+            print("update time: ", end_upd - start_upd)
+
 
         if self.mario.did_win:
             print("WE HAVE A WINNEr")
@@ -245,9 +255,10 @@ class DQNCallback(BaseCallback):
             self.recent_distance = 0
             print("EPISODE: ", self.episode)
 
+            if self.episode % 50 == 0:
+                self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_CHECKPOINT')
 
             if self.episode >= self.max_episodes:
-                print(f"Stopping training DQN after {self.episode} episodes.")
                 return False  # Stops training
 
         self.recent_distance = self.mario.farthest_x
@@ -256,8 +267,9 @@ class DQNCallback(BaseCallback):
 
  
     def _on_training_end(self) -> None:
+        print(f"Stopping training DQN after {self.episode} episodes.")
         self.is_training = False
-        self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}')
+        self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_FINAL')
 
 class DQNMario(Mario):
     def __init__(self, 
