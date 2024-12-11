@@ -262,7 +262,6 @@ class DQNCallback(BaseCallback):
             print("EPISODE: ", self.episode)
 
             if self.episode % 10 == 0:
-                self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_CHECKPOINT')
                 policy_nn = self.model.policy
                 self.save_model()
 
@@ -285,7 +284,7 @@ class DQNCallback(BaseCallback):
             return
         
         self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_FINAL')
-        layer_sizes = [self.model.env.input_size] + [self.config.NeuralNetworkDQN.hidden_layer_architecture] + [self.model.env.output_size]
+        layer_sizes = [self.model.env.observation_space.shape[0]] + [self.config.NeuralNetworkDQN.hidden_layer_architecture] + [self.model.env.action_space.n]
         torch.save({
         'state_dict': self.model.state_dict(),
         'layer_sizes': layer_sizes,
