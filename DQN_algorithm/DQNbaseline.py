@@ -307,7 +307,7 @@ class DQNMario(Mario):
                     verbose=1,
                     tensorboard_log= None,
                     policy_kwargs = policy_kwargs,
-                    device="cpu"
+                    device="cuda"
                     )
 
         
