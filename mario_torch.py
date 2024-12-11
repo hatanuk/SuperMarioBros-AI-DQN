@@ -249,6 +249,8 @@ def save_mario(population_folder: str, individual_name: str, mario: MarioTorch) 
     individual_dir = os.path.join(population_folder, individual_name)
     os.makedirs(individual_dir)
 
+    mario.model.save(f'{individual_dir}_MODEL')
+
     chromosome = mario.chromosome
     for param_name, param_val in chromosome.items():
         np.save(os.path.join(individual_dir, param_name), param_val)
