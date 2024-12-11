@@ -287,7 +287,7 @@ class DQNMario(Mario):
         # specifies the model architecture for the DQN
         policy_kwargs = dict(activation_fn=get_torch_activation_by_name(self.hidden_activation), net_arch=self.hidden_layer_architecture)
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        #device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.model = DQN('MlpPolicy', 
                     env=env, 
@@ -303,7 +303,7 @@ class DQNMario(Mario):
                     verbose=1,
                     tensorboard_log= None,
                     policy_kwargs = policy_kwargs,
-                    device=device
+                    device="cpu"
                     )
 
         
