@@ -107,6 +107,7 @@ def evaluate_individual_in_separate_process(args):
 
     individual, config = args
 
+    start = time.time()
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
     env = InputSpaceReduction(env, config)
@@ -139,7 +140,7 @@ def evaluate_individual_in_separate_process(args):
                 best_fitness = individual.fitness
             break
 
-
+    end = time.time()
 
     data = {
         'max_fitness': best_fitness,
@@ -218,7 +219,7 @@ def run_ga_agent(config, data_queue):
                 }
                 data_queue.put(data)
             
-            print(f"average time for a generational episode: {average_time / len(results):.5f}")
+            #print(f"average time for a generational episode: {average_time / len(results):.5f}")
 
 
             # Selection for next generation
