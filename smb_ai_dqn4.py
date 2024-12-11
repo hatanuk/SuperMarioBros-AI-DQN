@@ -142,6 +142,8 @@ def evaluate_individual_in_separate_process(args):
 
     end = time.time()
 
+    print(individual.farthest_x)
+
     data = {
         'max_fitness': best_fitness,
         'max_distance': max_distance,
