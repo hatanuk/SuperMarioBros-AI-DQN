@@ -222,8 +222,6 @@ class DQNCallback(BaseCallback):
 
     def _on_step(self) -> bool:
 
-      
-
         done = True if self.locals['dones'].any() else False
 
         actions = self.locals['actions']

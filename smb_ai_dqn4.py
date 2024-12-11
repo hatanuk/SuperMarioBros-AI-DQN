@@ -132,12 +132,12 @@ def evaluate_individual_in_separate_process(args):
         action_counts[action] += 1
 
         # Take a step in the environment (mario is updated in wrapper)
-        obs, rewards, dones, _ = env.step(action)
+        obs, rewards, done, _ = env.step(action)
         
         if individual.farthest_x > max_distance:
             max_distance = individual.farthest_x
 
-        if dones.any():
+        if done:
             individual.calculate_fitness()
             if individual.fitness > best_fitness:
                 best_fitness = individual.fitness
