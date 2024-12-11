@@ -52,15 +52,15 @@ import torch.nn as nn
 
 
 class EpsilonDecayScheduler:
-    def __init__(self, initial_epsilon, final_epsilon, max_episodes):
+    def __init__(self, initial_epsilon, final_epsilon, epsilon_decay):
         self.initial_epsilon = initial_epsilon
         self.final_epsilon = final_epsilon
-        self.max_episodes = max_episodes
+        self.epsilon_decay = epsilon_decay
 
     def get_epsilon(self, current_episode):
         epsilon = max(
             self.final_epsilon,
-            self.initial_epsilon - (current_episode / self.max_episodes) * (self.initial_epsilon - self.final_epsilon)
+            self.initial_epsilon * self.epsilon_decay ** current_episode
         )
         return epsilon
 
@@ -200,7 +200,7 @@ class DQNCallback(BaseCallback):
 
         self.max_episodes = self.config.DQN.total_episodes
 
-        self.epsilon_scheduler = EpsilonDecayScheduler(config.DQN.epsilon_start, config.DQN.epsilon_min, self.max_episodes)
+        self.epsilon_scheduler = EpsilonDecayScheduler(config.DQN.epsilon_start, config.DQN.epsilon_min, config.DQN.epsilon_decay)
 
 
     def _on_training_start(self) -> None:
@@ -306,7 +306,6 @@ class DQNMario(Mario):
                     gamma=self.discount_value, 
                     learning_rate=self.learning_rate,  
                     buffer_size=self.buffer_size,
-                    exploration_fraction=self.epsilon_decay, 
                     exploration_final_eps=self.epsilon_min, 
                     exploration_initial_eps=self.epsilon_start,
                     train_freq=self.train_freq,
