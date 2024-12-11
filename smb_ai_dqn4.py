@@ -157,7 +157,7 @@ def evaluate_individual_in_separate_process(args):
         'current_fitness': individual.fitness,
         'current_distance': individual.farthest_x,
         'action_counts': action_counts,
-        'wall_clock_time': f"{(end - start):.5f}"
+        'wall_clock_time': float(f"{(end - start):.5f}")
     }
 
     return data
