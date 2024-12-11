@@ -113,7 +113,7 @@ def evaluate_individual_in_separate_process(args):
     }
 
     # attempt to offload model to GPU
-    individual.to_cuda()
+    #individual.to_cuda()
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
     env = InputSpaceReduction(env, config)
