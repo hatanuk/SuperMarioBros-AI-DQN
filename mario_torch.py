@@ -33,6 +33,10 @@ def get_torch_activation(activation_name: str):
 class SequentialModel(nn.Module):
     def __init__(self, layer_sizes: List[int], hidden_activation: str, output_activation: str):
         super(SequentialModel, self).__init__()
+
+        self.layer_sizes = layer_sizes
+        self.hidden_activation = hidden_activation
+        self.output_activation = output_activation
         
         self.layers = []
         for i in range(len(layer_sizes) - 1):
