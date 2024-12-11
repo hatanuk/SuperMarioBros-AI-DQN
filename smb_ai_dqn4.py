@@ -113,7 +113,12 @@ def evaluate_individual_in_separate_process(args):
     }
 
     # attempt to offload model to GPU
-    #individual.to_cuda()
+
+    if random.random() < 0.5:
+        start = time.time()
+        individual.to_cuda()
+        end = time.time()
+        print(f"cuda offloading time: {(end - start).2f}")
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
     env = InputSpaceReduction(env, config)
@@ -131,7 +136,17 @@ def evaluate_individual_in_separate_process(args):
     while not done:
 
         # Take a step in the environment (mario is updated in wrapper)
+        start = time.time()
         action = individual.get_action(obs)
+        end = time.time()
+
+        if next(individual.model.parameters()).is_cuda:
+            inf_loc = "GPU"
+        else:
+            inf_loc = "CPU"
+
+        print(f"inference on {inf_loc} time: {(end - start).2f}")
+
         action_counts[action] += 1
         obs, reward, done, _ = env.step(action)
 
