@@ -366,10 +366,10 @@ def get_stats(mario):
     game_score = mario.game_score if mario.game_score is not None else 0
     return [frames, distance, game_score]
 
-def clear_tensorboard_log_dir(log_dir):
+def clear_log_dir(log_dir):
     if os.path.exists(log_dir):
         shutil.rmtree(log_dir) 
-        print(f"Cleared TensorBoard log directory: {log_dir}")
+        print(f"Cleared log directory: {log_dir}")
     os.makedirs(log_dir, exist_ok=True)
 
 if __name__ == "__main__":
@@ -384,8 +384,8 @@ if __name__ == "__main__":
         config = Config(args.config)
 
     # clear prior tensorboard logs
-    clear_tensorboard_log_dir(config.Statistics.tensorboard_dir)
-    clear_tensorboard_log_dir('./monitor_logs/DQNtbFromBaseline')
+    clear_log_dir(config.Statistics.tensorboard_dir)
+    clear_log_dir('./monitor_logs/DQNtbFromBaseline')
 
     # Initialize Logger
     writer = SummaryWriter(log_dir=config.Statistics.tensorboard_dir)
