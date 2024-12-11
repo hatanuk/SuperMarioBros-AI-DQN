@@ -91,7 +91,7 @@ class Logger:
         self.writer.add_scalar('DQN/max_fitness/episode', max_fitness, episode_num)
         self.writer.add_scalar('DQN/max_distance/episode', max_distance, episode_num)
 
-        self.writer.add_scalar('DQN/epsilon/episode', epsilon, episode_num)
+        self.writer.add_scalar('DQN/epsilon/episode', round(epsilon, 3), episode_num)
 
         action_dict = {f'{self.actions_to_keys_map[i]}_key': count for i, count in enumerate(action_counts)}
         self.writer.add_scalars('DQN/action_counts/episode', action_dict, episode_num)
