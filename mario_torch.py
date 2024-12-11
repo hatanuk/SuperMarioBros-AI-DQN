@@ -250,7 +250,6 @@ def save_mario(population_folder: str, individual_name: str, mario: MarioTorch) 
     if not os.path.exists(individual_dir):
         os.makedirs(individual_dir)
 
-    mario.model.save(f'{individual_dir}')
 
     chromosome = mario.chromosome
     for param_name, param_val in chromosome.items():
