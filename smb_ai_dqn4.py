@@ -283,7 +283,6 @@ def run_dqn_agent(config, data_queue, dqn_model):
 
     env = DummyVecEnv([lambda: env])
 
-    config = 
     if dqn_model:
         try:
             model = DQN.load(dqn_model, env=env)
