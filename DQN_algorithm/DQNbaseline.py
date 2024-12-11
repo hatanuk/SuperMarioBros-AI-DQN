@@ -17,7 +17,7 @@ import retro
 import torch.nn as nn
 import torch
 import time
-
+import random
 
 from DQN_algorithm.DQN import DQN as CustomDQN
 
