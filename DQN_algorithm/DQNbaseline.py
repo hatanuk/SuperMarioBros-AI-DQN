@@ -231,7 +231,7 @@ class DQNCallback(BaseCallback):
 
         if done:
             # manually update epsilon
-            self.model.exploration_rate = self.epsilon_scheduler.get_epsilon(episode)
+            self.model.exploration_rate = self.epsilon_scheduler.get_epsiloself.episode)
             print("epsilon: ", self.model.exploration_rate)
 
             data = {

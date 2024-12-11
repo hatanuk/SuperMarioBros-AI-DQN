@@ -69,9 +69,8 @@ class Logger:
         }
 
     def log_ga_generation(self, total_fitness, total_distance, num_individuals, max_fitness, max_distance, generation, action_counts):
-        print(f"total distance: {total_distance}")
-        print(f"num individuals: {num_individuals}")
-        print(f"total distance / num_individuals: {total_distance / num_individuals}")
+
+        print(f"avg distance GA: {round(total_fitness/num_individuals, 2)}")
         self.writer.add_scalar('GA/max_fitness/generation', max_fitness, generation)
         self.writer.add_scalar('GA/avg_fitness/generation', round(total_fitness/num_individuals, 2), generation)
         self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
@@ -86,6 +85,7 @@ class Logger:
 
 
     def log_dqn_episode(self, fitness, episode_steps, episode_distance, episode_num, max_fitness, max_distance, action_counts, epsilon):
+        print(f"distance DQN: {episode_distance}")
         self.writer.add_scalar('DQN/fitness/episode', fitness, episode_num)
         self.writer.add_scalar('DQN/distance/episode', episode_distance, episode_num)
         self.writer.add_scalar('DQN/max_fitness/episode', max_fitness, episode_num)
@@ -451,17 +451,6 @@ if __name__ == "__main__":
                 try:
                     while True:
                         ga_data = ga_data_queue.get_nowait()
-                        ga_counter += 1
-
-                        gen_stats['total_fitness'] += ga_data['current_fitness']
-                        gen_stats['total_distance'] += ga_data['current_distance']
-                        gen_stats['max_fitness'] = ga_data['max_fitness']
-                        gen_stats['max_distance'] = ga_data['max_distance']
-                        gen_stats['current_ind'] = ga_data['current_individual']
-
-                        for i, action_count in enumerate(ga_data['action_counts']):
-                            gen_stats['action_counts'][i] += action_count
-                            
 
                         if gen_stats['current_gen'] != ga_data['current_generation']:
                             # Generation changed, log the old generation's stats
@@ -475,10 +464,20 @@ if __name__ == "__main__":
                                 generation=gen_stats['current_gen'] + 1,
                                 action_counts=gen_stats['action_counts']
                             )
-
                             gen_stats['current_gen'] = ga_data['current_generation']
-
                             reset_generation_stats(gen_stats)
+
+                        gen_stats['total_fitness'] += ga_data['current_fitness']
+                        gen_stats['total_distance'] += ga_data['current_distance']
+                        gen_stats['max_fitness'] = ga_data['max_fitness']
+                        gen_stats['max_distance'] = ga_data['max_distance']
+                        gen_stats['current_ind'] = ga_data['current_individual']
+
+                        for i, action_count in enumerate(ga_data['action_counts']):
+                            gen_stats['action_counts'][i] += action_count
+                            
+
+                        
 
 
                 except queue.Empty:
@@ -510,7 +509,7 @@ if __name__ == "__main__":
                     pass
 
             # Sleep briefly to prevent tight loop
-            time.sleep(0.0001)
+            time.sleep(0.001)
 
     except KeyboardInterrupt:
         cleanup()
