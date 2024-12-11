@@ -118,7 +118,7 @@ def evaluate_individual_in_separate_process(args):
         start = time.time()
         individual.to_cuda()
         end = time.time()
-        print(f"cuda offloading time: {(end - start):.2f}")
+        print(f"cuda offloading time: {(end - start):.15f}")
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
     env = InputSpaceReduction(env, config)
@@ -140,12 +140,14 @@ def evaluate_individual_in_separate_process(args):
         action = individual.get_action(obs)
         end = time.time()
 
-        if next(individual.model.parameters()).is_cuda:
-            inf_loc = "GPU"
-        else:
-            inf_loc = "CPU"
+        if random.random() < 0.05:
 
-        print(f"inference on {inf_loc} time: {(end - start):.2f}")
+            if next(individual.model.parameters()).is_cuda:
+                inf_loc = "GPU"
+            else:
+                inf_loc = "CPU"
+
+            print(f"inference on {inf_loc} time: {(end - start):.15f}")
 
         action_counts[action] += 1
         obs, reward, done, _ = env.step(action)
@@ -193,7 +195,6 @@ def run_ga_agent(config, data_queue):
     # Create a pool for parallel evaluation
     with multiprocessing.Pool(processes=config.GA.parallel_processes) as pool:
         while current_generation <= config.GA.total_generations:
-            print("GENERATION: ", current_generation)
 
             # Evaluate all individuals in parallel
             args = [(ind, config) for ind in population.individuals]
