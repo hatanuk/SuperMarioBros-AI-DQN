@@ -24,13 +24,6 @@ class Agent:
         return action_index
 
 
-
-def load_model(path):
-    model = torch.load(path)
-    return model
-
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type=str, required=True, help='Path to saved Mario .pt model')
