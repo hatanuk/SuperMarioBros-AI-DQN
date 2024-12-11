@@ -257,6 +257,9 @@ class DQNCallback(BaseCallback):
 
             if self.episode % 50 == 0:
                 self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_CHECKPOINT')
+                policy_nn = self.model.policy
+                torch.save(self.model.policy.state_dict(), "DQNparams_CHECKPOINT.pt")
+
 
             if self.episode >= self.max_episodes:
                 return False  # Stops training
@@ -270,6 +273,8 @@ class DQNCallback(BaseCallback):
         print(f"Stopping training DQN after {self.episode} episodes.")
         self.is_training = False
         self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_FINAL')
+        torch.save(self.model.policy.state_dict(), f"{self.config.Statistics.dqn_save_dir}/DQNparams_FINAL.pt")
+
 
 class DQNMario(Mario):
     def __init__(self, 

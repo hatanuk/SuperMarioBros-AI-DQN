@@ -49,6 +49,9 @@ class SequentialModel(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
 
+    def save(self, path: str):
+        torch.save(self.state_dict(), path)
+
 
 # Reimplementation of mario using PyTorch instead of FeedForwardNetwork
 class MarioTorch(Individual):
@@ -240,20 +243,12 @@ def save_mario(population_folder: str, individual_name: str, mario: MarioTorch) 
     if not os.path.exists(population_folder):
         os.makedirs(population_folder)
 
-    # Save settings.config
-    if 'settings.config' not in os.listdir(population_folder):
-        with open(os.path.join(population_folder, 'settings.config'), 'w') as config_file:
-            config_file.write(mario.config._config_text_file)
-    
     # Make a directory for the individual
     individual_dir = os.path.join(population_folder, individual_name)
     if not os.path.exists(individual_dir):
         os.makedirs(individual_dir)
 
-
-    chromosome = mario.chromosome
-    for param_name, param_val in chromosome.items():
-        np.save(os.path.join(individual_dir, param_name), param_val)
+    mario.model.save(os.path.join(individual_dir, 'GAparams.pth'))
     
 def load_mario(population_folder: str, individual_name: str, config: Optional[Config] = None) -> MarioTorch:
     if not os.path.exists(os.path.join(population_folder, individual_name)):
