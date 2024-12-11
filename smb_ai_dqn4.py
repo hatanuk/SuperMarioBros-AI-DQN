@@ -114,11 +114,7 @@ def evaluate_individual_in_separate_process(args):
 
     # attempt to offload model to GPU
 
-    if random.random() < 0.5:
-        start = time.time()
-        individual.to_cuda()
-        end = time.time()
-        print(f"cuda offloading time: {(end - start):.15f}")
+    start = time.time()
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
     env = InputSpaceReduction(env, config)
@@ -136,18 +132,7 @@ def evaluate_individual_in_separate_process(args):
     while not done:
 
         # Take a step in the environment (mario is updated in wrapper)
-        start = time.time()
         action = individual.get_action(obs)
-        end = time.time()
-
-        if random.random() < 0.05:
-
-            if next(individual.model.parameters()).is_cuda:
-                inf_loc = "GPU"
-            else:
-                inf_loc = "CPU"
-
-            print(f"inference on {inf_loc} time: {(end - start):.15f}")
 
         action_counts[action] += 1
         obs, reward, done, _ = env.step(action)
@@ -163,12 +148,16 @@ def evaluate_individual_in_separate_process(args):
 
     env.close()
 
+    end = time.time()
+
+
     data = {
         'max_fitness': best_fitness,
         'max_distance': max_distance,
         'current_fitness': individual.fitness,
         'current_distance': individual.farthest_x,
         'action_counts': action_counts
+        'wall_clock_time': f"{(end - start):.5f}"
     }
 
     return data
@@ -207,6 +196,8 @@ def run_ga_agent(config, data_queue):
             total_distance = 0
             for i, res in enumerate(results):
 
+                average_time += res['wall_clock_time']
+
                 population.individuals[i]._fitness = res['current_fitness']
                 population.individuals[i].farthest_x = res['max_distance']
 
@@ -235,6 +226,8 @@ def run_ga_agent(config, data_queue):
                     'action_counts': res['action_counts']
                 }
                 data_queue.put(data)
+            
+            print(f"average time for a generational episode: {average_time / len(results):.5f}")
 
 
             # Selection for next generation
