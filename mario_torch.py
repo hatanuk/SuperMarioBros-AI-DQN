@@ -51,7 +51,7 @@ class SequentialModel(nn.Module):
 
     def save(self, path: str):
         torch.save({
-    'state_dict': model.state_dict(),
+    'state_dict': self.model.state_dict(),
     'layer_sizes': self.layer_sizes,
     'hidden_activation': self.hidden_activation,
     'output_activation': self.output_activation
