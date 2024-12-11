@@ -194,6 +194,7 @@ def run_ga_agent(config, data_queue):
             # Process results for logging and stats
             total_fitness = 0
             total_distance = 0
+            average_time = 0
             for i, res in enumerate(results):
 
                 average_time += res['wall_clock_time']
