@@ -118,7 +118,7 @@ def evaluate_individual_in_separate_process(args):
         start = time.time()
         individual.to_cuda()
         end = time.time()
-        print(f"cuda offloading time: {(end - start).2f}")
+        print(f"cuda offloading time: {(end - start):.2f}")
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
     env = InputSpaceReduction(env, config)
