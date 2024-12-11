@@ -52,17 +52,15 @@ import torch.nn as nn
 
 
 class EpsilonDecayScheduler:
-    def __init__(self, initial_epsilon, final_epsilon, epsilon_decay):
+    def __init__(self, initial_epsilon, final_epsilon, decay_fraction, total_episodes):
         self.initial_epsilon = initial_epsilon
         self.final_epsilon = final_epsilon
-        self.epsilon_decay = epsilon_decay
+        self.decay_episodes = int(total_episodes * decay_fraction)
 
     def get_epsilon(self, current_episode):
-        epsilon = max(
-            self.final_epsilon,
-            self.initial_epsilon * self.epsilon_decay ** current_episode
-        )
-        return epsilon
+        return max(self.initial_epsilon - current_episode * (self.initial_epsilon - self.final_epsilon) / self.decay_episodes,
+                     self.final_epsilon)
+
 
 ## Restricts the DQN's output to a subset of available actions (ie from 9 to 6)
 # This is to match the DQN's output layer to the size of the GA's output layer
@@ -200,7 +198,7 @@ class DQNCallback(BaseCallback):
 
         self.max_episodes = self.config.DQN.total_episodes
 
-        self.epsilon_scheduler = EpsilonDecayScheduler(config.DQN.epsilon_start, config.DQN.epsilon_min, config.DQN.epsilon_decay)
+        self.epsilon_scheduler = EpsilonDecayScheduler(config.DQN.epsilon_start, config.DQN.epsilon_min, config.DQN.decay_fraction, self.max_episodes)
 
 
     def _on_training_start(self) -> None:
@@ -298,7 +296,7 @@ class DQNMario(Mario):
         self.discount_value = self.config.DQN.discount_value
         self.epsilon_start = self.config.DQN.epsilon_start
         self.epsilon_min = self.config.DQN.epsilon_min
-        self.epsilon_decay = self.config.DQN.epsilon_decay
+        self.decay_fraction = self.config.DQN.decay_fraction
         self.train_freq = self.config.DQN.train_freq
 
         # specifies the model architecture for the DQN
@@ -311,6 +309,7 @@ class DQNMario(Mario):
                     gamma=self.discount_value, 
                     learning_rate=self.learning_rate,  
                     buffer_size=self.buffer_size,
+                    exploration_fraction=self.decay_fraction,
                     exploration_final_eps=self.epsilon_min, 
                     exploration_initial_eps=self.epsilon_start,
                     train_freq=self.train_freq,

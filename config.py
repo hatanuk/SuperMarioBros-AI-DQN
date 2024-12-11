@@ -67,7 +67,7 @@ _params = {
         'buffer_size': int,
         'epsilon_start': float,
         'epsilon_min': float,
-        'epsilon_decay': float,
+        'decay_fraction': float,
         'train_freq': int,
         'total_episodes': int,
     },
