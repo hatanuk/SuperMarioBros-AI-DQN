@@ -279,8 +279,11 @@ class DQNCallback(BaseCallback):
         self.save_model()
     
     def save_model(self):
+        if self.model.env is None:
+            return
+        
         self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_FINAL')
-        layer_sizes = [self.env.observation_space.n] + [self.config.NeuralNetworkDQN.hidden_layer_architecture] + [self.env.action_space.n]
+        layer_sizes = [self.model.env.observation_space.n] + [self.config.NeuralNetworkDQN.hidden_layer_architecture] + [self.model.env.action_space.n]
         torch.save({
         'state_dict': self.model.state_dict(),
         'layer_sizes': layer_sizes,
