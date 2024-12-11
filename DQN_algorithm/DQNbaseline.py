@@ -102,7 +102,7 @@ class InputSpaceReduction(gym.Env):
         self.input_size = self._height * self._width + (self._height if self._encode_row else 0),
         self.output_size = 6
 
-        self.action_space = self.output_size
+        self.action_space = spaces.Discrete(self.output_size)
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(self.input_size), dtype=np.float32
         )
