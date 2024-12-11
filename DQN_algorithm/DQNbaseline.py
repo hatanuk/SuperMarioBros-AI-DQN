@@ -263,7 +263,7 @@ class DQNCallback(BaseCallback):
 
             if self.episode % 10 == 0:
                 policy_nn = self.model.policy
-                self.save_model()
+                self.save_model("CHECKPOINT")
 
 
             if self.episode >= self.max_episodes:
@@ -277,20 +277,20 @@ class DQNCallback(BaseCallback):
     def _on_training_end(self) -> None:
         print(f"Stopping training DQN after {self.episode} episodes.")
         self.is_training = False
-        self.save_model()
+        self.save_model("FINAL")
     
-    def save_model(self):
+    def save_model(self, title):
         if self.model.env is None:
             return
         
-        self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_FINAL')
+        self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_{title}')
         layer_sizes = [self.model.env.observation_space.shape[0]] + [self.config.NeuralNetworkDQN.hidden_layer_architecture] + [self.model.env.action_space.n]
         torch.save({
         'state_dict': self.model.policy.state_dict(),
         'layer_sizes': layer_sizes,
         'hidden_activation': self.config.NeuralNetworkDQN.hidden_node_activation,
         'output_activation': self.config.NeuralNetworkDQN.output_node_activation,
-        }, path)
+        }, self.config.Statistics.dqn_save_dir + f'/{self.config.Statistics.dqn_model_name}_{title}.pt')
 
 
 class DQNMario(Mario):
