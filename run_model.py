@@ -7,22 +7,10 @@ from mario_torch import MarioTorch as Mario
 from config import Config
 from smb_ai import parse_args
 from mario_torch import SequentialModel
+from mario_torch import MarioTorch as Mario
 import os
 from DQN_algorithm.DQNbaseline import InputSpaceReduction
 
-
-class Agent:
-    def __init__(self, model):
-        self.model = model
-    
-    def get_action(self, obs):
-        x = torch.from_numpy(obs).float()
-        if next(self.model.parameters()).is_cuda:
-            x = x.to('cuda')
-        output = self.model.forward(x)
-        output = output.detach().cpu().numpy().flatten()
-        action_index = np.argmax(output)
-        return action_index
 
 
 if __name__ == "__main__":
@@ -54,9 +42,12 @@ if __name__ == "__main__":
         input_dims = config.NeuralNetworkDQN.input_dims
         encode_row = config.NeuralNetworkDQN.encode_row
 
-    agent = Agent(model)
+    agent = Mario( config: config)
+    agent.model = model
+
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{args.level}', render_mode='human')
     env = InputSpaceReduction(env, input_dims, encode_row, skip=config.Misc.frame_skip)
+    env.mario = agent
     obs = env.reset()
 
     done = False
