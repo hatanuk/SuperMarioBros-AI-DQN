@@ -89,7 +89,7 @@ class MarioTorch(Individual):
         self.name = name
         self.debug = debug
 
-        self._skip = config.Misc.skip_frames
+        self._skip = config.Misc.frame_skip
 
         self._fitness = 0
         self._frames_since_progress = 0
