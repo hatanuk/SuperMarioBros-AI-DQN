@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     agent = Agent(model)
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{args.level}', render_mode='human')
-    env = InputSpaceReduction(env, input_dims, encode_row, skip=config.Misc.skip_frames)
+    env = InputSpaceReduction(env, input_dims, encode_row, skip=config.Misc.frame_skip)
     obs = env.reset()
 
     done = False
