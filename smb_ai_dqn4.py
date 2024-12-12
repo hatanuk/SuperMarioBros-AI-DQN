@@ -109,9 +109,8 @@ def evaluate_individual_in_separate_process(args):
     start = time.time()
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
-    env = InputSpaceReduction(env, input_dims=config.NeuralNetworkGA.input_dims, encode_row=config.NeuralNetworkGA.encode_row)
+    env = InputSpaceReduction(env, input_dims=config.NeuralNetworkGA.input_dims, encode_row=config.NeuralNetworkGA.encode_row, skip=config.Misc.frame_skip)
     env.mario = individual
-    env = FrameSkipWrapper(env, skip=config.Misc.frame_skip)
   
     obs = env.reset()
 
@@ -271,13 +270,12 @@ def run_dqn_agent(config, data_queue, dqn_model):
 
     # Initialize environment
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
-    env = InputSpaceReduction(env, input_dims=config.NeuralNetworkDQN.input_dims, encode_row=config.NeuralNetworkDQN.encode_row)
+    env = InputSpaceReduction(env, input_dims=config.NeuralNetworkDQN.input_dims, encode_row=config.NeuralNetworkDQN.encode_row, skip=config.Misc.frame_skip)
 
     # Initialize DQN agent
     mario_DQN = DQNMario(config, env)
     env.mario = mario_DQN
 
-    env = FrameSkipWrapper(env, skip=config.Misc.frame_skip)
 
     env = DummyVecEnv([lambda: env])
 
