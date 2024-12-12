@@ -64,9 +64,20 @@ class SequentialModel(nn.Module):
     @classmethod
     def load(cls, path: str):
         details = torch.load(path, weights_only=False)
-        print(details)
         model = cls(details['layer_sizes'], details['hidden_activation'], details['output_activation'])
-        model.load_state_dict({f'model.{key}': value for key, value in details['state_dict'].items()})
+
+        updated_state_dict = {}
+        for key, value in details['state_dict'].items():
+            if '.' in key:
+                suffix = '.'.join(key.split('.')[-2:])  
+            else:
+                suffix = key
+            
+            updated_key = f'model.{suffix}'
+            updated_state_dict[updated_key] = value
+        
+        # Load the updated state_dict into the model
+        model.load_state_dict(updated_state_dict)
         return model
 
 
