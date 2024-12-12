@@ -151,7 +151,6 @@ class InputSpaceReduction(gym.Env):
             prior_fitness = self.mario.fitness
             reward = self.mario.calculate_fitness() - prior_fitness
 
-        print(f"delta fitness: {self.mario.fitness} - {prior_fitness} = {reward}")
 
         if self.mario and not self.mario.is_alive:
             done = True
@@ -254,7 +253,6 @@ class DQNCallback(BaseCallback):
         if done:
             # manually update epsilon
             self.model.exploration_rate = self.epsilon_scheduler.get_epsilon(self.episode)
-            print("epsilon: ", self.model.exploration_rate)
 
             data = {
                 'fitness': self.recent_reward,
