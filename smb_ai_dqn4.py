@@ -50,9 +50,6 @@ import atexit
 
 from torch.utils.tensorboard import SummaryWriter
 
-import logging
-
-logging.basicConfig(level=logging.CRITICAL) 
 
 class Logger:
     def __init__(self, writer, config):

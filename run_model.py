@@ -36,6 +36,8 @@ if __name__ == "__main__":
         raise FileNotFoundError(f"Could not find model at {args.model_path}. Provide the generated .pt file.")
     if not os.path.exists(args.config):
         raise FileNotFoundError(f"Could not find config file at {args.config}.")
+    else:
+        config = Config(args.config)
 
     try:
         model = SequentialModel.load(args.model_path)
@@ -45,7 +47,7 @@ if __name__ == "__main__":
 
     agent = Agent(model)
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{args.level}', render_mode='human')
-    env = InputSpaceReduction(env, args.config.Graphics.input_dims, args.config.Graphics.encode_row, skip=args.config.Misc.skip_frames)
+    env = InputSpaceReduction(env, config.Graphics.input_dims, config.Graphics.encode_row, skip=args.Misc.skip_frames)
     obs = env.reset()
 
     done = False
