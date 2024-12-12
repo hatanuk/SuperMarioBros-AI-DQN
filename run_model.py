@@ -42,7 +42,7 @@ if __name__ == "__main__":
         input_dims = config.NeuralNetworkDQN.input_dims
         encode_row = config.NeuralNetworkDQN.encode_row
 
-    agent = Mario( config: config)
+    agent = Mario(config=config)
     agent.model = model
 
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{args.level}', render_mode='human')
