@@ -2,4 +2,12 @@ Super Mario Bros. (World).zip
 Super Mario Bros. (World).nes
 smb_rom.nes
 __pycache__/
+*.c
+*.cpp
+*.h
+*.so
+build/
+*.pyd
+*.dll
+
 
