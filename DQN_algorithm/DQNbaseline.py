@@ -113,13 +113,13 @@ class InputSpaceReduction(gym.Env):
         
     def reset(self):
 
-        if mario:
+        if self.mario:
             self.mario.reset()
         self.episode_steps = 0
 
         obs = self.env.reset()  
 
-        if mario:
+        if self.mario:
             self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
             self.mario.calculate_fitness()
     
@@ -139,20 +139,21 @@ class InputSpaceReduction(gym.Env):
             obs, reward, done, _, info = self.env.step(one_hot_v) 
             if done:
                 break
-        if mario:
+
+        if self.mario:
             self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
      
-        if mario and self.mario.did_win:
+        if self.mario and self.mario.did_win:
             print("WE HAVE A WINNER")
 
         #override env reward with the delta of fitness func
-        if mario:
+        if self.mario:
             prior_fitness = self.mario.fitness
             reward = self.mario.calculate_fitness() - prior_fitness
 
         print(f"delta fitness: {self.mario.fitness} - {prior_fitness} = {reward}")
 
-        if mario and not self.mario.is_alive:
+        if self.mario and not self.mario.is_alive:
             done = True
 
         return self._observation(obs), reward, done, info  
@@ -160,9 +161,9 @@ class InputSpaceReduction(gym.Env):
     
     def _observation(self, obs):
 
-        if not mario:
+        if not self.mario:
             return obs
-            
+
         ram = self.env.get_ram()  
 
         mario_row, mario_col = SMB.get_mario_row_col(ram)
