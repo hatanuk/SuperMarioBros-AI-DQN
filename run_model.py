@@ -8,6 +8,7 @@ from config import Config
 from smb_ai import parse_args
 from mario_torch import SequentialModel
 import os
+from DQN_algorithm.DQNbaseline import InputSpaceReduction
 
 
 class Agent:
@@ -44,8 +45,7 @@ if __name__ == "__main__":
 
     agent = Agent(model)
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{args.level}', render_mode='human')
-    env = InputSpaceReduction(env, config.Graphics.input_dims, config.Graphics.encode_row)
-    env = FrameSkipWrapper(env, skip=4)
+    env = InputSpaceReduction(env, config.Graphics.input_dims, config.Graphics.encode_row, skip=config.Misc.skip_frames)
     obs = env.reset()
 
     done = False
