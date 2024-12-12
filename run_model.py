@@ -30,6 +30,7 @@ if __name__ == "__main__":
     parser.add_argument('--model_path', type=str, required=True, help='Path to saved Mario .pt model')
     parser.add_argument('--level', type=str, default="1-1", help='Which level to load')
     parser.add_argument('--config', type=str, default='settings.config', help='Path to config')
+    parser.add_argument('--arch', type=str, default='ga', help='Whether to use the DQN or GA NN architecture defined in config. Only matter if they differ.')
     args = parser.parse_args()
 
     if not os.path.exists(args.model_path):
@@ -45,9 +46,17 @@ if __name__ == "__main__":
         print(f"Error loading model: {e}")
         exit(1)
 
+
+    if args.arch.lower() == 'ga':
+        input_dims = config.NeuralNetworkGA.input_dims
+        encode_row = config.NeuralNetworkGA.encode_row
+    else:
+        input_dims = config.NeuralNetworkDQN.input_dims
+        encode_row = config.NeuralNetworkDQN.encode_row
+
     agent = Agent(model)
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{args.level}', render_mode='human')
-    env = InputSpaceReduction(env, config.Graphics.input_dims, config.Graphics.encode_row, skip=args.Misc.skip_frames)
+    env = InputSpaceReduction(env, input_dims, encode_row, skip=args.Misc.skip_frames)
     obs = env.reset()
 
     done = False
