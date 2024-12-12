@@ -65,7 +65,7 @@ class SequentialModel(nn.Module):
     def load(cls, path: str):
         details = torch.load(path, weights_only=False)
         model = cls(details['layer_sizes'], details['hidden_activation'], details['output_activation'])
-        model.load_state_dict(details['state_dict'])
+        model.load_state_dict(f'model.{key}': value for key, value in details['state_dict'].items())
         return model
 
 
@@ -88,6 +88,8 @@ class MarioTorch(Individual):
         self.lifespan = lifespan
         self.name = name
         self.debug = debug
+
+        self._skip = config.Misc.skip_frames
 
         self._fitness = 0
         self._frames_since_progress = 0
@@ -213,7 +215,7 @@ class MarioTorch(Individual):
 
     def update(self, ram, tiles) -> bool:
         if self.is_alive:
-            self._frames += 1
+            self._frames += self._skip
             self.x_dist = SMB.get_mario_location_in_level(ram).x
             self.game_score = SMB.get_mario_score(ram)
 
@@ -234,7 +236,7 @@ class MarioTorch(Individual):
                 self.farthest_x = self.x_dist
                 self._frames_since_progress = 0
             else:
-                self._frames_since_progress += 1
+                self._frames_since_progress += self._skip
 
             if self.allow_additional_time and self.did_win:
                 self.additional_timesteps += 1

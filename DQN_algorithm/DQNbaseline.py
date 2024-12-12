@@ -77,7 +77,7 @@ class EpsilonDecayScheduler:
 
 
 class InputSpaceReduction(gym.Env):
-    def __init__(self, env, input_dims, encode_row):
+    def __init__(self, env, input_dims, encode_row, skip=4):
         super().__init__()
         
         self.env = env  
@@ -87,6 +87,7 @@ class InputSpaceReduction(gym.Env):
         self._width = input_dims[1]
         self._height = input_dims[2]
         self._encode_row = encode_row
+        self._skip = skip
 
         self.output_to_keys_map = {
             0: 4,  # U
@@ -117,12 +118,13 @@ class InputSpaceReduction(gym.Env):
 
         obs = self.env.reset()  
         self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
-        
+        self.mario.calculate_fitness()
+    
         return self._observation(obs)
     
     def step(self, action):
 
-        self.episode_steps += 1
+        self.episode_steps += self._skip
 
         action = self.output_to_keys_map[action]
 
@@ -130,16 +132,21 @@ class InputSpaceReduction(gym.Env):
         one_hot_v = np.zeros(9)
         one_hot_v[action] = 1
 
-        obs, reward, done, _, info = self.env.step(one_hot_v) 
+        for _ in range(self._skip):
+            obs, reward, done, _, info = self.env.step(one_hot_v) 
+            if done:
+                break
 
         self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
      
-
         if self.mario.did_win:
             print("WE HAVE A WINNER")
 
-        #override env reward with the fitness func
-        reward = self.mario.calculate_fitness()
+        #override env reward with the delta of fitness func
+        prior_fitness = self.mario.fitness
+        reward = self.mario.calculate_fitness() - prior_fitness
+
+        print(f"delta fitness: {self.mario.fitness} - {prior_fitness} = {reward}")
 
         if not self.mario.is_alive:
             done = True
@@ -349,62 +356,3 @@ class DQNMario(Mario):
         self.x_dist = None
         self.game_score = None
         self.did_win = False
-
-    # Mario Override
-    def update(self, ram, tiles) -> bool:
-        """
-        The main update call for Mario.
-        Takes in inputs of surrounding area and feeds through the Neural Network
-        
-        Return: True if Mario is alive
-                False otherwise
-        """
-
-        if self.is_alive:
-            self._frames += 1
-            self.x_dist = SMB.get_mario_location_in_level(ram).x
-            self.game_score = SMB.get_mario_score(ram)
-            # Sliding down flag pole
-            if ram[0x001D] == 3:
-                self.did_win = True
-                if not self._printed and self.debug:
-                    name = 'Mario '
-                    name += f'{self.name}' if self.name else ''
-                    print(f'{name} won')
-                    self._printed = True
-                if not self.allow_additional_time:
-                    self.is_alive = False
-                    return False
-            # If we made it further, reset stats
-            if self.x_dist > self.farthest_x:
-                self.farthest_x = self.x_dist
-                self._frames_since_progress = 0
-            else:
-                self._frames_since_progress += 1
-
-            if self.allow_additional_time and self.did_win:
-                self.additional_timesteps += 1
-            
-            if self.allow_additional_time and self.additional_timesteps > self.max_additional_timesteps:
-                self.is_alive = False
-                return False
-            elif not self.did_win and self._frames_since_progress > 60*3:
-                self.is_alive = False
-                return False            
-        else:
-            return False
-
-        # Did you fly into a hole?
-        if ram[0x0E] in (0x0B, 0x06) or ram[0xB5] == 2:
-            self.is_alive = False
-            return False
-
-        # Updates the fitness value as well
-        self._fitness = self.reward_func(
-            distance=self.x_dist,
-            frames=self._frames,
-            game_score =self.game_score,
-            did_win=self.did_win
-        )
-
-        return True

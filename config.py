@@ -4,8 +4,8 @@ from typing import Any, Dict
 
 # Temporarily hardcoded
 def performance_func(distance, frames, game_score, did_win):
-    score = (distance ** 1.1
-    - frames * (1/60)
+    score = (distance
+    - frames * (1/30)
     + int(did_win) * 1_000)
 
     return max(score, 0.0001)

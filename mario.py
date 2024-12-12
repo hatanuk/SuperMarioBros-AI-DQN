@@ -28,6 +28,7 @@ class Mario(Individual):
         self.config = config
         self.fitness_func = performance_func
 
+
         self.lifespan = lifespan
         self.name = name
         self.debug = debug
