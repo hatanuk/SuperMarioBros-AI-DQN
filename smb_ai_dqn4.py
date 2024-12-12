@@ -260,10 +260,10 @@ def run_ga_agent(config, data_queue):
 
             if current_generation % 10 == 0:
                 best_individual = max(population.individuals, key=lambda ind: ind.fitness)
-                save_mario('GAindividuals', 'best_mario_CHECKPOINT_GEN{current_generation}', best_individual)
+                save_mario('GAindividuals', f'best_mario_CHECKPOINT_GEN{current_generation}', best_individual)
 
         best_individual = max(population.individuals, key=lambda ind: ind.fitness)
-        save_mario('GAindividuals', 'best_mario_FINAL_GEN{current_generation}', best_individual)
+        save_mario('GAindividuals', f'best_mario_FINAL_GEN{current_generation}', best_individual)
         
 
 
