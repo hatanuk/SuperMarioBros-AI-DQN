@@ -213,7 +213,7 @@ class DQNCallback(BaseCallback):
         self.episode = 0
         self.episode_steps = 0
         self.recent_distance = 0
-        self.action_counts = [0] * 7
+        self.action_counts = [0] * len(output_to_keys_map)
         self.recent_reward = 0
 
         self.max_episodes = self.config.DQN.total_episodes
@@ -256,7 +256,6 @@ class DQNCallback(BaseCallback):
                 'episode_distance': self.recent_distance,
                 'action_counts': self.action_counts,
                 'epsilon': self.model.exploration_rate,
-                'done': done,
             }
             self.data_queue.put(data)
         
@@ -265,6 +264,7 @@ class DQNCallback(BaseCallback):
             self.recent_distance = 0
             self.recent_reward = 0
             self.recent_fitness = 0
+            self.action_counts = [0] * len(output_to_keys_map)
 
             print("EPISODE: ", self.episode)
 

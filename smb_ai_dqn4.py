@@ -464,7 +464,7 @@ if __name__ == "__main__":
                     while True:
                         ga_data = ga_data_queue.get_nowait()
 
-                        if gen_stats['current_gen'] != ga_data['current_generation']:
+                        if gen_stats['current_gen'] != ga_data['current_generation'] and ga_data['current_generation'] % config.Statistics.log_interval == 0:
                             # Generation changed, log the old generation's stats
                         
                             logger.log_ga_generation(
@@ -503,7 +503,7 @@ if __name__ == "__main__":
                         dqn_data = dqn_data_queue.get_nowait()
                         dqn_counter += 1
 
-                        if dqn_data.get('done', False) == True:
+                        if dqn_data['episode_num'] % config.Statistics.log_interval == 0:
                             logger.log_dqn_episode(
                                 fitness=dqn_data['fitness'],
                                 episode_steps=dqn_data['episode_steps'],

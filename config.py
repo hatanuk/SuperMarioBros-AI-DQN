@@ -24,7 +24,7 @@ _params = {
     "Environment": {
         'frame_skip': int,
         'level': str,
-    }
+    },
 
     # Statistics Params
     'Statistics': {
