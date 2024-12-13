@@ -397,9 +397,12 @@ if __name__ == "__main__":
     # clear prior tensorboard logs
     clear_log_dir(config.Statistics.tensorboard_dir)
 
-    os.makedirs(config.Statistics.model_save_dir)
-    os.makedirs(f'{config.Statistics.model_save_dir}/GA')
-    os.makedirs(f'{config.Statistics.model_save_dir}/DQN')
+    if not os.path.exists(config.Statistics.model_save_dir):
+        os.makedirs(config.Statistics.model_save_dir)
+    if not os.path.exists(f'{config.Statistics.model_save_dir}/GA'):
+        os.makedirs(f'{config.Statistics.model_save_dir}/GA')
+    if not os.path.exists(f'{config.Statistics.model_save_dir}/DQN'):
+        os.makedirs(f'{config.Statistics.model_save_dir}/DQN')
 
     # Add copy of the config file
     shutil.copy(args.config, f'{config.Statistics.model_save_dir}/settings.config')
