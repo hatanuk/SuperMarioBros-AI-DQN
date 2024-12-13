@@ -20,17 +20,23 @@ _params = {
         'neuron_radius': float,
     },
 
+    # Environment Params
+    "Environment": {
+        'frame_skip': int,
+        'level': str,
+    }
+
     # Statistics Params
     'Statistics': {
-        'save_best_individual_from_generation': str,
-        'save_population_stats': str,
-        'monitor_dir': str,
-        'dqn_save_dir': str,
+        'model_save_dir': str,
         'dqn_model_name': str,
+        'ga_model_name': str,
+        'checkpoint_interval': int,
         'tensorboard_dir': str,
         'log_interval': int
     },
 
+  
     # NeuralNetwork Params for GA
     'NeuralNetworkGA': {
         'input_dims': (tuple, int),
@@ -101,9 +107,7 @@ _params = {
 
     # Misc Params
     'Misc': {
-        'level': str,
         'allow_additional_time_for_flagpole': bool,
-        'frame_skip': int,
     }
 }
 

@@ -15,6 +15,17 @@ from config import Config, performance_func
 from utils import SMB, StaticTileType, EnemyType
 from neural_network import get_activation_by_name  
 
+# Simulates multioutput by mapping specific NN outputs to key combinations
+output_to_keys_map = {
+    0: [],        # No operation
+    1: [7],         # Right
+    2: [7, 8],      # Right + A
+    3: [7, 0],      # Right + B
+    4: [7, 8, 0],   # Right + A + B
+    5: [8],         # A
+    6: [6],         # Left
+}
+
 def get_torch_activation(activation_name: str):
     name = activation_name.lower()
     if name == 'relu':
@@ -53,8 +64,9 @@ class SequentialModel(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
 
-    def save(self, path: str):
+    def save(self, path: str, iteration: int):
         torch.save({
+    'iteration': iteration,
     'state_dict': self.model.state_dict(),
     'layer_sizes': self.layer_sizes,
     'hidden_activation': self.hidden_activation,
@@ -101,7 +113,7 @@ class MarioTorch(Individual):
         self.name = name
         self.debug = debug
 
-        self._skip = config.Misc.frame_skip
+        self._skip = config.Environment.frame_skip
 
         self._fitness = 0
         self._frames_since_progress = 0
@@ -123,7 +135,7 @@ class MarioTorch(Individual):
 
         self.network_architecture = [num_inputs]
         self.network_architecture.extend(self.hidden_layer_architecture)
-        self.network_architecture.append(6)  # Outputs: U, D, L, R, A, B
+        self.network_architecture.append(len(output_to_keys_map.keys()))
 
         # Create a PyTorch model
         self.model = SequentialModel(
@@ -269,17 +281,12 @@ class MarioTorch(Individual):
         return True
 
 
-def save_mario(population_folder: str, individual_name: str, mario: MarioTorch) -> None:
+def save_mario(population_folder: str, individual_name: str, mario: MarioTorch, generation) -> None:
     # Make population folder if it doesnt exist
     if not os.path.exists(population_folder):
         os.makedirs(population_folder)
 
-    # Make a directory for the individual
-    individual_dir = os.path.join(population_folder, individual_name)
-    if not os.path.exists(individual_dir):
-        os.makedirs(individual_dir)
-
-    mario.model.save(os.path.join(individual_dir, 'GAparams.pt'))
+    mario.model.save(os.path.join(population_folder, f'GAmodel_{individual_name}.pt'), generation)
     
 def load_mario(population_folder: str, individual_name: str, config: Optional[Config] = None) -> MarioTorch:
     if not os.path.exists(os.path.join(population_folder, individual_name)):
@@ -399,7 +406,7 @@ def get_num_inputs(config: Config) -> int:
 def get_num_trainable_parameters(config: Config) -> int:
     num_inputs = get_num_inputs(config)
     hidden_layers = config.NeuralNetworkGA.hidden_layer_architecture
-    num_outputs = 6  # U, D, L, R, A, B
+    num_outputs = len(output_to_keys_map.keys())
 
     layers = [num_inputs] + hidden_layers + [num_outputs]
     num_params = 0

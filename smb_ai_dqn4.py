@@ -51,18 +51,20 @@ import atexit
 from torch.utils.tensorboard import SummaryWriter
 
 
+
 class Logger:
     def __init__(self, writer, config):
         self.writer = writer
         self.config = config
 
         self.actions_to_keys_map = {
-            0: "U", 
-            1: "D", 
-            2: "L",  
-            3: "R", 
-            4: "A", 
-            5: "B"   
+            0: "None", 
+            1: "Right", 
+            2: "Right + A",  
+            3: "Right + B", 
+            4: "Right + A + B", 
+            5: "A",
+            6: "Left"
         }
 
     def log_ga_generation(self, total_fitness, total_distance, num_individuals, max_fitness, max_distance, generation, action_counts):
@@ -73,8 +75,9 @@ class Logger:
         self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
         self.writer.add_scalar('GA/avg_distance/generation', round(total_distance/num_individuals, 2), generation)
 
+        action_counts = action_counts[:len(self.action_to_keys_map)]
         action_total = sum(action_counts)
-        action_dict = {f'{self.actions_to_keys_map[i]}_key': round(count/action_total, 2) for i, count in enumerate(action_counts)}
+        action_dict = {f'{self.actions_to_keys_map[i]}': round(count/action_total, 2) for i, count in enumerate(action_counts)}
         self.writer.add_scalars('GA/action_counts/generation', action_dict, generation)
 
         values = [action_id for action_id, count in enumerate(action_counts) for _ in range(count)]
@@ -91,6 +94,7 @@ class Logger:
 
         self.writer.add_scalar('DQN/epsilon/episode', round(epsilon, 3), episode_num)
 
+        action_counts = action_counts[:len(self.action_to_keys_map)] 
         action_total = sum(action_counts)
         action_dict = {f'{self.actions_to_keys_map[i]}_key': round(count/action_total, 2) for i, count in enumerate(action_counts)}
         self.writer.add_scalars('DQN/action_counts/episode', action_dict, episode_num)
@@ -108,8 +112,8 @@ def evaluate_individual_in_separate_process(args):
 
     start = time.time()
 
-    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
-    env = InputSpaceReduction(env, input_dims=config.NeuralNetworkGA.input_dims, encode_row=config.NeuralNetworkGA.encode_row, skip=config.Misc.frame_skip)
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Environment.level}', render_mode='rgb_array')
+    env = InputSpaceReduction(env, input_dims=config.NeuralNetworkGA.input_dims, encode_row=config.NeuralNetworkGA.encode_row, skip=config.Environment.frame_skip)
     env.mario = individual
   
     obs = env.reset()
@@ -257,20 +261,20 @@ def run_ga_agent(config, data_queue):
 
             current_generation += 1
 
-            if current_generation % 10 == 0:
+            if current_generation % config.Statistis.checkpoint_interval == 0:
                 best_individual = max(population.individuals, key=lambda ind: ind.fitness)
-                save_mario('GAindividuals', f'best_mario_CHECKPOINT_GEN{current_generation}', best_individual)
+                save_mario(f'{config.Statistics.model_save_dir}/GA', f'{config.Statistics.ga_model_name}_CHECKPOINT', best_individual, current_generation)
 
         best_individual = max(population.individuals, key=lambda ind: ind.fitness)
-        save_mario('GAindividuals', f'best_mario_FINAL_GEN{current_generation}', best_individual)
+        save_mario(f'{config.Statistics.model_save_dir}/GA', config.Statistics.ga_model_name, best_individual, config.GA.total_generations)
         
 
 
 def run_dqn_agent(config, data_queue, dqn_model):
 
     # Initialize environment
-    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Misc.level}', render_mode='rgb_array')
-    env = InputSpaceReduction(env, input_dims=config.NeuralNetworkDQN.input_dims, encode_row=config.NeuralNetworkDQN.encode_row, skip=config.Misc.frame_skip)
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Environment.level}', render_mode='rgb_array')
+    env = InputSpaceReduction(env, input_dims=config.NeuralNetworkDQN.input_dims, encode_row=config.NeuralNetworkDQN.encode_row, skip=config.Environment.frame_skip)
 
     # Initialize DQN agent
     mario_DQN = DQNMario(config, env)
@@ -393,6 +397,9 @@ if __name__ == "__main__":
     # clear prior tensorboard logs
     clear_log_dir(config.Statistics.tensorboard_dir)
 
+    # Add copy of the config file
+    shutil.copy(args.config, f'{config.Statistics.model_save_dir}/settings.config')
+
     # Initialize Logger
     writer = SummaryWriter(log_dir=config.Statistics.tensorboard_dir)
 
@@ -435,7 +442,7 @@ if __name__ == "__main__":
             "max_fitness": 0,
             "max_distance": 0,
             "current_ind": 0,
-            "action_counts": [0] * 6
+            "action_counts": [0] * 9
 
         }
 
@@ -445,7 +452,7 @@ if __name__ == "__main__":
             stats["max_fitness"] = 0
             stats["max_distance"] = 0
             stats["current_ind"] = 0
-            stats["action_counts"] = [0] * 6
+            stats["action_counts"] = [0] * 9
 
 
         while True:

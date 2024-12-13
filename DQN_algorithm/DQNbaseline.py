@@ -5,6 +5,7 @@ from random import sample
 from collections import deque, OrderedDict
 from config import Config, performance_func
 from mario_torch import MarioTorch as Mario
+from mario_torch import output_to_keys_map
 from neural_network import FeedForwardNetwork, get_activation_by_name, sigmoid, tanh, relu, leaky_relu, linear, ActivationFunction
 from utils import SMB
 from mario import get_num_inputs
@@ -89,19 +90,12 @@ class InputSpaceReduction(gym.Env):
         self._encode_row = encode_row
         self._skip = skip
 
-        self.output_to_keys_map = {
-            0: 4,  # U
-            1: 5,  # D
-            2: 6,  # L
-            3: 7,  # R
-            4: 8,  # A
-            5: 0   # B
-        }
+        self.output_to_keys_map = output_to_keys_map
 
         self.episode_steps = 0
 
         self.input_size = self._height * self._width + (self._height if self._encode_row else 0),
-        self.output_size = 6
+        self.output_size = len(self.output_to_keys_map.keys())
 
         self.action_space = spaces.Discrete(self.output_size)
         self.observation_space = spaces.Box(
@@ -128,15 +122,17 @@ class InputSpaceReduction(gym.Env):
     def step(self, action):
 
         self.episode_steps += self._skip
+        
+        action_indices = self.output_to_keys_map[action]
 
-        action = self.output_to_keys_map[action]
+        # Size of the (original) action space
+        multi_hot_action = np.zeros(9)
 
-        # size of the action space
-        one_hot_v = np.zeros(9)
-        one_hot_v[action] = 1
+        for action_index in action_indices:
+            multi_hot_action[action_index] = 1
 
         for _ in range(self._skip):
-            obs, reward, done, _, info = self.env.step(one_hot_v) 
+            obs, reward, done, _, info = self.env.step(multi_hot_action) 
             if done:
                 break
 
@@ -215,10 +211,9 @@ class DQNCallback(BaseCallback):
         self.max_distance = 0
         self.max_fitness = 0
         self.episode = 0
-        self.episode_rewards = 0
         self.episode_steps = 0
         self.recent_distance = 0
-        self.action_counts = [0] * 6
+        self.action_counts = [0] * 7
         self.recent_reward = 0
 
         self.max_episodes = self.config.DQN.total_episodes
@@ -241,8 +236,6 @@ class DQNCallback(BaseCallback):
         
 
         self.episode_steps += 1
-        self.episode_rewards += self.locals['rewards'].sum()
-        self.recent_reward = self.locals['rewards'].sum()
 
 
         if self.mario.farthest_x > self.max_distance:
@@ -259,7 +252,6 @@ class DQNCallback(BaseCallback):
                 'max_fitness':  self.max_fitness,
                 'max_distance': self.max_distance,
                 'episode_num': self.episode,
-                'episode_rewards': self.episode_rewards,
                 'episode_steps': self.episode_steps,
                 'episode_distance': self.recent_distance,
                 'action_counts': self.action_counts,
@@ -269,21 +261,23 @@ class DQNCallback(BaseCallback):
             self.data_queue.put(data)
         
             self.episode += 1
-            self.episode_rewards = 0 
             self.episode_steps = 0 
             self.recent_distance = 0
             self.recent_reward = 0
+            self.recent_fitness = 0
+
             print("EPISODE: ", self.episode)
 
-            if self.episode % 10 == 0:
+            if self.episode % self.config.Statistics.checkpoint_interval == 0:
                 policy_nn = self.model.policy
-                self.save_model("CHECKPOINT")
+                self.save_model(self.episode, title="_CHECKPOINT")
 
 
             if self.episode >= self.max_episodes:
                 return False  # Stops training
 
         self.recent_distance = self.mario.farthest_x
+        self.recent_fitness = self.mario.fitness
 
         return True
 
@@ -291,20 +285,21 @@ class DQNCallback(BaseCallback):
     def _on_training_end(self) -> None:
         print(f"Stopping training DQN after {self.episode} episodes.")
         self.is_training = False
-        self.save_model("FINAL")
+        self.save_model(self.config.DQN.total_episodes)
     
-    def save_model(self, title):
+    def save_model(self, episode, title=""):
         if self.model.env is None:
             return
         
-        self.model.save(f'{self.config.Statistics.dqn_save_dir}/{self.config.Statistics.dqn_model_name}_{title}')
         layer_sizes = [self.model.env.observation_space.shape[0]] + [self.config.NeuralNetworkDQN.hidden_layer_architecture] + [self.model.env.action_space.n]
+        state_dict = {f'{key.split('.')[-2:].join(".")}': value for key, value in self.model.policy.state_dict()}
         torch.save({
+        'iterations': episode,
         'state_dict': self.model.policy.state_dict(),
         'layer_sizes': layer_sizes,
         'hidden_activation': self.config.NeuralNetworkDQN.hidden_node_activation,
         'output_activation': self.config.NeuralNetworkDQN.output_node_activation,
-        }, self.config.Statistics.dqn_save_dir + f'/{self.config.Statistics.dqn_model_name}_{title}.pt')
+        }, self.config.Statistics.model_save_dir + f'/DQN/DQNmodel_{self.config.Statistics.dqn_model_name}{title}.pt')
 
 
 class DQNMario(Mario):
