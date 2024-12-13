@@ -75,7 +75,7 @@ class Logger:
         self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
         self.writer.add_scalar('GA/avg_distance/generation', round(total_distance/num_individuals, 2), generation)
 
-        action_counts = action_counts[:len(self.action_to_keys_map)]
+        action_counts = action_counts[:len(self.actions_to_keys_map)]
         action_total = sum(action_counts)
         action_dict = {f'{self.actions_to_keys_map[i]}': round(count/action_total, 2) for i, count in enumerate(action_counts)}
         self.writer.add_scalars('GA/action_counts/generation', action_dict, generation)
@@ -94,7 +94,7 @@ class Logger:
 
         self.writer.add_scalar('DQN/epsilon/episode', round(epsilon, 3), episode_num)
 
-        action_counts = action_counts[:len(self.action_to_keys_map)] 
+        action_counts = action_counts[:len(self.actions_to_keys_map)] 
         action_total = sum(action_counts)
         action_dict = {f'{self.actions_to_keys_map[i]}_key': round(count/action_total, 2) for i, count in enumerate(action_counts)}
         self.writer.add_scalars('DQN/action_counts/episode', action_dict, episode_num)
@@ -261,7 +261,7 @@ def run_ga_agent(config, data_queue):
 
             current_generation += 1
 
-            if current_generation % config.Statistis.checkpoint_interval == 0:
+            if current_generation % config.Statistics.checkpoint_interval == 0:
                 best_individual = max(population.individuals, key=lambda ind: ind.fitness)
                 save_mario(f'{config.Statistics.model_save_dir}/GA', f'{config.Statistics.ga_model_name}_CHECKPOINT', best_individual, current_generation)
 
