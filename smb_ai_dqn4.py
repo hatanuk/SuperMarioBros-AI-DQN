@@ -397,6 +397,9 @@ if __name__ == "__main__":
     # clear prior tensorboard logs
     clear_log_dir(config.Statistics.tensorboard_dir)
 
+    if not os.path.exists(config.Statistics.model_save_dir):
+        os.makedirs(config.Statistics.model_save_dir)
+
     # Add copy of the config file
     with open(f'{config.Statistics.model_save_dir}/settings.config', "w") as _:
         pass
