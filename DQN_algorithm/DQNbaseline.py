@@ -292,7 +292,6 @@ class DQNCallback(BaseCallback):
             return
         
         layer_sizes = [self.model.env.observation_space.shape[0]] + [self.config.NeuralNetworkDQN.hidden_layer_architecture] + [self.model.env.action_space.n]
-        state_dict = {f'{key.split(".")[-2:].join(".")}': value for key, value in self.model.policy.state_dict()}
         torch.save({
         'iterations': episode,
         'state_dict': self.model.policy.state_dict(),
