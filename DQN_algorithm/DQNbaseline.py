@@ -291,7 +291,7 @@ class DQNCallback(BaseCallback):
         if self.model.env is None:
             return
         
-        layer_sizes = [self.model.env.observation_space.shape[0]] + [self.config.NeuralNetworkDQN.hidden_layer_architecture] + [self.model.env.action_space.n]
+        layer_sizes = [self.model.env.observation_space.shape[0]] + self.config.NeuralNetworkDQN.hidden_layer_architecture + [self.model.env.action_space.n]
         torch.save({
         'iterations': episode,
         'state_dict': self.model.policy.state_dict(),
