@@ -81,7 +81,7 @@ class Logger:
         self.writer.add_scalars('GA/action_counts/generation', action_dict, generation)
 
         values = [action_id for action_id, count in enumerate(action_counts) for _ in range(count)]
-        if generation % 10 == 0 and values:
+        if generation % 500 == 0 and values:
             self.writer.add_histogram('GA/action_distribution/generation', np.array(values), generation)
 
 
@@ -100,7 +100,7 @@ class Logger:
         self.writer.add_scalars('DQN/action_counts/episode', action_dict, episode_num)
 
         values = [action_id for action_id, count in enumerate(action_counts) for _ in range(count)]
-        if episode_num % 10 == 0 and values:
+        if episode_num % 500 == 0 and values:
             self.writer.add_histogram('DQN/action_distribution/episode', np.array(values), episode_num)
 
 
@@ -481,8 +481,8 @@ if __name__ == "__main__":
 
                         gen_stats['total_fitness'] += ga_data['current_fitness']
                         gen_stats['total_distance'] += ga_data['current_distance']
-                        gen_stats['max_fitness'] = ga_data['max_fitness']
-                        gen_stats['max_distance'] = ga_data['max_distance']
+                        gen_stats['max_fitness'] = max(gen_stats['max_fitness'], ga_data['max_fitness'])
+                        gen_stats['max_distance'] = max(gen_stats['max_distance'], ga_data['max_distance'])
                         gen_stats['current_ind'] = ga_data['current_individual']
 
                         for i, action_count in enumerate(ga_data['action_counts']):
