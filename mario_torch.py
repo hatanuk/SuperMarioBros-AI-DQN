@@ -76,8 +76,8 @@ class SequentialModel(nn.Module):
     @classmethod
     def load(cls, path: str):
         details = torch.load(path, weights_only=False)
-        saved_keys = details['state_dict'].keys()
-        print(details.keys())
+        saved_keys = details['state_dict']
+        print(details)
 
         model = cls(details['layer_sizes'], details['hidden_activation'], details['output_activation'])
         
