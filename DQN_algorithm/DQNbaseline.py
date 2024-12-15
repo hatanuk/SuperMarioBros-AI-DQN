@@ -312,7 +312,7 @@ class DQNCallback(BaseCallback):
         'layer_sizes': layer_sizes,
         'hidden_activation': self.config.NeuralNetworkDQN.hidden_node_activation,
         'output_activation': self.config.NeuralNetworkDQN.output_node_activation,
-        }, )
+        }, save_dir)
 
     def save_best_model(self, episode):
         # Saving the overall best model
@@ -334,8 +334,7 @@ class DQNCallback(BaseCallback):
             'layer_sizes': layer_sizes,
             'hidden_activation': self.config.NeuralNetworkDQN.hidden_node_activation,
             'output_activation': self.config.NeuralNetworkDQN.output_node_activation,
-            }, self.config.Statistics.model_save_dir + f'/DQN/OVERALL_BEST/{self.config.Statistics.dqn_model_name}_fitness{fitness}.pt')
-
+            }, save_dir)
 
 class DQNMario(Mario):
     def __init__(self, 
