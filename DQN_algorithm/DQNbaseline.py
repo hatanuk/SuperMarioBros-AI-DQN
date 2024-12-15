@@ -45,6 +45,10 @@ def get_torch_activation_by_name(name: str):
     }
     return activations.get(name.lower(), None)
 
+def clear_dir(target):
+    if os.path.exists(target):
+        shutil.rmtree(target) 
+    os.makedirs(target, exist_ok=True)
 
 
 class FrameSkipWrapper(gym.Wrapper):
@@ -322,11 +326,12 @@ class DQNCallback(BaseCallback):
         save_dir = self.config.Statistics.model_save_dir + f'/DQN/OVERALL_BEST/{self.config.Statistics.dqn_model_name}_fitness{max_fitness}.pt'
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
+
+        clear_dir(f'{config.Statistics.model_save_dir}/DQN/OVERALL_BEST')
         
         layer_sizes = [self.model.env.observation_space.shape[0]] + self.config.NeuralNetworkDQN.hidden_layer_architecture + [self.model.env.action_space.n]
 
         if self.best_model:
-            clear_log_dir(f'{config.Statistics.model_save_dir}/DQN/OVERALL_BEST')
             torch.save({
             'iterations': episode,
             'distance': self.best_model_distance,

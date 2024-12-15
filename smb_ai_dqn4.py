@@ -35,7 +35,7 @@ from genetic_algorithm.selection import elitism_selection, tournament_selection,
 from genetic_algorithm.crossover import simulated_binary_crossover as SBX
 from genetic_algorithm.mutation import gaussian_mutation
 
-from DQN_algorithm.DQNbaseline import DQNCallback, DQNMario, InputSpaceReduction, FrameSkipWrapper
+from DQN_algorithm.DQNbaseline import DQNCallback, DQNMario, InputSpaceReduction, FrameSkipWrapper, clear_dir
 
 from smb_ai import draw_border, parse_args
 
@@ -275,7 +275,7 @@ def save_mario_pop(population, config, generation, postfix=""):
         save_mario(f'{config.Statistics.model_save_dir}/GA/GEN{generation}{postfix}', f'{config.Statistics.ga_model_name}_ind{i+1}_fitness{fitness}', ind, generation, ind.farthest_x)
    
 def save_overall_best_individual(individual, config, generation, postfix=""):
-    clear_log_dir(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST')
+    clear_dir(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST')
     fitness = int(max(0, min(individual.fitness, 99999999)))
     save_mario(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST', f'{config.Statistics.ga_model_name}_best_fitness{fitness}', individual, generation, individual.farthest_x)
 
@@ -387,11 +387,6 @@ def get_stats(mario):
     game_score = mario.game_score if mario.game_score is not None else 0
     return [frames, distance, game_score]
 
-def clear_log_dir(log_dir):
-    if os.path.exists(log_dir):
-        shutil.rmtree(log_dir) 
-        print(f"Cleared log directory: {log_dir}")
-    os.makedirs(log_dir, exist_ok=True)
 
 if __name__ == "__main__":
     multiprocessing.set_start_method("spawn", force=True)
@@ -405,7 +400,7 @@ if __name__ == "__main__":
         config = Config(args.config)
 
     # clear prior tensorboard logs
-    clear_log_dir(config.Statistics.tensorboard_dir)
+    clear_dir(config.Statistics.tensorboard_dir)
 
     if not os.path.exists(config.Statistics.model_save_dir):
         os.makedirs(config.Statistics.model_save_dir)
