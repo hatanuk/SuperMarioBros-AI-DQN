@@ -271,12 +271,12 @@ def run_ga_agent(config, data_queue):
 def save_mario_pop(population, config, generation, postfix=""):
     best_individuals = sorted(population.individuals, key=lambda ind: ind.fitness, reverse=True)[:config.Statistics.top_x_individuals:]
     for i, ind in enumerate(best_individuals):
-        fitness = max(0, min(ind.fitness, 99999999))
+        fitness = int(max(0, min(ind.fitness, 99999999)))
         save_mario(f'{config.Statistics.model_save_dir}/GA/GEN{generation}{postfix}', f'{config.Statistics.ga_model_name}_ind{i+1}_fitness{fitness}', ind, generation, ind.farthest_x)
    
 def save_overall_best_individual(individual, config, generation, postfix=""):
     clear_log_dir(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST')
-    fitness = max(0, min(individual.fitness, 99999999))
+    fitness = int(max(0, min(individual.fitness, 99999999)))
     save_mario(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST', f'{config.Statistics.ga_model_name}_best_fitness{fitness}', individual, current_generation, individual.farthest_x)
 
 
