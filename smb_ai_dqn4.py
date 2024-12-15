@@ -277,7 +277,7 @@ def save_mario_pop(population, config, generation, postfix=""):
 def save_overall_best_individual(individual, config, generation, postfix=""):
     clear_log_dir(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST')
     fitness = int(max(0, min(individual.fitness, 99999999)))
-    save_mario(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST', f'{config.Statistics.ga_model_name}_best_fitness{fitness}', individual, current_generation, individual.farthest_x)
+    save_mario(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST', f'{config.Statistics.ga_model_name}_best_fitness{fitness}', individual, generation, individual.farthest_x)
 
 
 def run_dqn_agent(config, data_queue, dqn_model):
