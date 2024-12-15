@@ -327,7 +327,7 @@ class DQNCallback(BaseCallback):
         if self.model.env is None:
             return
         fitness = int(max(0, min(self.recent_fitness, 99999999)))
-        save_dir = os.path.join(self.config.Statistics.model_save_dir, f'DQN/EPS{self.episode}{postfix}')
+        save_dir = os.path.join(self.config.Statistics.model_save_dir, f'DQN/BEST_OVERALL')
         save_file = f"{self.config.Statistics.dqn_model_name}_fitness{fitness}.pt"
         save_path = os.path.join(save_dir, save_file)
 
