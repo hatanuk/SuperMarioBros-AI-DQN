@@ -64,9 +64,10 @@ class SequentialModel(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
 
-    def save(self, path: str, iteration: int):
+    def save(self, path: str, iteration: int, distance: int):
         torch.save({
-    'iteration': iteration,
+    'iterations': iteration,
+    'distance': distance,
     'state_dict': self.model.state_dict(),
     'layer_sizes': self.layer_sizes,
     'hidden_activation': self.hidden_activation,
@@ -283,12 +284,12 @@ class MarioTorch(Individual):
         return True
 
 
-def save_mario(population_folder: str, individual_name: str, mario: MarioTorch, generation) -> None:
+def save_mario(population_folder: str, individual_name: str, mario: MarioTorch, generation, distance) -> None:
     # Make population folder if it doesnt exist
     if not os.path.exists(population_folder):
         os.makedirs(population_folder)
 
-    mario.model.save(os.path.join(population_folder, f'GAmodel_{individual_name}.pt'), generation)
+    mario.model.save(os.path.join(population_folder, f'GAmodel_{individual_name}.pt'), generation, distance)
     
 def load_mario(population_folder: str, individual_name: str, config: Optional[Config] = None) -> MarioTorch:
     if not os.path.exists(os.path.join(population_folder, individual_name)):

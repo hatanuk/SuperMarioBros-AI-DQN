@@ -170,6 +170,8 @@ def run_ga_agent(config, data_queue):
     current_generation = 0
     _current_individual = 0
 
+    best_individual = None
+
     # Determine the size of the next generation
     if config.Selection.selection_type == 'plus':
         _next_gen_size = config.Selection.num_parents + config.Selection.num_offspring
@@ -202,9 +204,11 @@ def run_ga_agent(config, data_queue):
                 total_fitness += res['current_fitness']
                 total_distance += res['current_distance']
 
-                # Update global best fitness and distance
+                # Update global best fitness and distance (and save the best individual)
                 if res['max_fitness'] > best_fitness_GA:
                     best_fitness_GA = res['max_fitness']
+                    best_individual = population.individuals[i]
+
                 if res['max_distance'] > max_distance_GA:
                     max_distance_GA = res['max_distance']
 
@@ -227,6 +231,10 @@ def run_ga_agent(config, data_queue):
             
             #print(f"average time for a generational episode: {average_time / len(results):.5f}")
 
+            if current_generation % config.Statistics.checkpoint_interval == 0:
+                save_mario_pop(population, config, current_generation, "_CHECKPOINT")
+                if best_individual:
+                    save_overall_best_individual(best_individual, config, current_generation)
 
             # Selection for next generation
             population.individuals = elitism_selection(population, config.Selection.num_parents)
@@ -261,13 +269,17 @@ def run_ga_agent(config, data_queue):
 
             current_generation += 1
 
-            if current_generation % config.Statistics.checkpoint_interval == 0:
-                best_individual = max(population.individuals, key=lambda ind: ind.fitness)
-                save_mario(f'{config.Statistics.model_save_dir}/GA', f'{config.Statistics.ga_model_name}_CHECKPOINT', best_individual, current_generation)
+        save_mario_pop(population, config, current_generation, "_FINAL")
+        save_overall_best_individual(best_individual, config, current_generation)
 
-        best_individual = max(population.individuals, key=lambda ind: ind.fitness)
-        save_mario(f'{config.Statistics.model_save_dir}/GA', config.Statistics.ga_model_name, best_individual, config.GA.total_generations)
-        
+def save_mario_pop(population, config, generation, postfix=""):
+    best_individuals = sorted(population, key=lambda ind: ind.fitness, reverse=True)[:config.Statistics.top_x_individuals:]
+    for i, ind in enumerate(best_individuals):
+        save_mario(f'{config.Statistics.model_save_dir}/GA/GEN{generation}{postfix}', f'{config.Statistics.ga_model_name}_ind{i+1}_fitness{ind.fitness}', ind, generation, ind.distance)
+   
+def save_overall_best_individual(individual, config, generation, postfix=""):
+    clear_log_dir(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST')
+    save_mario(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST', f'{config.Statistics.ga_model_name}_best_fitness{best_individual.fitness}', best_individual, current_generation, best_individual.distance)
 
 
 def run_dqn_agent(config, data_queue, dqn_model):

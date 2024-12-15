@@ -216,6 +216,9 @@ class DQNCallback(BaseCallback):
         self.action_counts = [0] * len(output_to_keys_map)
         self.recent_reward = 0
 
+        self.best_model = None
+        self.best_model_distance = 0
+
         self.max_episodes = self.config.DQN.total_episodes
 
         self.epsilon_scheduler = EpsilonDecayScheduler(config.DQN.epsilon_start, config.DQN.epsilon_min, config.DQN.decay_fraction, self.max_episodes)
@@ -242,10 +245,17 @@ class DQNCallback(BaseCallback):
             self.max_distance = self.mario.farthest_x
         if self.mario.fitness >  self.max_fitness:
             self.max_fitness = self.mario.fitness
+            # also save these new weights as new best
+            self.best_model_distance = self.mario.farthest_x
+            self.best_model_state_dict = copy.deepcopy(self.model.policy.state_dict())
 
         if done:
             # manually update epsilon
             self.model.exploration_rate = self.epsilon_scheduler.get_epsilon(self.episode)
+
+            if self.episode % self.config.Statistics.checkpoint_interval == 0:
+                policy_nn = self.model.policy
+                self.save_model(self.episode, self.recent_distance, postfix="_CHECKPOINT")
 
             data = {
                 'fitness': self.recent_reward,
@@ -258,6 +268,10 @@ class DQNCallback(BaseCallback):
                 'epsilon': self.model.exploration_rate,
             }
             self.data_queue.put(data)
+
+
+            if self.episode >= self.max_episodes:
+                return False  # Stops training
         
             self.episode += 1
             self.episode_steps = 0 
@@ -268,14 +282,6 @@ class DQNCallback(BaseCallback):
 
             print("EPISODE: ", self.episode)
 
-            if self.episode % self.config.Statistics.checkpoint_interval == 0:
-                policy_nn = self.model.policy
-                self.save_model(self.episode, title="_CHECKPOINT")
-
-
-            if self.episode >= self.max_episodes:
-                return False  # Stops training
-
         self.recent_distance = self.mario.farthest_x
         self.recent_fitness = self.mario.fitness
 
@@ -285,20 +291,36 @@ class DQNCallback(BaseCallback):
     def _on_training_end(self) -> None:
         print(f"Stopping training DQN after {self.episode} episodes.")
         self.is_training = False
-        self.save_model(self.config.DQN.total_episodes)
+        self.save_model(self.episode, self.recent_distance, postfix="_FINAL")
     
-    def save_model(self, episode, title=""):
+    def save_model(self, episode, distance, postfix=""):
+
+        fitness = max(0, min(self.recent_fitness, 99999999))
+        max_fitness = max(0, min(self.max_fitness, 99999999))
+
         if self.model.env is None:
             return
         
         layer_sizes = [self.model.env.observation_space.shape[0]] + self.config.NeuralNetworkDQN.hidden_layer_architecture + [self.model.env.action_space.n]
         torch.save({
         'iterations': episode,
+        'distance': self.mario.farthest_x,
         'state_dict': self.model.policy.state_dict(),
         'layer_sizes': layer_sizes,
         'hidden_activation': self.config.NeuralNetworkDQN.hidden_node_activation,
         'output_activation': self.config.NeuralNetworkDQN.output_node_activation,
-        }, self.config.Statistics.model_save_dir + f'/DQN/DQNmodel_{self.config.Statistics.dqn_model_name}{title}.pt')
+        }, self.config.Statistics.model_save_dir + f'/DQN/EPS{self.episode}{postfix}/{self.config.Statistics.dqn_model_name}_fitness{fitness}.pt')
+
+        if self.best_model:
+            clear_log_dir(f'{config.Statistics.model_save_dir}/DQN/OVERALL_BEST')
+            torch.save({
+            'iterations': episode,
+            'distance': self.best_model_distance,
+            'state_dict': self.best_model_state_dict,
+            'layer_sizes': layer_sizes,
+            'hidden_activation': self.config.NeuralNetworkDQN.hidden_node_activation,
+            'output_activation': self.config.NeuralNetworkDQN.output_node_activation,
+            }, self.config.Statistics.model_save_dir + f'/DQN/OVERALL_BEST/{self.config.Statistics.dqn_model_name}_fitness{max_fitness}.pt')
 
 
 class DQNMario(Mario):
