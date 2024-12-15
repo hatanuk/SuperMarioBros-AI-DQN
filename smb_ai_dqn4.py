@@ -231,7 +231,7 @@ def run_ga_agent(config, data_queue):
             
             #print(f"average time for a generational episode: {average_time / len(results):.5f}")
 
-            if current_generation % config.Statistics.checkpoint_interval == 0:
+            if current_generation % config.Statistics.ga_checkpoint_interval == 0:
                 save_mario_pop(population, config, current_generation, "_CHECKPOINT")
                 if best_individual:
                     save_overall_best_individual(best_individual, config, current_generation)

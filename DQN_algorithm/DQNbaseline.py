@@ -253,7 +253,7 @@ class DQNCallback(BaseCallback):
             # manually update epsilon
             self.model.exploration_rate = self.epsilon_scheduler.get_epsilon(self.episode)
 
-            if self.episode % self.config.Statistics.checkpoint_interval == 0:
+            if self.episode % self.config.Statistics.dqn_checkpoint_interval == 0:
                 policy_nn = self.model.policy
                 self.save_model(self.episode, self.recent_distance, postfix="_CHECKPOINT")
 
