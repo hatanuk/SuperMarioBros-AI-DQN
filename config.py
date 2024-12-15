@@ -31,7 +31,9 @@ _params = {
         'model_save_dir': str,
         'dqn_model_name': str,
         'ga_model_name': str,
-        'checkpoint_interval': int,
+        'ga_checkpoint_interval': int,
+        'dqn_checkpoint_interval': int,
+        'top_x_individuals': int,
         'tensorboard_dir': str,
         'log_interval': int
     },
