@@ -306,7 +306,10 @@ class DQNCallback(BaseCallback):
             return
         fitness = int(max(0, min(self.recent_fitness, 99999999)))
         layer_sizes = [self.model.env.observation_space.shape[0]] + self.config.NeuralNetworkDQN.hidden_layer_architecture + [self.model.env.action_space.n]
-        save_dir = self.config.Statistics.model_save_dir + f'/DQN/EPS{self.episode}{postfix}/{self.config.Statistics.dqn_model_name}_fitness{fitness}.pt'
+        save_dir = os.path.join(self.config.Statistics.model_save_dir, f'DQN/EPS{self.episode}{postfix}')
+        save_file = f"{self.config.Statistics.dqn_model_name}_fitness{fitness}.pt"
+        save_path = os.path.join(save_dir, save_file)
+
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -317,18 +320,21 @@ class DQNCallback(BaseCallback):
         'layer_sizes': layer_sizes,
         'hidden_activation': self.config.NeuralNetworkDQN.hidden_node_activation,
         'output_activation': self.config.NeuralNetworkDQN.output_node_activation,
-        }, save_dir)
+        }, save_path)
 
     def save_best_model(self, episode):
         # Saving the overall best model
         if self.model.env is None:
             return
         fitness = int(max(0, min(self.recent_fitness, 99999999)))
-        save_dir = self.config.Statistics.model_save_dir + f'/DQN/OVERALL_BEST/{self.config.Statistics.dqn_model_name}_fitness{max_fitness}.pt'
+        save_dir = os.path.join(self.config.Statistics.model_save_dir, f'DQN/EPS{self.episode}{postfix}')
+        save_file = f"{self.config.Statistics.dqn_model_name}_fitness{fitness}.pt"
+        save_path = os.path.join(save_dir, save_file)
+
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        clear_dir(f'{config.Statistics.model_save_dir}/DQN/OVERALL_BEST')
+        clear_dir(save_dir)
         
         layer_sizes = [self.model.env.observation_space.shape[0]] + self.config.NeuralNetworkDQN.hidden_layer_architecture + [self.model.env.action_space.n]
 
@@ -340,7 +346,7 @@ class DQNCallback(BaseCallback):
             'layer_sizes': layer_sizes,
             'hidden_activation': self.config.NeuralNetworkDQN.hidden_node_activation,
             'output_activation': self.config.NeuralNetworkDQN.output_node_activation,
-            }, save_dir)
+            }, save_path)
 
 class DQNMario(Mario):
     def __init__(self, 
