@@ -228,7 +228,6 @@ class DQNCallback(BaseCallback):
     
         self.is_training = True
 
-
     def _on_step(self) -> bool:
 
         done = True if self.locals['dones'].any() else False
@@ -255,7 +254,8 @@ class DQNCallback(BaseCallback):
 
             if self.episode % self.config.Statistics.dqn_checkpoint_interval == 0:
                 policy_nn = self.model.policy
-                self.save_model(self.episode, self.recent_distance, postfix="_CHECKPOINT")
+                self.save_current_model(self.episode, self.recent_distance, postfix="_CHECKPOINT")
+                self.save_best_model(self.episode)
 
             data = {
                 'fitness': self.recent_reward,
@@ -292,16 +292,18 @@ class DQNCallback(BaseCallback):
         print(f"Stopping training DQN after {self.episode} episodes.")
         self.is_training = False
         self.save_model(self.episode, self.recent_distance, postfix="_FINAL")
+        self.save_best_model(self.episode)
     
-    def save_model(self, episode, distance, postfix=""):
-
-        fitness = max(0, min(self.recent_fitness, 99999999))
-        max_fitness = max(0, min(self.max_fitness, 99999999))
-
+    def save_current_model(self, episode, distance, postfix=""):
+        # Saving the model at a given episode
         if self.model.env is None:
             return
-        
+        fitness = max(0, min(self.recent_fitness, 99999999))
         layer_sizes = [self.model.env.observation_space.shape[0]] + self.config.NeuralNetworkDQN.hidden_layer_architecture + [self.model.env.action_space.n]
+        save_dir = self.config.Statistics.model_save_dir + f'/DQN/EPS{self.episode}{postfix}/{self.config.Statistics.dqn_model_name}_fitness{fitness}.pt'
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
         torch.save({
         'iterations': episode,
         'distance': self.mario.farthest_x,
@@ -309,7 +311,18 @@ class DQNCallback(BaseCallback):
         'layer_sizes': layer_sizes,
         'hidden_activation': self.config.NeuralNetworkDQN.hidden_node_activation,
         'output_activation': self.config.NeuralNetworkDQN.output_node_activation,
-        }, self.config.Statistics.model_save_dir + f'/DQN/EPS{self.episode}{postfix}/{self.config.Statistics.dqn_model_name}_fitness{fitness}.pt')
+        }, )
+
+    def save_best_model(self, episode):
+        # Saving the overall best model
+        if self.model.env is None:
+            return
+        fitness = max(0, min(self.recent_fitness, 99999999))
+        save_dir = self.config.Statistics.model_save_dir + f'/DQN/OVERALL_BEST/{self.config.Statistics.dqn_model_name}_fitness{max_fitness}.pt'
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        
+        layer_sizes = [self.model.env.observation_space.shape[0]] + self.config.NeuralNetworkDQN.hidden_layer_architecture + [self.model.env.action_space.n]
 
         if self.best_model:
             clear_log_dir(f'{config.Statistics.model_save_dir}/DQN/OVERALL_BEST')
@@ -320,7 +333,7 @@ class DQNCallback(BaseCallback):
             'layer_sizes': layer_sizes,
             'hidden_activation': self.config.NeuralNetworkDQN.hidden_node_activation,
             'output_activation': self.config.NeuralNetworkDQN.output_node_activation,
-            }, self.config.Statistics.model_save_dir + f'/DQN/OVERALL_BEST/{self.config.Statistics.dqn_model_name}_fitness{max_fitness}.pt')
+            }, self.config.Statistics.model_save_dir + f'/DQN/OVERALL_BEST/{self.config.Statistics.dqn_model_name}_fitness{fitness}.pt')
 
 
 class DQNMario(Mario):

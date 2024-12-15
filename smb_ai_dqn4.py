@@ -273,13 +273,15 @@ def run_ga_agent(config, data_queue):
         save_overall_best_individual(best_individual, config, current_generation)
 
 def save_mario_pop(population, config, generation, postfix=""):
-    best_individuals = sorted(population, key=lambda ind: ind.fitness, reverse=True)[:config.Statistics.top_x_individuals:]
+    best_individuals = sorted(population.individuals, key=lambda ind: ind.fitness, reverse=True)[:config.Statistics.top_x_individuals:]
     for i, ind in enumerate(best_individuals):
-        save_mario(f'{config.Statistics.model_save_dir}/GA/GEN{generation}{postfix}', f'{config.Statistics.ga_model_name}_ind{i+1}_fitness{ind.fitness}', ind, generation, ind.distance)
+        fitness = max(0, min(ind.fitness, 99999999))
+        save_mario(f'{config.Statistics.model_save_dir}/GA/GEN{generation}{postfix}', f'{config.Statistics.ga_model_name}_ind{i+1}_fitness{fitness}', ind, generation, ind.distance)
    
 def save_overall_best_individual(individual, config, generation, postfix=""):
     clear_log_dir(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST')
-    save_mario(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST', f'{config.Statistics.ga_model_name}_best_fitness{best_individual.fitness}', best_individual, current_generation, best_individual.distance)
+    fitness = max(0, min(ind.fitness, 99999999))
+    save_mario(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST', f'{config.Statistics.ga_model_name}_best_fitness{fitness}', best_individual, current_generation, best_individual.distance)
 
 
 def run_dqn_agent(config, data_queue, dqn_model):
