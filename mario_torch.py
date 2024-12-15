@@ -289,7 +289,7 @@ def save_mario(population_folder: str, individual_name: str, mario: MarioTorch, 
     if not os.path.exists(population_folder):
         os.makedirs(population_folder)
 
-    mario.model.save(os.path.join(population_folder, f'GAmodel_{individual_name}.pt'), generation, distance)
+    mario.model.save(os.path.join(population_folder, f'{individual_name}.pt'), generation, distance)
     
 def load_mario(population_folder: str, individual_name: str, config: Optional[Config] = None) -> MarioTorch:
     if not os.path.exists(os.path.join(population_folder, individual_name)):
