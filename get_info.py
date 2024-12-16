@@ -12,5 +12,5 @@ if __name__ == "__main__":
     print(f"Number of iterations: {info['iterations']}")
     print(f"Output activation: {info['output_activation']}")
     print(f"Hidden activation: {info['hidden_activation']}")
-    print(f"Architecture: {info['architecture']}")
+    print(f"Architecture: {info['layer_sizes']}")
 
