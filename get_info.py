@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     #print(f"Algorithm: {info['algorithm']}")
     print(f"Distance achieved: {info['distance']}")
-    print(f"Number of iterations: {info['num_iterations']}")
+    print(f"Number of iterations: {info['iterations']}")
     print(f"Output activation: {info['output_activation']}")
     print(f"Hidden activation: {info['hidden_activation']}")
     print(f"Architecture: {info['architecture']}")
