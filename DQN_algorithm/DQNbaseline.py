@@ -371,7 +371,7 @@ class DQNMario(Mario):
         self.decay_fraction = self.config.DQN.decay_fraction
         self.train_freq = self.config.DQN.train_freq
 
-        self.model = self.create_model(self.hidden_layer_architecture, self.hidden_activation, self.output_activation)
+        self.model = self.create_model(self.hidden_layer_architecture, self.hidden_activation, self.output_activation, env)
 
         
     def reset(self):
@@ -382,7 +382,7 @@ class DQNMario(Mario):
         self.game_score = None
         self.did_win = False
 
-    def create_model(self, hidden_layer_architecture, hidden_activation, output_activation):
+    def create_model(self, hidden_layer_architecture, hidden_activation, output_activation, env):
         policy_kwargs = dict(
             hidden_layer_architecture=hidden_layer_architecture,
             hidden_activation=hidden_activation,
@@ -392,7 +392,7 @@ class DQNMario(Mario):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         return DQN(CustomDQNPolicy, 
-                    env=self.env, 
+                    env=env, 
                     gamma=self.discount_value, 
                     learning_rate=self.learning_rate,  
                     buffer_size=self.buffer_size,
@@ -409,7 +409,7 @@ class DQNMario(Mario):
                     )
 
 
-    def load_saved_model(self, save_path):
+    def load_saved_model(self, save_path, env):
         '''Loads .pt file from save_path and returns the iterations and distance of the saved model'''
 
         assert checkpoint['layer_sizes'] == self.network_architecture, "Failed to load model with a differing architecture than what is specified in the .config"
@@ -420,7 +420,7 @@ class DQNMario(Mario):
         hidden_activation = checkpoint['hidden_activation']
         output_activation = checkpoint['output_activation']
 
-        self.model = self.create_model(layer_sizes[1:-1], hidden_activation, output_activation)
+        self.model = self.create_model(layer_sizes[1:-1], hidden_activation, output_activation, env)
         self.model.policy.load_state_dict(state_dict)
 
         return checkpoint['iterations'], checkpoint['distance']

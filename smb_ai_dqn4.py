@@ -262,8 +262,8 @@ def run_ga_agent(config, data_queue):
                 c1_params, c2_params = _crossover_and_mutate(p1, p2, config, current_generation)
 
                 
-                c1 = Mario(c1_params, p1.hidden_layer_architecture, p1.hidden_activation, p1.output_activation, p1.encode_row, p1.lifespan, p1.frame_skip, p1.input_dims, p1.allow_additional_time_for_flagpole)
-                c2 = Mario(c2_params, p2.hidden_layer_architecture, p2.hidden_activation, p2.output_activation, p2.encode_row, p2.lifespan, p2.frame_skip, p2.input_dims, p2.allow_additional_time_for_flagpole)
+                c1 = Mario(c1_params, p1.hidden_layer_architecture, p1.hidden_activation, p1.output_activation, p1.encode_row, p1.lifespan, p1.frame_skip, p1.input_dims, p1.allow_additional_time)
+                c2 = Mario(c2_params, p2.hidden_layer_architecture, p2.hidden_activation, p2.output_activation, p2.encode_row, p2.lifespan, p2.frame_skip, p2.input_dims, p2.allow_additional_time)
 
                 next_pop.extend([c1, c2])
 
@@ -299,7 +299,7 @@ def run_dqn_agent(config, data_queue, model_save_path):
 
     if model_save_path:
         try:
-            iterations, distance = mario_DQN.load_saved_model(model_save_path)
+            iterations, distance = mario_DQN.load_saved_model(model_save_path, env)
             print(f"Loaded model at {model_save_path} with {iterations} iterations and {distance} distance")
             episode_start = iterations
         except FileNotFoundError:
@@ -324,10 +324,10 @@ def _initialize_population(config):
     lifespan = config.Selection.lifespan
     frame_skip = config.Environment.frame_skip
     input_dims = config.NeuralNetworkGA.input_dims
-    allow_additional_time_for_flagpole = config.Misc.allow_additional_time_for_flagpole
+    allow_additional_time= config.Misc.allow_additional_time_for_flagpole
 
     for _ in range(num_parents):
-        individual = Mario(None, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan, frame_skip, input_dims, allow_additional_time_for_flagpole)
+        individual = Mario(None, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan, frame_skip, input_dims, allow_additional_time)
         individuals.append(individual)
     return individuals
 
@@ -342,10 +342,10 @@ def individual_to_agent(population, config):
         lifespan = individual.lifespan
         frame_skip = individual.frame_skip
         input_dims = individual.input_dims
-        allow_additional_time_for_flagpole = individual.allow_additional_time_for_flagpole
+        allow_additional_time = individual.allow_additional_time
 
         if lifespan > 0:
-            agent = Mario(chromosome, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan, frame_skip, input_dims, allow_additional_time_for_flagpole)
+            agent = Mario(chromosome, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan, frame_skip, input_dims, allow_additional_time)
             agents.append(agent)
 
     return agents
