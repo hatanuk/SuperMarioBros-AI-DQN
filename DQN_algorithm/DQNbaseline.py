@@ -5,11 +5,11 @@ from random import sample
 from collections import deque, OrderedDict
 from config import Config, performance_func
 from mario_torch import MarioTorch as Mario
-from mario_torch import output_to_keys_map
+from mario_torch import output_to_keys_map, SequentialModel
 from neural_network import FeedForwardNetwork, get_activation_by_name, sigmoid, tanh, relu, leaky_relu, linear, ActivationFunction
 from utils import SMB
 from mario import get_num_inputs
-from stable_baselines3 import DQN
+from stable_baselines3 import DQN, DQNPolicy
 from stable_baselines3.common.callbacks import BaseCallback
 import gymnasium as gym
 from gym.spaces import Box, Discrete
@@ -22,8 +22,6 @@ import random
 import os
 import shutil
 
-from DQN_algorithm.DQN import DQN as CustomDQN
-
 from gym.spaces import Space
 import numpy as np
  
@@ -33,18 +31,34 @@ import numpy as np
 from gym import spaces
 
 ###
-# This is an implentation of a DQN Agent using stable-baselines
+# This is an implementation of a DQN Agent using stable-baselines
 
 
-def get_torch_activation_by_name(name: str):
-    activations = {
-        'relu': nn.ReLU,
-        'tanh': nn.Tanh,
-        'sigmoid': nn.Sigmoid,
-        'leaky_relu': nn.LeakyReLU,
-        'linear': nn.Identity
-    }
-    return activations.get(name.lower(), None)
+# Uses the SequentialModel Pytorch architecture to match with the GA's architecture
+class CustomDQNPolicy(DQNPolicy):
+    def __init__(self, observation_space, action_space, lr_schedule, hidden_layer_architecture, hidden_activation, output_activation, **kwargs):
+        super(CustomDQNPolicy, self).__init__(observation_space, action_space, lr_schedule, **kwargs)
+        
+        self.q_net = SequentialModel(
+            layer_sizes=[self.observation_space.shape[0]] + hidden_layer_architecture + [self.action_space.n],
+            hidden_activation=hidden_activation,
+            output_activation=output_activation
+        )
+
+        self.q_net_target = SequentialModel(
+            layer_sizes=[self.observation_space.shape[0]] + hidden_layer_architecture + [self.action_space.n],
+            hidden_activation=hidden_activation,
+            output_activation=output_activation
+        )
+
+        self.q_net_target.model.load_state_dict(self.q_net.state_dict())
+        self.q_net.to(self.device)
+        self.q_net_target.to(self.device)
+
+    def forward(self, obs, deterministic=True):
+        # InputSpaceReduction Env is already modified to preprocess features, override the feature extraction
+        return self.q_net(obs)
+
 
 def clear_dir(target):
     if os.path.exists(target):
@@ -103,6 +117,7 @@ class InputSpaceReduction(gym.Env):
         self.input_size = self._height * self._width + (self._height if self._encode_row else 0),
         self.output_size = len(self.output_to_keys_map.keys())
 
+        self.action_space_original = self.env.action_space
         self.action_space = spaces.Discrete(self.output_size)
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(self.input_size), dtype=np.float32
@@ -132,7 +147,7 @@ class InputSpaceReduction(gym.Env):
         action_indices = self.output_to_keys_map[action]
 
         # Size of the (original) action space
-        multi_hot_action = np.zeros(9)
+        multi_hot_action = np.zeros(self.action_space_original.n)
 
         for action_index in action_indices:
             multi_hot_action[action_index] = 1
@@ -207,7 +222,7 @@ class DQNCallback(BaseCallback):
 
     :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
     """
-    def __init__(self, data_queue, mario, config, verbose=1):
+    def __init__(self, data_queue, mario, config, verbose=1, episode_start=0):
         super(DQNCallback, self).__init__(verbose)
         self.data_queue = data_queue
         self.mario = mario
@@ -216,13 +231,12 @@ class DQNCallback(BaseCallback):
 
         self.max_distance = 0
         self.max_fitness = 0
-        self.episode = 0
+        self.episode = episode_start
         self.episode_steps = 0
         self.recent_distance = 0
         self.action_counts = [0] * len(output_to_keys_map)
-        self.recent_reward = 0
 
-        self.best_model = None
+        self.best_model_state_dict = None
         self.best_model_distance = 0
 
         self.max_episodes = self.config.DQN.total_episodes
@@ -259,12 +273,11 @@ class DQNCallback(BaseCallback):
             self.model.exploration_rate = self.epsilon_scheduler.get_epsilon(self.episode)
 
             if self.episode % self.config.Statistics.dqn_checkpoint_interval == 0:
-                policy_nn = self.model.policy
                 self.save_current_model(self.episode, self.recent_distance, postfix="_CHECKPOINT")
                 self.save_best_model(self.episode)
 
             data = {
-                'fitness': self.recent_reward,
+                'fitness': self.recent_fitness,
                 'max_fitness':  self.max_fitness,
                 'max_distance': self.max_distance,
                 'episode_num': self.episode,
@@ -282,7 +295,6 @@ class DQNCallback(BaseCallback):
             self.episode += 1
             self.episode_steps = 0 
             self.recent_distance = 0
-            self.recent_reward = 0
             self.recent_fitness = 0
             self.action_counts = [0] * len(output_to_keys_map)
 
@@ -297,7 +309,7 @@ class DQNCallback(BaseCallback):
     def _on_training_end(self) -> None:
         print(f"Stopping training DQN after {self.episode} episodes.")
         self.is_training = False
-        self.save_model(self.episode, self.recent_distance, postfix="_FINAL")
+        self.save_current_model(self.episode, self.recent_distance, postfix="_FINAL")
         self.save_best_model(self.episode)
     
     def save_current_model(self, episode, distance, postfix=""):
@@ -305,7 +317,6 @@ class DQNCallback(BaseCallback):
         if self.model.env is None:
             return
         fitness = int(max(0, min(self.recent_fitness, 99999999)))
-        layer_sizes = [self.model.env.observation_space.shape[0]] + self.config.NeuralNetworkDQN.hidden_layer_architecture + [self.model.env.action_space.n]
         save_dir = os.path.join(self.config.Statistics.model_save_dir, f'DQN/EPS{self.episode}{postfix}')
         save_file = f"{self.config.Statistics.dqn_model_name}_fitness{fitness}.pt"
         save_path = os.path.join(save_dir, save_file)
@@ -313,19 +324,14 @@ class DQNCallback(BaseCallback):
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        torch.save({
-        'iterations': episode,
-        'distance': self.mario.farthest_x,
-        'state_dict': self.model.policy.state_dict(),
-        'layer_sizes': layer_sizes,
-        'hidden_activation': self.config.NeuralNetworkDQN.hidden_node_activation,
-        'output_activation': self.config.NeuralNetworkDQN.output_node_activation,
-        }, save_path)
+        
+        self.model.policy.q_net.save(save_path, episode, distance, "DQN")
 
     def save_best_model(self, episode):
         # Saving the overall best model
         if self.model.env is None:
             return
+        
         fitness = int(max(0, min(self.recent_fitness, 99999999)))
         save_dir = os.path.join(self.config.Statistics.model_save_dir, f'DQN/BEST_OVERALL')
         save_file = f"{self.config.Statistics.dqn_model_name}_fitness{fitness}.pt"
@@ -335,18 +341,10 @@ class DQNCallback(BaseCallback):
             os.makedirs(save_dir)
 
         clear_dir(save_dir)
-        
-        layer_sizes = [self.model.env.observation_space.shape[0]] + self.config.NeuralNetworkDQN.hidden_layer_architecture + [self.model.env.action_space.n]
 
-        if self.best_model:
-            torch.save({
-            'iterations': episode,
-            'distance': self.best_model_distance,
-            'state_dict': self.best_model_state_dict,
-            'layer_sizes': layer_sizes,
-            'hidden_activation': self.config.NeuralNetworkDQN.hidden_node_activation,
-            'output_activation': self.config.NeuralNetworkDQN.output_node_activation,
-            }, save_path)
+        self.model.policy.q_net.save(save_path, episode, self.best_model_distance, "DQN", state_dict=self.best_model_state_dict)
+
+
 
 class DQNMario(Mario):
     def __init__(self, 
@@ -373,13 +371,28 @@ class DQNMario(Mario):
         self.decay_fraction = self.config.DQN.decay_fraction
         self.train_freq = self.config.DQN.train_freq
 
-        # specifies the model architecture for the DQN
-        policy_kwargs = dict(activation_fn=get_torch_activation_by_name(self.hidden_activation), net_arch=self.hidden_layer_architecture)
+        self.model = self.create_model(self, self.hidden_layer_architecture, self.hidden_activation, self.output_activation)
 
-        #device = "cuda" if torch.cuda.is_available() else "cpu"
+        
+    def reset(self):
+        self._frames = 0
+        self.is_alive = True
+        self.farthest_x = 0
+        self.x_dist = None
+        self.game_score = None
+        self.did_win = False
 
-        self.model = DQN('MlpPolicy', 
-                    env=env, 
+    def create_model(self, hidden_layer_architecture, hidden_activation, output_activation):
+        policy_kwargs = dict(
+            hidden_layer_architecture=hidden_layer_architecture,
+            hidden_activation=hidden_activation,
+            output_activation=output_activation
+        )
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        return DQN(CustomDQNPolicy, 
+                    env=self.env, 
                     gamma=self.discount_value, 
                     learning_rate=self.learning_rate,  
                     buffer_size=self.buffer_size,
@@ -392,15 +405,22 @@ class DQNMario(Mario):
                     verbose=1,
                     tensorboard_log= None,
                     policy_kwargs = policy_kwargs,
-                    device="cuda"
+                    device=device
                     )
 
-        
-        
-    def reset(self):
-        self._frames = 0
-        self.is_alive = True
-        self.farthest_x = 0
-        self.x_dist = None
-        self.game_score = None
-        self.did_win = False
+
+    def load_saved_model(self, save_path):
+        '''Loads .pt file from save_path and returns the iterations and distance of the saved model'''
+
+        assert checkpoint['layer_sizes'] == self.network_architecture, "Failed to load model with a differing architecture than what is specified in the .config"
+
+        checkpoint = torch.load(save_path)
+        state_dict = checkpoint['state_dict']
+        layer_sizes = checkpoint['layer_sizes']
+        hidden_activation = checkpoint['hidden_activation']
+        output_activation = checkpoint['output_activation']
+
+        self.model = self.create_model(layer_sizes[1:-1], hidden_activation, output_activation)
+        self.model.policy.load_state_dict(state_dict)
+
+        return checkpoint['iterations'], checkpoint['distance']

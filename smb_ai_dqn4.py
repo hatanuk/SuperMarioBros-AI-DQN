@@ -280,7 +280,7 @@ def save_overall_best_individual(individual, config, generation, postfix=""):
     save_mario(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST', f'{config.Statistics.ga_model_name}_best_fitness{fitness}', individual, generation, individual.farthest_x)
 
 
-def run_dqn_agent(config, data_queue, dqn_model):
+def run_dqn_agent(config, data_queue, model_save_path):
 
     # Initialize environment
     env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Environment.level}', render_mode='rgb_array')
@@ -290,19 +290,24 @@ def run_dqn_agent(config, data_queue, dqn_model):
     mario_DQN = DQNMario(config, env)
     env.mario = mario_DQN
 
-
     env = DummyVecEnv([lambda: env])
 
-    if dqn_model:
+    episode_start = 0
+
+    if model_save_path:
         try:
-            model = DQN.load(dqn_model, env=env)
-            mario_DQN.model = model
+            iterations, distance = mario_DQN.load_saved_model(model_save_path)
+            print(f"Loaded model at {model_save_path} with {iterations} iterations and {distance} distance")
+            episode_start = iterations
+        except FileNotFoundError:
+            raise Exception(f'Failed to find model at {model_save_path}')
         except Exception as e:
-            raise Exception(f'Failed to find model at {dqn_model}') from e
-        # Add an inference loop here later
-    else:
-        callback = DQNCallback(data_queue, mario_DQN, config, verbose=1)
-        mario_DQN.model.learn(total_timesteps=int(500*config.DQN.total_episodes + 1000), callback=callback, log_interval=int(1e6))
+            raise Exception(f'Failed to load model at {model_save_path}: {e}')
+   
+    callback = DQNCallback(data_queue, mario_DQN, config, verbose=1, episode_start=episode_start)
+    
+    # total_timesteps and log_interval should be unreachably high - the callback will stop the training
+    mario_DQN.model.learn(total_timesteps=int(100_000 * config.DQN.total_episodes), callback=callback, log_interval=int(100_000 * config.DQN.total_episodes))
 
 
 def _initialize_population(config):

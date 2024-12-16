@@ -64,14 +64,17 @@ class SequentialModel(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
 
-    def save(self, path: str, iteration: int, distance: int):
+    def save(self, path: str, iteration: int, distance: int, algorithm: str, state_dict=None):
+        if not state_dict:
+            state_dict = self.model.state_dict()
         torch.save({
-    'iterations': iteration,
-    'distance': distance,
-    'state_dict': self.model.state_dict(),
-    'layer_sizes': self.layer_sizes,
-    'hidden_activation': self.hidden_activation,
-    'output_activation': self.output_activation
+            'iterations': iteration,
+            'distance': distance,
+            'algorithm': algorithm,
+            'state_dict': state_dict,
+            'layer_sizes': self.layer_sizes,
+            'hidden_activation': self.hidden_activation,
+            'output_activation': self.output_activation
         }, path)
 
     @classmethod
@@ -138,7 +141,7 @@ class MarioTorch(Individual):
 
         self.network_architecture = [num_inputs]
         self.network_architecture.extend(self.hidden_layer_architecture)
-        self.network_architecture.append(len(output_to_keys_map.keys()))
+        self.network_architecture.append(len(output_to_keys_map))
 
         # Create a PyTorch model
         self.model = SequentialModel(
@@ -289,7 +292,7 @@ def save_mario(population_folder: str, individual_name: str, mario: MarioTorch, 
     if not os.path.exists(population_folder):
         os.makedirs(population_folder)
 
-    mario.model.save(os.path.join(population_folder, f'{individual_name}.pt'), generation, distance)
+    mario.model.save(os.path.join(population_folder, f'{individual_name}.pt'), generation, distance, algorithm='GA')
     
 def load_mario(population_folder: str, individual_name: str, config: Optional[Config] = None) -> MarioTorch:
     if not os.path.exists(os.path.join(population_folder, individual_name)):
