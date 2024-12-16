@@ -5,7 +5,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Outputs the distance achieved, num. iterations, output and hidden activations, architecture, and algorithm used to train the model.")
     parser.add_argument("save_path", help="Path to the saved model")
     args = parser.parse_args()
-    info = torch.load(args.save_path)
+    info = torch.load(args.save_path, weights_only=False)
 
     #print(f"Algorithm: {info['algorithm']}")
     print(f"Distance achieved: {info['distance']}")

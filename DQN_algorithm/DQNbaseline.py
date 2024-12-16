@@ -9,7 +9,8 @@ from mario_torch import output_to_keys_map, SequentialModel
 from neural_network import FeedForwardNetwork, get_activation_by_name, sigmoid, tanh, relu, leaky_relu, linear, ActivationFunction
 from utils import SMB
 from mario import get_num_inputs
-from stable_baselines3 import DQN, DQNPolicy
+from stable_baselines3 import DQN
+from stable_baselines3.dqn.policies import DQNPolicy
 from stable_baselines3.common.callbacks import BaseCallback
 import gymnasium as gym
 from gym.spaces import Box, Discrete
