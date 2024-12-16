@@ -17,7 +17,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('model_path', type=str, help='Path to saved Mario .pt model')
     parser.add_argument('--level', type=str, default="1-1", help='Which level to load')
-    parser.add_argument('--config', type=str, default='settings.config', help='Path to config')
+    parser.add_argument('--config', type=str, required=True, default='settings.config', help='Path to .config')
     parser.add_argument('--arch', type=str, default='ga', help='Whether to use the DQN or GA NN architecture defined in config. Only matter if they differ.')
     args = parser.parse_args()
 
@@ -30,12 +30,14 @@ if __name__ == "__main__":
 
     try:
         model = SequentialModel.load(args.model_path)
+        details = torch.load(args.model_path, weights_only=False)
+
     except Exception as e:
         print(f"Error loading model: {e}")
         exit(1)
 
 
-    if args.arch.lower() == 'ga':
+    if args.arch == "ga":
         input_dims = config.NeuralNetworkGA.input_dims
         encode_row = config.NeuralNetworkGA.encode_row
     else:
