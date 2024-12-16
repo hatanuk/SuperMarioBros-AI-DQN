@@ -3,7 +3,7 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Outputs the distance achieved, num. iterations, output and hidden activations, architecture, and algorithm used to train the model.")
-    parser.add_argument("save_path", help="Path to the saved model", required=True)
+    parser.add_argument("save_path", help="Path to the saved model")
     args = parser.parse_args()
     info = torch.load(args.save_path)
 
