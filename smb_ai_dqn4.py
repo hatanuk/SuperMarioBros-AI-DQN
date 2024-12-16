@@ -324,7 +324,7 @@ def _initialize_population(config):
     lifespan = config.Selection.lifespan
     frame_skip = config.Environment.frame_skip
     input_dims = config.NeuralNetworkGA.input_dims
-    allow_additional_time_for_flagpole = config.Environment.allow_additional_time_for_flagpole
+    allow_additional_time_for_flagpole = config.Misc.allow_additional_time_for_flagpole
 
     for _ in range(num_parents):
         individual = Mario(None, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan, frame_skip, input_dims, allow_additional_time_for_flagpole)

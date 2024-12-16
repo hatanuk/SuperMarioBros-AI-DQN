@@ -357,7 +357,7 @@ class DQNMario(Mario):
         nn_params = self.config.NeuralNetworkDQN
         
         Mario.__init__(self, None, nn_params.hidden_layer_architecture, nn_params.hidden_node_activation,
-         nn_params.output_node_activation, nn_params.encode_row, np.inf, name, debug, self.config.Environment.frame_skip, nn_params.input_dims, self.config.Environment.allow_additional_time_for_flagpole)
+         nn_params.output_node_activation, nn_params.encode_row, np.inf, name, debug, self.config.Environment.frame_skip, nn_params.input_dims, self.config.Misc.allow_additional_time_for_flagpole)
 
 
         ## Parameter initialisation
