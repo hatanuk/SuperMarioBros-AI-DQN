@@ -59,6 +59,11 @@ class CustomDQNPolicy(DQNPolicy):
     def forward(self, obs, deterministic=True):
         # InputSpaceReduction Env is already modified to preprocess features, override the feature extraction
         return self.q_net(obs)
+    
+    def _predict(self, obs, deterministic = True):
+        q_values = self.forward(obs, deterministic)
+        actions = torch.argmax(q_values, dim=1)
+        return actions
 
 
 def clear_dir(target):
