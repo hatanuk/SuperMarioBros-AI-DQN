@@ -371,7 +371,7 @@ class DQNMario(Mario):
         self.decay_fraction = self.config.DQN.decay_fraction
         self.train_freq = self.config.DQN.train_freq
 
-        self.model = self.create_model(self, self.hidden_layer_architecture, self.hidden_activation, self.output_activation)
+        self.model = self.create_model(self.hidden_layer_architecture, self.hidden_activation, self.output_activation)
 
         
     def reset(self):

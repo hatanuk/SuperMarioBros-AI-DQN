@@ -122,7 +122,7 @@ class MarioTorch(Individual):
         self.name = name
         self.debug = debug
 
-        self._skip = frame_skip
+        self.frame_skip = frame_skip
 
         self._fitness = 0
         self._frames_since_progress = 0
@@ -249,7 +249,7 @@ class MarioTorch(Individual):
 
     def update(self, ram, tiles) -> bool:
         if self.is_alive:
-            self._frames += self._skip
+            self._frames += self.frame_skip
             self.x_dist = SMB.get_mario_location_in_level(ram).x
             self.game_score = SMB.get_mario_score(ram)
 
@@ -270,7 +270,7 @@ class MarioTorch(Individual):
                 self.farthest_x = self.x_dist
                 self._frames_since_progress = 0
             else:
-                self._frames_since_progress += self._skip
+                self._frames_since_progress += self.frame_skip
 
             if self.allow_additional_time and self.did_win:
                 self.additional_timesteps += 1
