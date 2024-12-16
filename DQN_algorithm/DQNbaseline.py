@@ -160,9 +160,6 @@ class InputSpaceReduction(gym.Env):
 
         if self.mario:
             self.mario.update(self.get_ram(), SMB.get_tiles(self.get_ram()))
-     
-        if self.mario and self.mario.did_win:
-            print("WE HAVE A WINNER")
 
         #override env reward with the delta of fitness func
         if self.mario:
@@ -229,6 +226,9 @@ class DQNCallback(BaseCallback):
         self.mario = mario
         self.config = config
         self.is_training = False
+
+        self.encode_row = config.NeuralNetworkDQN.encode_row
+        self.input_dims = config.NeuralNetworkDQN.input_dims
 
         self.max_distance = 0
         self.max_fitness = 0
@@ -324,9 +324,8 @@ class DQNCallback(BaseCallback):
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
-
         
-        self.model.policy.q_net.save(save_path, episode, distance, "DQN")
+        self.model.policy.q_net.save(save_path, episode, distance, "DQN", self.input_dims, self.encode_row)
 
     def save_best_model(self, episode):
         # Saving the overall best model
@@ -343,7 +342,7 @@ class DQNCallback(BaseCallback):
 
         clear_dir(save_dir)
 
-        self.model.policy.q_net.save(save_path, episode, self.best_model_distance, "DQN", state_dict=self.best_model_state_dict)
+        self.model.policy.q_net.save(save_path, episode, self.best_model_distance, "DQN", self.input_dims, self.encode_row, state_dict=self.best_model_state_dict)
 
 
 
@@ -357,8 +356,8 @@ class DQNMario(Mario):
         self.reward_func = performance_func
         nn_params = self.config.NeuralNetworkDQN
         
-        Mario.__init__(self, config, None, nn_params.hidden_layer_architecture, nn_params.hidden_node_activation,
-         nn_params.output_node_activation, nn_params.encode_row, np.inf, name, debug)
+        Mario.__init__(self, None, nn_params.hidden_layer_architecture, nn_params.hidden_node_activation,
+         nn_params.output_node_activation, nn_params.encode_row, np.inf, name, debug, self.config.Environment.frame_skip, nn_params.input_dims, self.config.Environment.allow_additional_time_for_flagpole)
 
 
         ## Parameter initialisation

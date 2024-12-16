@@ -226,8 +226,13 @@ def run_ga_agent(config, data_queue):
                 data_queue.put(data)
             
             #print(f"average time for a generational episode: {average_time / len(results):.5f}")
+            
+            if current_generation == config.GA.total_generations:
+                save_mario_pop(population, config, config.GA.total_generations, "_FINAL")
+                if best_individual:
+                    save_overall_best_individual(best_individual, config, config.GA.total_generations)
 
-            if current_generation % config.Statistics.ga_checkpoint_interval == 0:
+            elif current_generation % config.Statistics.ga_checkpoint_interval == 0:
                 save_mario_pop(population, config, current_generation, "_CHECKPOINT")
                 if best_individual:
                     save_overall_best_individual(best_individual, config, current_generation)
@@ -256,8 +261,9 @@ def run_ga_agent(config, data_queue):
 
                 c1_params, c2_params = _crossover_and_mutate(p1, p2, config, current_generation)
 
-                c1 = Mario(config, c1_params, p1.hidden_layer_architecture, p1.hidden_activation, p1.output_activation, p1.encode_row, p1.lifespan)
-                c2 = Mario(config, c2_params, p2.hidden_layer_architecture, p2.hidden_activation, p2.output_activation, p2.encode_row, p2.lifespan)
+                
+                c1 = Mario(c1_params, p1.hidden_layer_architecture, p1.hidden_activation, p1.output_activation, p1.encode_row, p1.lifespan, p1.frame_skip, p1.input_dims, p1.allow_additional_time_for_flagpole)
+                c2 = Mario(c2_params, p2.hidden_layer_architecture, p2.hidden_activation, p2.output_activation, p2.encode_row, p2.lifespan, p2.frame_skip, p2.input_dims, p2.allow_additional_time_for_flagpole)
 
                 next_pop.extend([c1, c2])
 
@@ -265,16 +271,13 @@ def run_ga_agent(config, data_queue):
 
             current_generation += 1
 
-        save_mario_pop(population, config, current_generation, "_FINAL")
-        save_overall_best_individual(best_individual, config, current_generation)
-
 def save_mario_pop(population, config, generation, postfix=""):
     best_individuals = sorted(population.individuals, key=lambda ind: ind.fitness, reverse=True)[:config.Statistics.top_x_individuals:]
     for i, ind in enumerate(best_individuals):
         fitness = int(max(0, min(ind.fitness, 99999999)))
         save_mario(f'{config.Statistics.model_save_dir}/GA/GEN{generation}{postfix}', f'{config.Statistics.ga_model_name}_ind{i+1}_fitness{fitness}', ind, generation, ind.farthest_x)
    
-def save_overall_best_individual(individual, config, generation, postfix=""):
+def save_overall_best_individual(individual, config, generation):
     clear_dir(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST')
     fitness = int(max(0, min(individual.fitness, 99999999)))
     save_mario(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST', f'{config.Statistics.ga_model_name}_best_fitness{fitness}', individual, generation, individual.farthest_x)
@@ -305,7 +308,7 @@ def run_dqn_agent(config, data_queue, model_save_path):
             raise Exception(f'Failed to load model at {model_save_path}: {e}')
    
     callback = DQNCallback(data_queue, mario_DQN, config, verbose=1, episode_start=episode_start)
-    
+
     # total_timesteps and log_interval should be unreachably high - the callback will stop the training
     mario_DQN.model.learn(total_timesteps=int(100_000 * config.DQN.total_episodes), callback=callback, log_interval=int(100_000 * config.DQN.total_episodes))
 
@@ -319,9 +322,12 @@ def _initialize_population(config):
     output_activation = config.NeuralNetworkGA.output_node_activation
     encode_row = config.NeuralNetworkGA.encode_row
     lifespan = config.Selection.lifespan
+    frame_skip = config.Environment.frame_skip
+    input_dims = config.NeuralNetworkGA.input_dims
+    allow_additional_time_for_flagpole = config.Environment.allow_additional_time_for_flagpole
 
     for _ in range(num_parents):
-        individual = Mario(config, None, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan)
+        individual = Mario(None, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan, frame_skip, input_dims, allow_additional_time_for_flagpole)
         individuals.append(individual)
     return individuals
 
@@ -334,10 +340,14 @@ def individual_to_agent(population, config):
         output_activation = individual.output_activation
         encode_row = individual.encode_row
         lifespan = individual.lifespan
+        frame_skip = individual.frame_skip
+        input_dims = individual.input_dims
+        allow_additional_time_for_flagpole = individual.allow_additional_time_for_flagpole
 
         if lifespan > 0:
-            agent = Mario(config, chromosome, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan)
+            agent = Mario(chromosome, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan, frame_skip, input_dims, allow_additional_time_for_flagpole)
             agents.append(agent)
+
     return agents
 
 def _crossover_and_mutate(p1, p2, config, current_generation):

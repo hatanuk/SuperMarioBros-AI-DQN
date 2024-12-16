@@ -64,12 +64,14 @@ class SequentialModel(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
 
-    def save(self, path: str, iteration: int, distance: int, algorithm: str, state_dict=None):
+    def save(self, path: str, iteration: int, distance: int, algorithm: str, input_dims: Tuple[int, ...], encode_row: bool, state_dict=None):
         if not state_dict:
             state_dict = self.model.state_dict()
         torch.save({
             'iterations': iteration,
             'distance': distance,
+            'encode_row': encode_row,
+            'input_dims': input_dims,
             'algorithm': algorithm,
             'state_dict': state_dict,
             'layer_sizes': self.layer_sizes,
@@ -102,7 +104,6 @@ class SequentialModel(nn.Module):
 # Reimplementation of mario using PyTorch instead of FeedForwardNetwork
 class MarioTorch(Individual):
     def __init__(self,
-                 config: Config,
                  chromosome: Optional[Dict[str, np.ndarray]] = None,
                  hidden_layer_architecture: List[int] = [12, 9],
                  hidden_activation: Optional[str] = 'relu',
@@ -111,15 +112,17 @@ class MarioTorch(Individual):
                  lifespan: Union[int, float] = np.inf,
                  name: Optional[str] = None,
                  debug: Optional[bool] = False,
+                 frame_skip: int = 4,
+                 input_dims: Tuple[int, ...] = (4, 7, 10),
+                 allow_additional_time_for_flagpole: Optional[bool] = True,
                  ):
         
-        self.config = config
         self.fitness_func = performance_func
         self.lifespan = lifespan
         self.name = name
         self.debug = debug
 
-        self._skip = config.Environment.frame_skip
+        self._skip = frame_skip
 
         self._fitness = 0
         self._frames_since_progress = 0
@@ -129,8 +132,9 @@ class MarioTorch(Individual):
         self.hidden_activation = hidden_activation
         self.output_activation = output_activation
         self.encode_row = encode_row
+        self.input_dims = input_dims
 
-        self.start_row, self.viz_width, self.viz_height = self.config.NeuralNetworkGA.input_dims
+        self.start_row, self.viz_width, self.viz_height = input_dims
 
         if self.encode_row:
             num_inputs = self.viz_width * self.viz_height + self.viz_height
@@ -161,7 +165,7 @@ class MarioTorch(Individual):
         self.x_dist = None
         self.game_score = None
         self.did_win = False
-        self.allow_additional_time = self.config.Misc.allow_additional_time_for_flagpole
+        self.allow_additional_time = allow_additional_time_for_flagpole
         self.additional_timesteps = 0
         self.max_additional_timesteps = int(60 * 2.5)
         self._printed = False
@@ -292,7 +296,7 @@ def save_mario(population_folder: str, individual_name: str, mario: MarioTorch, 
     if not os.path.exists(population_folder):
         os.makedirs(population_folder)
 
-    mario.model.save(os.path.join(population_folder, f'{individual_name}.pt'), generation, distance, algorithm='GA')
+    mario.model.save(os.path.join(population_folder, f'{individual_name}.pt'), generation, distance, algorithm='GA', input_dims=mario.input_dims, encode_row=mario.encode_row)
     
 def load_mario(population_folder: str, individual_name: str, config: Optional[Config] = None) -> MarioTorch:
     if not os.path.exists(os.path.join(population_folder, individual_name)):
