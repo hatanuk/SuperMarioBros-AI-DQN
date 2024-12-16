@@ -15,7 +15,7 @@ from DQN_algorithm.DQNbaseline import InputSpaceReduction
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, required=True, help='Path to saved Mario .pt model')
+    parser.add_argument('model_path', type=str, help='Path to saved Mario .pt model')
     parser.add_argument('--level', type=str, default="1-1", help='Which level to load')
     parser.add_argument('--config', type=str, default='settings.config', help='Path to config')
     parser.add_argument('--arch', type=str, default='ga', help='Whether to use the DQN or GA NN architecture defined in config. Only matter if they differ.')
