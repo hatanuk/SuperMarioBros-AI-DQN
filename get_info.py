@@ -7,7 +7,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     info = torch.load(args.save_path)
 
-    print(f"Algorithm: {info['algorithm']}")
+    #print(f"Algorithm: {info['algorithm']}")
     print(f"Distance achieved: {info['distance']}")
     print(f"Number of iterations: {info['num_iterations']}")
     print(f"Output activation: {info['output_activation']}")
