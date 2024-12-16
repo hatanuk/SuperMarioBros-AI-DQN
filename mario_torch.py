@@ -60,6 +60,12 @@ class SequentialModel(nn.Module):
         self.model = nn.Sequential(*self.layers)
 
         self.layers = [layer for layer in self.layers if hasattr(layer, 'weight')]
+
+    def set_training_mode(self, mode: bool):
+        if mode:
+            self.train()
+        else:
+            self.eval()
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
