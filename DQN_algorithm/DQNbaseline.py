@@ -272,7 +272,6 @@ class DQNCallback(BaseCallback):
             self.max_distance = self.mario.farthest_x
         if self.mario.fitness >  self.max_fitness:
             self.max_fitness = self.mario.fitness
-            print("NEW MAX FITNESS: ", self.max_fitness)
             # also save these new weights as new best
             self.best_model_distance = self.mario.farthest_x
             self.best_model_state_dict = copy.deepcopy(self.model.policy.state_dict())
