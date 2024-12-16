@@ -52,7 +52,7 @@ class CustomDQNPolicy(DQNPolicy):
             output_activation=output_activation
         )
 
-        self.q_net_target.model.load_state_dict(self.q_net.state_dict())
+        self.q_net_target.load_state_dict(self.q_net.state_dict())
         self.q_net.to(self.device)
         self.q_net_target.to(self.device)
 
