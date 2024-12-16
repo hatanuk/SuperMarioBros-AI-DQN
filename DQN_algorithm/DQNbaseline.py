@@ -265,11 +265,14 @@ class DQNCallback(BaseCallback):
 
         self.episode_steps += 1
 
+       
+
 
         if self.mario.farthest_x > self.max_distance:
             self.max_distance = self.mario.farthest_x
         if self.mario.fitness >  self.max_fitness:
             self.max_fitness = self.mario.fitness
+            print("NEW MAX FITNESS: ", self.max_fitness)
             # also save these new weights as new best
             self.best_model_distance = self.mario.farthest_x
             self.best_model_state_dict = copy.deepcopy(self.model.policy.state_dict())
@@ -278,7 +281,7 @@ class DQNCallback(BaseCallback):
             # manually update epsilon
             self.model.exploration_rate = self.epsilon_scheduler.get_epsilon(self.episode)
 
-            if self.episode % self.config.Statistics.dqn_checkpoint_interval == 0:
+            if self.episode % self.config.Statistics.dqn_checkpoint_interval == 0 and self.episode > 0:
                 self.save_current_model(self.episode, self.recent_distance, postfix="_CHECKPOINT")
                 self.save_best_model(self.episode)
 

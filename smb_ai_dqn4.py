@@ -232,7 +232,7 @@ def run_ga_agent(config, data_queue):
                 if best_individual:
                     save_overall_best_individual(best_individual, config, config.GA.total_generations)
 
-            elif current_generation % config.Statistics.ga_checkpoint_interval == 0:
+            elif current_generation % config.Statistics.ga_checkpoint_interval == 0 and current_generation > 0:
                 save_mario_pop(population, config, current_generation, "_CHECKPOINT")
                 if best_individual:
                     save_overall_best_individual(best_individual, config, current_generation)
