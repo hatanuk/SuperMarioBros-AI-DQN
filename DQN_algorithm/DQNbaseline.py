@@ -38,8 +38,10 @@ from gym import spaces
 # Uses the SequentialModel Pytorch architecture to match with the GA's architecture
 class CustomDQNPolicy(DQNPolicy):
     def __init__(self, observation_space, action_space, lr_schedule, hidden_layer_architecture, hidden_activation, output_activation, **kwargs):
+        
         self.hidden_activation = hidden_activation
         self.output_activation = output_activation
+        self.hidden_layer_architecture = hidden_layer_architecture
 
         super().__init__(observation_space, action_space, lr_schedule, **kwargs)
 
