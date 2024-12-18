@@ -1,6 +1,9 @@
  
 import numpy as np
 from typing import Tuple
+import matplotlib.pyplot as plt
+
+
 
 def simulated_binary_crossover(parent1: np.ndarray, parent2: np.ndarray, eta: float) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -55,3 +58,4 @@ def single_point_binary_crossover(parent1: np.ndarray, parent2: np.ndarray, majo
         offspring2[:row+1, col] = parent1[:row+1, col]
 
     return offspring1, offspring2
+

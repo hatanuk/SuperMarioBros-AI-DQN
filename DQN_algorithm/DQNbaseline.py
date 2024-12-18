@@ -38,23 +38,11 @@ from gym import spaces
 # Uses the SequentialModel Pytorch architecture to match with the GA's architecture
 class CustomDQNPolicy(DQNPolicy):
     def __init__(self, observation_space, action_space, lr_schedule, hidden_layer_architecture, hidden_activation, output_activation, **kwargs):
-        super(CustomDQNPolicy, self).__init__(observation_space, action_space, lr_schedule, **kwargs)
-        
-        self.q_net = SequentialModel(
-            layer_sizes=[self.observation_space.shape[0]] + hidden_layer_architecture + [self.action_space.n],
-            hidden_activation=hidden_activation,
-            output_activation=output_activation
-        )
+        self.hidden_activation = hidden_activation
+        self.output_activation = output_activation
 
-        self.q_net_target = SequentialModel(
-            layer_sizes=[self.observation_space.shape[0]] + hidden_layer_architecture + [self.action_space.n],
-            hidden_activation=hidden_activation,
-            output_activation=output_activation
-        )
+        super().__init__(observation_space, action_space, lr_schedule, **kwargs)
 
-        self.q_net_target.load_state_dict(self.q_net.state_dict())
-        self.q_net.to(self.device)
-        self.q_net_target.to(self.device)
 
     def forward(self, obs, deterministic=True):
         # InputSpaceReduction Env is already modified to preprocess features, override the feature extraction
@@ -64,7 +52,15 @@ class CustomDQNPolicy(DQNPolicy):
         q_values = self.forward(obs, deterministic)
         actions = torch.argmax(q_values, dim=1)
         return actions
-
+    
+    def make_q_net(self):
+        # overrides QNetwork with custom SequentialModel
+        return SequentialModel(
+        layer_sizes=[self.observation_space.shape[0]] + self.net_arch + [self.action_space.n],
+            hidden_activation=self.hidden_activation,
+            output_activation=self.output_activation  
+    ).to(self.device)
+    
 
 def clear_dir(target):
     if os.path.exists(target):
