@@ -38,7 +38,7 @@ from gym import spaces
 # Uses the SequentialModel Pytorch architecture to match with the GA's architecture
 class CustomDQNPolicy(DQNPolicy):
     def __init__(self, observation_space, action_space, lr_schedule, hidden_layer_architecture, hidden_activation, output_activation, **kwargs):
-        
+
         self.hidden_activation = hidden_activation
         self.output_activation = output_activation
         self.hidden_layer_architecture = hidden_layer_architecture
@@ -371,7 +371,7 @@ class DQNCallback(BaseCallback):
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         
-        self.model.policy.q_net.save(save_path, episode, distance, "DQN", self.input_dims, self.encode_row)
+        self.model.policy.q_net.q_net.save(save_path, episode, distance, "DQN", self.input_dims, self.encode_row)
 
     def save_best_model(self, episode):
         # Saving the overall best model
@@ -388,7 +388,7 @@ class DQNCallback(BaseCallback):
 
         clear_dir(save_dir)
 
-        self.model.policy.q_net.save(save_path, episode, self.best_model_distance, "DQN", self.input_dims, self.encode_row, state_dict=self.best_model_state_dict)
+        self.model.policy.q_net.q_net.save(save_path, episode, self.best_model_distance, "DQN", self.input_dims, self.encode_row, state_dict=self.best_model_state_dict)
 
 
 
