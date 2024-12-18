@@ -275,7 +275,8 @@ class DQNCallback(BaseCallback):
             self.best_model_state_dict = copy.deepcopy(self.model.policy.state_dict())
 
         if done:
-            print(f"Step: {self.num_timesteps}, Loss: {self.model.policy.loss}")
+            loss = self.locals["loss"]
+            print(f"Step: {self.num_timesteps}, Loss: {loss}")
             # manually update epsilon
             self.model.exploration_rate = self.epsilon_scheduler.get_epsilon(self.episode)
 
