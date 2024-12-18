@@ -5,6 +5,8 @@ from .population import Population
 from .individual import Individual
 
 
+
+
 def elitism_selection(population: Population, num_individuals: int) -> List[Individual]:
     # Is this efficient? No. What would be better? Max heap. Will I change it? Probably not this time.
     individuals = sorted(population.individuals, key = lambda individual: individual.fitness, reverse=True)
