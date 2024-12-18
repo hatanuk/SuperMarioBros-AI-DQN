@@ -10,7 +10,7 @@ from neural_network import FeedForwardNetwork, get_activation_by_name, sigmoid, 
 from utils import SMB
 from mario import get_num_inputs
 from stable_baselines3 import DQN
-from stable_baselines3.dqn.policies import DQNPolicy
+from stable_baselines3.dqn.policies import DQNPolicy, QNetwork
 from stable_baselines3.common.callbacks import BaseCallback
 import gymnasium as gym
 from gym.spaces import Box, Discrete
@@ -55,11 +55,16 @@ class CustomDQNPolicy(DQNPolicy):
     
     def make_q_net(self):
         # overrides QNetwork with custom SequentialModel
-        return SequentialModel(
-        layer_sizes=[self.observation_space.shape[0]] + self.net_arch + [self.action_space.n],
+        net_args = self._update_features_extractor(self.net_args, features_extractor=None)
+        return CustomQNetwork(
+            observation_space=self.observation_space,
+            action_space=self.action_space,
+            features_extractor=net_args["features_extractor"],
+            features_dim=net_args["features_extractor"].features_dim,
+            hidden_layer_architecture=self.hidden_layer_architecture,
             hidden_activation=self.hidden_activation,
-            output_activation=self.output_activation  
-    ).to(self.device)
+            output_activation=self.output_activation,
+        ).to(self.device)
     
 
 def clear_dir(target):
@@ -92,6 +97,40 @@ class EpsilonDecayScheduler:
     def get_epsilon(self, current_episode):
         return max(self.initial_epsilon - current_episode * (self.initial_epsilon - self.final_epsilon) / self.decay_episodes,
                      self.final_epsilon)
+    
+
+class CustomQNetwork(QNetwork):
+    def __init__(
+        self,
+        observation_space,
+        action_space,
+        features_extractor,
+        features_dim,
+        activation_fn=nn.ReLU,
+        normalize_images=True,
+        hidden_layer_architecture=[],
+        hidden_activation="relu",
+        output_activation="linear",
+    ):
+        super().__init__(
+            observation_space,
+            action_space,
+            features_extractor,
+            features_dim,
+            net_arch=[],
+            activation_fn=activation_fn,
+            normalize_images=normalize_images,
+        )
+        
+        self.q_net = SequentialModel(
+            layer_sizes=[features_dim] + hidden_layer_architecture + [action_space.n],
+            hidden_activation=hidden_activation,
+            output_activation=output_activation
+        )
+
+    def forward(self, obs):
+        return self.q_net(obs)
+
 
 
 ## Restricts the DQN's output to a subset of available actions (ie from 9 to 6)
@@ -275,8 +314,6 @@ class DQNCallback(BaseCallback):
             self.best_model_state_dict = copy.deepcopy(self.model.policy.state_dict())
 
         if done:
-            loss = self.locals["loss"]
-            print(f"Step: {self.num_timesteps}, Loss: {loss}")
             # manually update epsilon
             self.model.exploration_rate = self.epsilon_scheduler.get_epsilon(self.episode)
 
