@@ -198,6 +198,8 @@ class DQNCallback(BaseCallback):
 
         self.encode_row = config.NeuralNetworkDQN.encode_row
         self.input_dims = config.NeuralNetworkDQN.input_dims
+        self.layer_sizes = [self.env.input_size, *self.model.policy.net_arch, self.env.output_size]
+
 
         self.max_distance = 0
         self.max_fitness = 0
@@ -297,8 +299,10 @@ class DQNCallback(BaseCallback):
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
+
+        model = SequentialModel(self.layer_sizes, self.config.NeuralNetworkDQN.hidden_node_activation, self.config.NeuralNetworkDQN.output_node_activation)
         
-        SequentialModel.save(save_path, episode, distance, "DQN", self.input_dims, self.encode_row)
+        model.save(save_path, episode, distance, "DQN", self.input_dims, self.encode_row, state_dict=self.model.policy.state_dict())
 
     def save_best_model(self, episode):
         # Saving the overall best model
@@ -315,7 +319,10 @@ class DQNCallback(BaseCallback):
 
         clear_dir(save_dir)
 
-        SequentialModel.save(save_path, episode, self.best_model_distance, "DQN", self.input_dims, self.encode_row, state_dict=self.best_model_state_dict)
+        model = SequentialModel(self.layer_sizes, self.config.NeuralNetworkDQN.hidden_node_activation, self.config.NeuralNetworkDQN.output_node_activation)
+
+
+        model.save(save_path, episode, self.best_model_distance, "DQN", self.input_dims, self.encode_row, state_dict=self.best_model_state_dict)
 
 
 
