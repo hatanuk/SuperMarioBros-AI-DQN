@@ -298,7 +298,7 @@ class DQNCallback(BaseCallback):
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         
-        self.model.policy.q_net.q_net.save(save_path, episode, distance, "DQN", self.input_dims, self.encode_row)
+        SequentialModel.save(save_path, episode, distance, "DQN", self.input_dims, self.encode_row)
 
     def save_best_model(self, episode):
         # Saving the overall best model
@@ -315,7 +315,7 @@ class DQNCallback(BaseCallback):
 
         clear_dir(save_dir)
 
-        self.model.policy.q_net.q_net.save(save_path, episode, self.best_model_distance, "DQN", self.input_dims, self.encode_row, state_dict=self.best_model_state_dict)
+        SequentialModel.save(save_path, episode, self.best_model_distance, "DQN", self.input_dims, self.encode_row, state_dict=self.best_model_state_dict)
 
 
 
