@@ -17,7 +17,7 @@ import torch.nn as nn
 import torch
 import os
 import shutil
-from DQN import to_torch_activation
+from DQN_algorithm.DQN import to_torch_activation
 
 from gym.spaces import Space
 import numpy as np
