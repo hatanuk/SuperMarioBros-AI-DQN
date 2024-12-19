@@ -34,41 +34,6 @@ from gym import spaces
 ###
 # This is an implementation of a DQN Agent using stable-baselines
 
-
-# Uses the SequentialModel Pytorch architecture to match with the GA's architecture
-class CustomDQNPolicy(DQNPolicy):
-    def __init__(self, observation_space, action_space, lr_schedule, hidden_layer_architecture, hidden_activation, output_activation, **kwargs):
-
-        self.hidden_activation = hidden_activation
-        self.output_activation = output_activation
-        self.hidden_layer_architecture = hidden_layer_architecture
-
-        super().__init__(observation_space, action_space, lr_schedule, **kwargs)
-
-
-    def forward(self, obs, deterministic=True):
-        # InputSpaceReduction Env is already modified to preprocess features, override the feature extraction
-        return self.q_net(obs)
-    
-    def _predict(self, obs, deterministic = True):
-        q_values = self.forward(obs, deterministic)
-        actions = torch.argmax(q_values, dim=1)
-        return actions
-    
-    def make_q_net(self):
-        # overrides QNetwork with custom SequentialModel
-        net_args = self._update_features_extractor(self.net_args, features_extractor=None)
-        return CustomQNetwork(
-            observation_space=self.observation_space,
-            action_space=self.action_space,
-            features_extractor=net_args["features_extractor"],
-            features_dim=net_args["features_extractor"].features_dim,
-            hidden_layer_architecture=self.hidden_layer_architecture,
-            hidden_activation=self.hidden_activation,
-            output_activation=self.output_activation,
-        ).to(self.device)
-    
-
 def clear_dir(target):
     if os.path.exists(target):
         shutil.rmtree(target) 
@@ -100,39 +65,6 @@ class EpsilonDecayScheduler:
         return max(self.initial_epsilon - current_episode * (self.initial_epsilon - self.final_epsilon) / self.decay_episodes,
                      self.final_epsilon)
     
-
-class CustomQNetwork(QNetwork):
-    def __init__(
-        self,
-        observation_space,
-        action_space,
-        features_extractor,
-        features_dim,
-        activation_fn=nn.ReLU,
-        normalize_images=True,
-        hidden_layer_architecture=[],
-        hidden_activation="relu",
-        output_activation="linear",
-    ):
-        super().__init__(
-            observation_space,
-            action_space,
-            features_extractor,
-            features_dim,
-            net_arch=[],
-            activation_fn=activation_fn,
-            normalize_images=normalize_images,
-        )
-        
-        self.q_net = SequentialModel(
-            layer_sizes=[features_dim] + hidden_layer_architecture + [action_space.n],
-            hidden_activation=hidden_activation,
-            output_activation=output_activation
-        )
-
-    def forward(self, obs):
-        return self.q_net(obs)
-
 
 
 ## Restricts the DQN's output to a subset of available actions (ie from 9 to 6)
@@ -428,16 +360,15 @@ class DQNMario(Mario):
         self.game_score = None
         self.did_win = False
 
-    def create_model(self, hidden_layer_architecture, hidden_activation, output_activation, env):
+    def create_model(self, hidden_layer_architecture, hidden_activation, env):
         policy_kwargs = dict(
-            hidden_layer_architecture=hidden_layer_architecture,
-            hidden_activation=hidden_activation,
-            output_activation=output_activation
+            net_arch=list(hidden_layer_architecture),
+            activation_fn=get_activation_by_name(hidden_activation),
         )
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        return DQN(CustomDQNPolicy, 
+        return DQN(DQNPolicy, 
                     env=env, 
                     gamma=self.discount_value, 
                     learning_rate=self.learning_rate,  
@@ -466,7 +397,7 @@ class DQNMario(Mario):
         hidden_activation = checkpoint['hidden_activation']
         output_activation = checkpoint['output_activation']
 
-        self.model = self.create_model(layer_sizes[1:-1], hidden_activation, output_activation, env)
+        self.model = self.create_model(layer_sizes[1:-1], hidden_activation, env)
         self.model.policy.load_state_dict(state_dict)
 
         return checkpoint['iterations'], checkpoint['distance']
