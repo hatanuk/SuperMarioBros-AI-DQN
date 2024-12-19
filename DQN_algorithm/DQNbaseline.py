@@ -6,22 +6,18 @@ from collections import deque, OrderedDict
 from config import Config, performance_func
 from mario_torch import MarioTorch as Mario
 from mario_torch import output_to_keys_map, SequentialModel
-from neural_network import FeedForwardNetwork, get_activation_by_name, sigmoid, tanh, relu, leaky_relu, linear, ActivationFunction
 from utils import SMB
-from mario import get_num_inputs
 from stable_baselines3 import DQN
 from stable_baselines3.dqn.policies import DQNPolicy, QNetwork
 from stable_baselines3.common.callbacks import BaseCallback
 import gymnasium as gym
 from gym.spaces import Box, Discrete
 from utils import SMB, StaticTileType, EnemyType
-import retro
 import torch.nn as nn
 import torch
-import time
-import random
 import os
 import shutil
+from DQN import to_torch_activation
 
 from gym.spaces import Space
 import numpy as np
@@ -363,7 +359,7 @@ class DQNMario(Mario):
     def create_model(self, hidden_layer_architecture, hidden_activation, env):
         policy_kwargs = dict(
             net_arch=list(hidden_layer_architecture),
-            activation_fn=get_activation_by_name(hidden_activation),
+            activation_fn=to_torch_activation(hidden_activation)
         )
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

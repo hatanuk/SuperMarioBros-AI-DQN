@@ -17,6 +17,21 @@ from mario import get_num_inputs
 ###
 # This is a custom implementation of a DQN Agent
 
+def to_torch_activation(activation_function):
+        if activation_function == sigmoid:
+            return nn.Sigmoid()
+        elif activation_function == tanh:
+            return nn.Tanh()
+        elif activation_function == relu:
+            return nn.ReLU()
+        elif activation_function == leaky_relu:
+            return nn.LeakyReLU(negative_slope=0.01)
+        elif activation_function == linear:
+            return nn.Identity()
+        else:
+            raise ValueError("unsupported activation function")
+
+
 class ReplayBuffer:
     
     def __init__(self, size):
@@ -31,7 +46,7 @@ class ReplayBuffer:
     
     def __len__(self):
         return len(self.buffer)
-
+    
 
 
 class DQN(nn.Module, FeedForwardNetwork):
@@ -55,21 +70,6 @@ class DQN(nn.Module, FeedForwardNetwork):
         
         self.sumRewardsEpisode=[]
         
-        
-  
-    def to_torch_activation(self, activation_function):
-        if activation_function == sigmoid:
-            return nn.Sigmoid()
-        elif activation_function == tanh:
-            return nn.Tanh()
-        elif activation_function == relu:
-            return nn.ReLU()
-        elif activation_function == leaky_relu:
-            return nn.LeakyReLU(negative_slope=0.01)
-        elif activation_function == linear:
-            return nn.Identity()
-        else:
-            raise ValueError("unsupported activation function")
         
     def build_torch_model(self):
         L = len(self.layer_nodes) - 1  # len(self.params) // 2
