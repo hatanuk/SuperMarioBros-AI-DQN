@@ -5,7 +5,7 @@ from random import sample
 from collections import deque, OrderedDict
 from config import Config, performance_func
 from mario_torch import MarioTorch as Mario
-from mario_torch import output_to_keys_map, SequentialModel
+from mario_torch import output_to_keys_map, SequentialModel, get_torch_activation
 from utils import SMB
 from stable_baselines3 import DQN
 from stable_baselines3.dqn.policies import DQNPolicy, QNetwork
@@ -17,7 +17,6 @@ import torch.nn as nn
 import torch
 import os
 import shutil
-from DQN_algorithm.DQN import to_torch_activation
 
 from gym.spaces import Space
 import numpy as np
@@ -359,7 +358,7 @@ class DQNMario(Mario):
     def create_model(self, hidden_layer_architecture, hidden_activation, env):
         policy_kwargs = dict(
             net_arch=list(hidden_layer_architecture),
-            activation_fn=to_torch_activation(hidden_activation)
+            activation_fn=get_torch_activation(hidden_activation)
         )
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
