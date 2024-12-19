@@ -349,7 +349,7 @@ class DQNMario(Mario):
         self.decay_fraction = self.config.DQN.decay_fraction
         self.train_freq = self.config.DQN.train_freq
 
-        self.model = self.create_model(self.hidden_layer_architecture, self.hidden_activation, self.output_activation, env)
+        self.model = self.create_model(self.hidden_layer_architecture, self.hidden_activation, env)
 
         
     def reset(self):
@@ -395,7 +395,6 @@ class DQNMario(Mario):
         state_dict = checkpoint['state_dict']
         layer_sizes = checkpoint['layer_sizes']
         hidden_activation = checkpoint['hidden_activation']
-        output_activation = checkpoint['output_activation']
 
         self.model = self.create_model(layer_sizes[1:-1], hidden_activation, env)
         self.model.policy.load_state_dict(state_dict)
