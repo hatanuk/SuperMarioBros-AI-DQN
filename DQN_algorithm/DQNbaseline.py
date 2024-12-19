@@ -199,7 +199,7 @@ class DQNCallback(BaseCallback):
         self.encode_row = config.NeuralNetworkDQN.encode_row
         self.input_dims = config.NeuralNetworkDQN.input_dims
         
-        self.layer_sizes = [self.model.policy.q_net.features_dim, *self.model.policy.net_arch, self.model.policy.q_net.action_space.n]
+        self.layer_sizes = self.mario.network_architecture
 
         self.max_distance = 0
         self.max_fitness = 0
