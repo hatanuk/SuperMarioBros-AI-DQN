@@ -512,7 +512,7 @@ if __name__ == "__main__":
     # Start processes
     if not args.no_ga:
         ga_data_queue = multiprocessing.Queue()
-        ga_process = multiprocessing.Process(target=run_ga_agent, args=(config, ga_data_queue. args.load_ga_model))
+        ga_process = multiprocessing.Process(target=run_ga_agent, args=(config, ga_data_queue, args.load_ga_model))
         ga_process.start()
 
     if not args.no_dqn:
