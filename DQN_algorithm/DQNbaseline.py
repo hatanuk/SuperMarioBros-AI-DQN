@@ -99,7 +99,7 @@ class InputSpaceReduction(gym.Env):
     
     def step(self, action):
 
-        self.episode_steps += self._skip
+        self.episode_steps += 1
         
         action_indices = self.output_to_keys_map[action]
 
@@ -123,7 +123,10 @@ class InputSpaceReduction(gym.Env):
             reward = self.mario.calculate_fitness() - prior_fitness
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 56b2ed9 (.)
         if self.mario and not self.mario.is_alive:
             done = True
 
@@ -193,6 +196,7 @@ class DQNCallback(BaseCallback):
         self.max_fitness = 0
         self.episode = episode_start
         self.episode_steps = 0
+        self.episode_rewards = 0
         self.recent_distance = 0
         self.action_counts = [0] * len(output_to_keys_map)
 
@@ -210,19 +214,17 @@ class DQNCallback(BaseCallback):
 
     def _on_step(self) -> bool:
 
-
-
         done = True if self.locals['dones'].any() else False
 
         actions = self.locals['actions']
         for action in actions:
             self.action_counts[action] += 1
+
+        rewards = self.local['rewards']
+        self.episode_rewards += sum(rewards)
         
 
         self.episode_steps += 1
-
-       
-
 
         if self.mario.farthest_x > self.max_distance:
             self.max_distance = self.mario.farthest_x
@@ -249,6 +251,7 @@ class DQNCallback(BaseCallback):
                 'episode_distance': self.recent_distance,
                 'action_counts': self.action_counts,
                 'epsilon': self.model.exploration_rate,
+                'episode_rewards': self.episode_rewards
             }
             self.data_queue.put(data)
 
@@ -258,6 +261,7 @@ class DQNCallback(BaseCallback):
         
             self.episode += 1
             self.episode_steps = 0 
+            self.episode_rewards = 0
             self.recent_distance = 0
             self.recent_fitness = 0
             self.action_counts = [0] * len(output_to_keys_map)

@@ -5,7 +5,10 @@
 # make it log every individual's episode stats
 # remove the per-step axis
 
+import argparse
 import re
+
+import torch
 import retro
 # Removed PyQt5 imports
 # from PyQt5 import QtGui, QtWidgets
@@ -27,7 +30,7 @@ from utils import SMB, EnemyType, StaticTileType, ColorMap, DynamicTileType
 from config import Config
 from nn_viz import NeuralNetworkViz
 from mario_torch import MarioTorch as Mario
-from mario_torch import save_mario, save_stats, get_num_trainable_parameters, get_num_inputs, load_mario
+from mario_torch import save_mario, save_stats, get_num_trainable_parameters, get_num_inputs, load_mario, state_dict_to_chromosome
 
 from genetic_algorithm.individual import Individual
 from genetic_algorithm.population import Population
@@ -37,7 +40,7 @@ from genetic_algorithm.mutation import gaussian_mutation
 
 from DQN_algorithm.DQNbaseline import DQNCallback, DQNMario, InputSpaceReduction, clear_dir
 
-from smb_ai import draw_border, parse_args
+from smb_ai import draw_border
 
 from stable_baselines3 import DQN
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -51,6 +54,36 @@ import atexit
 from torch.utils.tensorboard import SummaryWriter
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Super Mario Bros AI')
+
+    # Config
+    parser.add_argument('-c', '--config', dest='config', required=False, help='config file to use')
+
+    parser.add_argument('--load_dqn_model', dest='load_dqn_model', required=False, default=None, help='/path/to/model.pt to load DQN model to continue training')
+    parser.add_argument('--load_ga_model', dest='no_ga',  action='store_true', required=False, help='/path/to/model.pt to load a GA model which will be used to populate the a population and continue training')
+
+    parser.add_argument('--no_dqn', dest='no_dqn',  action='store_true', required=False, help='do not train a dqn model')
+    parser.add_argument('--no_ga', dest='no_ga',  action='store_true', required=False, help='do not train a ga model')
+
+
+    args = parser.parse_args()
+
+    return args
+
+def validate_model(model_path):
+    try:
+        details = torch.load(model_path)
+    except FileNotFoundError:
+        raise Exception(f'Failed to find model at {model_path}')
+    except Exception as e:
+        raise Exception(f'Failed to load model at {model_path}: {e}')
+    required_keys = ['state_dict', 'layer_sizes', 'hidden_activation', 'output_activation', 'encode_row', 'input_dims', 'algorithm', 'iterations', 'distance']
+    for key in required_keys:
+        if key not in details:
+            raise KeyError(f"Missing key in the model file: {key}")
+        
+    print(f"Loaded {details['algorithm']} model at {model_path} with {details['iterations']} iterations and {details['distance']} distance")
 
 class Logger:
     def __init__(self, writer, config):
@@ -67,13 +100,15 @@ class Logger:
             6: "Left"
         }
 
-    def log_ga_generation(self, total_fitness, total_distance, num_individuals, max_fitness, max_distance, generation, action_counts):
+    def log_ga_generation(self, total_steps, total_fitness, total_distance, num_individuals, max_fitness, max_distance, generation, action_counts):
 
         print(f"avg distance GA: {round(total_distance/num_individuals, 2)}")
         self.writer.add_scalar('GA/max_fitness/generation', max_fitness, generation)
         self.writer.add_scalar('GA/avg_fitness/generation', round(total_fitness/num_individuals, 2), generation)
         self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
         self.writer.add_scalar('GA/avg_distance/generation', round(total_distance/num_individuals, 2), generation)
+
+        self.writer.add_scalar('GA/max_fitness/step', max_fitness, total_steps)
 
         action_counts = action_counts[:len(self.actions_to_keys_map)]
         action_total = sum(action_counts)
@@ -85,12 +120,16 @@ class Logger:
             self.writer.add_histogram('GA/action_distribution/generation', np.array(values), generation)
 
 
-    def log_dqn_episode(self, fitness, episode_steps, episode_distance, episode_num, max_fitness, max_distance, action_counts, epsilon):
-        print(f"distance DQN: {episode_distance}")
+    def log_dqn_episode(self, total_steps, fitness, episode_steps, episode_rewards, episode_distance, episode_num, max_fitness, max_distance, action_counts, epsilon):
+        print(f"max distance DQN: {max_distance}")
         self.writer.add_scalar('DQN/fitness/episode', fitness, episode_num)
         self.writer.add_scalar('DQN/distance/episode', episode_distance, episode_num)
         self.writer.add_scalar('DQN/max_fitness/episode', max_fitness, episode_num)
         self.writer.add_scalar('DQN/max_distance/episode', max_distance, episode_num)
+
+        self.writer.add_scalar('DQN/avg_delta_reward/episode', round(episode_rewards/episode_steps, 2), episode_num)
+
+        self.writer.add_scalar('DQN/max_fitness/step', max_fitness, total_steps)
 
         self.writer.add_scalar('DQN/epsilon/episode', round(epsilon, 3), episode_num)
 
@@ -150,20 +189,32 @@ def evaluate_individual_in_separate_process(args):
         'current_fitness': individual.fitness,
         'current_distance': individual.farthest_x,
         'action_counts': action_counts,
-        'wall_clock_time': float(f"{(end - start):.5f}")
+        'wall_clock_time': float(f"{(end - start):.5f}"),
+        'episode_steps': env.episode_steps,
     }
 
     return data
 
 
-def run_ga_agent(config, data_queue):
-    # Initialize population
-    individuals = _initialize_population(config)
+def run_ga_agent(config, data_queue, model_save_path):
+
+    if model_save_path:
+        details = torch.load(model_save_path, weights_only=False)
+    else:
+        details = None
+        
+    individuals = _initialize_population(config, details)
     population = Population(individuals)
 
-    best_fitness_GA = 0.0
-    max_distance_GA = 0
-    current_generation = 0
+    if model_save_path:
+        max_distance_GA = details['distance']
+        best_fitness_GA = individuals[0].fitness_func(max_distance_GA)
+        current_generation = details['iterations']
+    else:
+        current_generation = 0
+        best_fitness_GA = 0.0
+        max_distance_GA = 0
+
     _current_individual = 0
 
     best_individual = None
@@ -218,6 +269,7 @@ def run_ga_agent(config, data_queue):
                     'current_generation': current_generation,
 
                     # Per Individual
+                    'episode_steps': res['episode_steps'],
                     'current_individual': i,
                     'current_fitness': res['current_fitness'],
                     'current_distance': res['current_distance'],
@@ -298,14 +350,8 @@ def run_dqn_agent(config, data_queue, model_save_path):
     episode_start = 0
 
     if model_save_path:
-        try:
-            iterations, distance = mario_DQN.load_saved_model(model_save_path, env)
-            print(f"Loaded model at {model_save_path} with {iterations} iterations and {distance} distance")
-            episode_start = iterations
-        except FileNotFoundError:
-            raise Exception(f'Failed to find model at {model_save_path}')
-        except Exception as e:
-            raise Exception(f'Failed to load model at {model_save_path}: {e}')
+        iterations, _ = mario_DQN.load_saved_model(model_save_path, env)
+        episode_start = iterations
    
     callback = DQNCallback(data_queue, mario_DQN, config, verbose=1, episode_start=episode_start)
 
@@ -313,9 +359,10 @@ def run_dqn_agent(config, data_queue, model_save_path):
     mario_DQN.model.learn(total_timesteps=int(100_000 * config.DQN.total_episodes), callback=callback, log_interval=int(100_000 * config.DQN.total_episodes))
 
 
-def _initialize_population(config):
+def _initialize_population(config, details=None):
     individuals: List[Individual] = []
     num_parents = config.Selection.num_parents
+    num_offspring = config.Selection.num_offspring
 
     hidden_layer_architecture = config.NeuralNetworkGA.hidden_layer_architecture
     hidden_activation = config.NeuralNetworkGA.hidden_node_activation
@@ -326,10 +373,30 @@ def _initialize_population(config):
     input_dims = config.NeuralNetworkGA.input_dims
     allow_additional_time= config.Misc.allow_additional_time_for_flagpole
 
-    for _ in range(num_parents):
-        individual = Mario(None, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan, frame_skip, input_dims, allow_additional_time)
-        individuals.append(individual)
+    if details:
+        # Populate parent population with copies of the saved model
+       
+        model_chromosome = state_dict_to_chromosome(details['state_dict'])
+
+        # Include the loaded model in the initial population
+        individuals.append(Mario(model_chromosome, details['layer_sizes'][1:-1], details["hidden_activation"], details["output_activation"], details["encode_row"], lifespan, frame_skip, details["input_dims"], allow_additional_time))
+
+        while len(individuals) < num_offspring:
+            # Populate the initial population with mutated copies of the loaded model
+            children = _crossover_and_mutate(model_chromosome, model_chromosome, config, details['iterations'])
+
+            for child in children:
+                if len(individuals) < num_offspring:
+                    individuals.append(Mario(child, details['layer_sizes'][1:-1], details["hidden_activation"], details["output_activation"], details["encode_row"], lifespan, frame_skip, details["input_dims"], allow_additional_time))
+         
+    else:
+        for _ in range(num_parents):
+            individual = Mario(None, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan, frame_skip, input_dims, allow_additional_time)
+            individuals.append(individual)
+
     return individuals
+
+
 
 def individual_to_agent(population, config):
     agents = []
@@ -435,10 +502,15 @@ if __name__ == "__main__":
 
     logger = Logger(writer, config)
 
+    if args.load_ga_model:
+        validate_model(args.load_ga_model)
+    if args.load_dqn_model:
+        validate_model(args.load_dqn)
+
     # Start processes
     if not args.no_ga:
         ga_data_queue = multiprocessing.Queue()
-        ga_process = multiprocessing.Process(target=run_ga_agent, args=(config, ga_data_queue))
+        ga_process = multiprocessing.Process(target=run_ga_agent, args=(config, ga_data_queue. args.load_ga_model))
         ga_process.start()
 
     if not args.no_dqn:
@@ -461,14 +533,15 @@ if __name__ == "__main__":
     atexit.register(cleanup)
 
     try:
-        ga_counter = 0
-        dqn_counter = 0
+      
+        total_steps_dqn = 0 
 
         # stats specific to a generation
         gen_stats = {
             "current_gen": 0,
             "total_fitness": 0,
             "total_distance": 0,
+            "total_steps": 0,
             "max_fitness": 0,
             "max_distance": 0,
             "current_ind": 0,
@@ -479,6 +552,7 @@ if __name__ == "__main__":
         def reset_generation_stats(stats):
             stats["total_fitness"] = 0
             stats["total_distance"] = 0
+            stats['total_steps'] = 0
             stats["max_fitness"] = 0
             stats["max_distance"] = 0
             stats["current_ind"] = 0
@@ -494,22 +568,25 @@ if __name__ == "__main__":
                     while True:
                         ga_data = ga_data_queue.get_nowait()
 
-                        if gen_stats['current_gen'] != ga_data['current_generation'] and ga_data['current_generation'] % config.Statistics.log_interval == 0:
+                        if gen_stats['current_gen'] != ga_data['current_generation']:
                             # Generation changed, log the old generation's stats
-                        
-                            logger.log_ga_generation(
-                                total_fitness=gen_stats['total_fitness'],
-                                total_distance=gen_stats['total_distance'],
-                                num_individuals=gen_stats['current_ind'] + 1, # needed to get num. of individuals in generation
-                                max_fitness=gen_stats['max_fitness'],
-                                max_distance=gen_stats['max_distance'],
-                                generation=gen_stats['current_gen'] + 1,
-                                action_counts=gen_stats['action_counts']
-                            )
                             gen_stats['current_gen'] = ga_data['current_generation']
                             reset_generation_stats(gen_stats)
+                            if ga_data['current_generation'] % config.Statistics.log_interval == 0:
+                         
+                                logger.log_ga_generation(
+                                    total_steps=gen_stats['total_steps'],
+                                    total_fitness=gen_stats['total_fitness'],
+                                    total_distance=gen_stats['total_distance'],
+                                    num_individuals=gen_stats['current_ind'] + 1, # needed to get num. of individuals in generation
+                                    max_fitness=gen_stats['max_fitness'],
+                                    max_distance=gen_stats['max_distance'],
+                                    generation=gen_stats['current_gen'] + 1,
+                                    action_counts=gen_stats['action_counts']
+                                )
 
                         gen_stats['total_fitness'] += ga_data['current_fitness']
+                        gen_stats['total_steps'] += ga_data['episode_steps']
                         gen_stats['total_distance'] += ga_data['current_distance']
                         gen_stats['max_fitness'] = max(gen_stats['max_fitness'], ga_data['max_fitness'])
                         gen_stats['max_distance'] = max(gen_stats['max_distance'], ga_data['max_distance'])
@@ -525,21 +602,24 @@ if __name__ == "__main__":
             else:               
                 # Process data from DQN agent
                 try:
+         
                     while True:
                         dqn_data = dqn_data_queue.get_nowait()
-                        dqn_counter += 1
+
+                        total_steps_dqn += dqn_data['episode_steps']
 
                         if dqn_data['episode_num'] % config.Statistics.log_interval == 0:
                             logger.log_dqn_episode(
+                                total_steps = total_steps_dqn,
                                 fitness=dqn_data['fitness'],
                                 episode_steps=dqn_data['episode_steps'],
+                                episode_rewards=dqn_data['episode_rewards'],
                                 episode_distance=dqn_data['episode_distance'],
                                 episode_num=dqn_data['episode_num'] + 1,
                                 max_fitness=dqn_data['max_fitness'],
                                 max_distance=dqn_data['max_distance'],
                                 action_counts=dqn_data['action_counts'],
                                 epsilon=dqn_data['epsilon']
-
                             )  
 
 

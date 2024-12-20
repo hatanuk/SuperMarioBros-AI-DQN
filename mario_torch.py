@@ -159,10 +159,7 @@ class MarioTorch(Individual):
             hidden_activation=self.hidden_activation,
             output_activation=self.output_activation
         )
-
         
-
-
         # If chromosome is provided, load weights
         if chromosome:
             self._load_chromosome(chromosome)
@@ -320,7 +317,7 @@ def load_mario(population_folder: str, individual_name: str, config: Optional[Co
             param = fname.rsplit('.npy', 1)[0]
             chromosome[param] = np.load(os.path.join(population_folder, individual_name, fname))
         
-    mario = Mario(config, chromosome=chromosome)
+    mario = MarioTorch(config, chromosome=chromosome)
     return mario
 
 def _calc_stats(data: List[Union[int, float]]) -> Tuple[float, float, float, float, float]:
@@ -432,3 +429,16 @@ def get_num_trainable_parameters(config: Config) -> int:
         num_params += L*L_next + L_next
 
     return num_params
+
+def state_dict_to_chromosome(state_dict: Dict[str, torch.Tensor]) -> Dict[str, np.ndarray]:
+    chromosome = {}
+    layer_index = 1 
+    
+    for key, value in state_dict.items():
+        if "weight" in key:
+            chromosome[f"W{layer_index}"] = value.cpu().numpy()  #
+        elif "bias" in key:
+            chromosome[f"b{layer_index}"] = value.cpu().numpy() 
+            layer_index += 1  
+
+    return chromosome
