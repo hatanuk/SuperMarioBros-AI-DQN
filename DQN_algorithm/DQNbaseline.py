@@ -1,4 +1,5 @@
 import copy
+import random
 from typing import Dict, List, Optional, Union
 import numpy as np
 from random import sample
@@ -34,20 +35,6 @@ def clear_dir(target):
         shutil.rmtree(target) 
     os.makedirs(target, exist_ok=True)
 
-
-class FrameSkipWrapper(gym.Wrapper):
-    def __init__(self, env, skip=4):
-        super().__init__(env)
-        self._skip = skip
-
-    def step(self, action):
-        total_reward = 0
-        for _ in range(self._skip):
-            obs, reward, done, info = self.env.step(action)
-            total_reward += reward
-            if done:
-                break
-        return obs, total_reward, done, info
 
 
 class EpsilonDecayScheduler:
@@ -111,6 +98,9 @@ class InputSpaceReduction(gym.Env):
         return self._observation(obs)
     
     def step(self, action):
+
+        if random.random() < 0.005:
+            print("reward: ", reward)
 
         self.episode_steps += self._skip
         
