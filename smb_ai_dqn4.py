@@ -573,8 +573,6 @@ if __name__ == "__main__":
 
                         if gen_stats['current_gen'] != ga_data['current_generation']:
                             # Generation changed, log the old generation's stats
-                            gen_stats['current_gen'] = ga_data['current_generation']
-                            reset_generation_stats(gen_stats)
                             if ga_data['current_generation'] % config.Statistics.log_interval == 0:
                          
                                 logger.log_ga_generation(
@@ -587,6 +585,9 @@ if __name__ == "__main__":
                                     generation=gen_stats['current_gen'] + 1,
                                     action_counts=gen_stats['action_counts']
                                 )
+
+                            gen_stats['current_gen'] = ga_data['current_generation']
+                            reset_generation_stats(gen_stats)
 
                         gen_stats['total_fitness'] += ga_data['current_fitness']
                         gen_stats['total_steps'] += ga_data['episode_steps']
