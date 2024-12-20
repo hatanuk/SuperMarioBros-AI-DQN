@@ -35,7 +35,7 @@ from genetic_algorithm.selection import elitism_selection, tournament_selection,
 from genetic_algorithm.crossover import simulated_binary_crossover as SBX
 from genetic_algorithm.mutation import gaussian_mutation
 
-from DQN_algorithm.DQNbaseline import DQNCallback, DQNMario, InputSpaceReduction, FrameSkipWrapper, clear_dir
+from DQN_algorithm.DQNbaseline import DQNCallback, DQNMario, InputSpaceReduction, clear_dir
 
 from smb_ai import draw_border, parse_args
 
