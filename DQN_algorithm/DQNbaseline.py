@@ -99,9 +99,6 @@ class InputSpaceReduction(gym.Env):
     
     def step(self, action):
 
-        if random.random() < 0.005:
-            print("reward: ", reward)
-
         self.episode_steps += self._skip
         
         action_indices = self.output_to_keys_map[action]
@@ -124,6 +121,11 @@ class InputSpaceReduction(gym.Env):
         if self.mario:
             prior_fitness = self.mario.fitness
             reward = self.mario.calculate_fitness() - prior_fitness
+
+
+            if random.random() < 0.005:
+                print("reward: ", reward)
+
 
 
         if self.mario and not self.mario.is_alive:
