@@ -569,6 +569,7 @@ if __name__ == "__main__":
                 try:
                     while True:
                         ga_data = ga_data_queue.get_nowait()
+                        print(ga_data)
 
                         if gen_stats['current_gen'] != ga_data['current_generation']:
                             # Generation changed, log the old generation's stats
