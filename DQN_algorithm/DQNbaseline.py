@@ -379,9 +379,9 @@ class DQNMario(Mario):
     def load_saved_model(self, save_path, env):
         '''Loads .pt file from save_path and returns the iterations and distance of the saved model'''
 
+        checkpoint = torch.load(save_path)
         assert checkpoint['layer_sizes'] == self.network_architecture, "Failed to load model with a differing architecture than what is specified in the .config"
 
-        checkpoint = torch.load(save_path)
         state_dict = checkpoint['state_dict']
         layer_sizes = checkpoint['layer_sizes']
         hidden_activation = checkpoint['hidden_activation']
