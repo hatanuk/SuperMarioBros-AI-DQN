@@ -61,7 +61,7 @@ def parse_args():
     parser.add_argument('-c', '--config', dest='config', required=False, help='config file to use')
 
     parser.add_argument('--load_dqn_model', dest='load_dqn_model', default=None, help='/path/to/model.pt to load DQN model to continue training')
-    parser.add_argument('--load_ga_model', dest='no_ga', default=None, help='/path/to/model.pt to load a GA model which will be used to populate the a population and continue training')
+    parser.add_argument('--load_ga_model', dest='load_ga_model', default=None, help='/path/to/model.pt to load a GA model which will be used to populate the a population and continue training')
 
     parser.add_argument('--no_dqn', dest='no_dqn',  action='store_true', required=False, help='do not train a dqn model')
     parser.add_argument('--no_ga', dest='no_ga',  action='store_true', required=False, help='do not train a ga model')
