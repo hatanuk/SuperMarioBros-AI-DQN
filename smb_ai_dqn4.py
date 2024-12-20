@@ -505,7 +505,7 @@ if __name__ == "__main__":
     if args.load_ga_model:
         validate_model(args.load_ga_model)
     if args.load_dqn_model:
-        validate_model(args.load_dqn)
+        validate_model(args.load_dqn_model)
 
     # Start processes
     if not args.no_ga:
