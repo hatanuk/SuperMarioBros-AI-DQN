@@ -216,7 +216,7 @@ class DQNCallback(BaseCallback):
         for action in actions:
             self.action_counts[action] += 1
 
-        rewards = self.local['rewards']
+        rewards = self.locals['rewards']
         self.episode_rewards += sum(rewards)
         
 
