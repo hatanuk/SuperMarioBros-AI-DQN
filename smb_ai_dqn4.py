@@ -481,11 +481,13 @@ if __name__ == "__main__":
     if args.config:
         config = Config(args.config)
 
-    # clear prior tensorboard logs
-    clear_dir(config.Statistics.tensorboard_dir)
+    if not args.load_ga_model and not args.load_dqn_model:
 
-    # clear prior model saves
-    clear_dir(config.Statistics.model_save_dir)
+        # clear prior tensorboard logs
+        clear_dir(config.Statistics.tensorboard_dir)
+
+        # clear prior model saves
+        clear_dir(config.Statistics.model_save_dir)
 
     if not os.path.exists(config.Statistics.model_save_dir):
         os.makedirs(config.Statistics.model_save_dir)
