@@ -123,10 +123,6 @@ class InputSpaceReduction(gym.Env):
             reward = self.mario.calculate_fitness() - prior_fitness
 
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 56b2ed9 (.)
         if self.mario and not self.mario.is_alive:
             done = True
 
