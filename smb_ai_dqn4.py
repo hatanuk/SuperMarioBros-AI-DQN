@@ -109,7 +109,7 @@ class Logger:
         self.writer.add_scalar('GA/avg_distance/generation', round(total_distance/num_individuals, 2), generation)
 
         self.writer.add_scalar('GA/max_fitness/step', max_fitness, total_steps)
-
+        print( total_steps, total_fitness, total_distance, num_individuals, max_fitness, max_distance, generation, action_counts)
         action_counts = action_counts[:len(self.actions_to_keys_map)]
         action_total = sum(action_counts)
         action_dict = {f'{self.actions_to_keys_map[i]}': round(count/action_total, 2) for i, count in enumerate(action_counts)}
