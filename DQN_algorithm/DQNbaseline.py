@@ -358,7 +358,7 @@ class DQNMario(Mario):
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        return DQN(DQNPolicy, 
+        model = DQN(DQNPolicy, 
                     env=env, 
                     gamma=self.discount_value, 
                     learning_rate=self.learning_rate,  
@@ -374,6 +374,9 @@ class DQNMario(Mario):
                     policy_kwargs = policy_kwargs,
                     device=device
                     )
+        
+        print('Created model with args:', model.policy.net_args)
+        return model
 
 
     def load_saved_model(self, save_path, env):

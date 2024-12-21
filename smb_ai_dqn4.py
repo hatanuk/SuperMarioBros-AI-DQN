@@ -355,7 +355,7 @@ def run_dqn_agent(config, data_queue, model_save_path):
     callback = DQNCallback(data_queue, mario_DQN, config, verbose=1, episode_start=episode_start)
 
     # total_timesteps and log_interval should be unreachably high - the callback will stop the training
-    mario_DQN.model.learn(total_timesteps=int(100_000 * config.DQN.total_episodes), callback=callback, log_interval=int(100_000 * config.DQN.total_episodes))
+    mario_DQN.model.learn(total_timesteps=int(100_000 * config.DQN.total_episodes), callback=callback, log_interval=1_000)
 
 
 def _initialize_population(config, details=None):
