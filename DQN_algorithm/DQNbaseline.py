@@ -77,8 +77,10 @@ class InputSpaceReduction(gym.Env):
         self.action_space_original = self.env.action_space
         self.action_space = spaces.Discrete(self.output_size)
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(self.input_size), dtype=np.float32
+            low=-1, high=1, shape=(self.input_size), dtype=np.float32
         )
+
+        print("n: ", self.observation_space.shape)
         
     def get_ram(self):
         return self.env.get_ram()
