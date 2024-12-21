@@ -79,8 +79,6 @@ class InputSpaceReduction(gym.Env):
         self.observation_space = spaces.Box(
             low=-1, high=1, shape=(self.input_size), dtype=np.float32
         )
-
-        print("n: ", self.observation_space.shape)
         
     def get_ram(self):
         return self.env.get_ram()
@@ -362,6 +360,7 @@ class DQNMario(Mario):
 
         model = DQN(DQNPolicy, 
                     env=env, 
+                    learning_starts=100,
                     gamma=self.discount_value, 
                     learning_rate=self.learning_rate,  
                     buffer_size=self.buffer_size,
