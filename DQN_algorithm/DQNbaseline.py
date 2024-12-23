@@ -279,7 +279,7 @@ class DQNCallback(BaseCallback):
             }
             self.data_queue.put(data)
 
-
+            print(f"{self.episode} / {self.max_episodes} Episodes")
             if self.episode >= self.max_episodes:
                 return False  # Stops training
         
