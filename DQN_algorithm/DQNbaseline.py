@@ -51,15 +51,20 @@ class CustomDQN(DQN):
             max_episodes
         )
 
+        self.prev_episode = 0
+
     def _on_step(self):
         self._n_calls += 1
         if self._n_calls % max(self.target_update_interval // self.n_envs, 1) == 0:
             polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)
             polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)
 
-        # overriden to use self._episode_num
-        self.exploration_rate = self.exploration_schedule(self._episode_num)
-        self.logger.record("rollout/exploration_rate", self.exploration_rate)
+        if self.prev_episode != self._episode_num:
+            # overriden to use self._episode_num
+            self.prev_episode = self._episode_num
+            self.exploration_rate = self.exploration_schedule(self._episode_num)
+            print("Exploration rate: ", self.exploration_rate)
+            self.logger.record("rollout/exploration_rate", self.exploration_rate)
 
 
 
