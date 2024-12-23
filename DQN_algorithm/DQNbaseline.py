@@ -38,19 +38,29 @@ def clear_dir(target):
     os.makedirs(target, exist_ok=True)
 
 class CustomDQN(DQN):
-    # just removes one line of code from the implementation in order to ensure
-    # That epsilon is logged from the custom scheduler rather than the default one
-    # DQNCallback handles exploration rate
+     
+     # Only difference is the implementation of a custom Epsilon Scheduler which takes into account
+     # total episodes instead of total timesteps
+    def __init__(self, *args, max_episodes: int = 1000, **kwargs):
+        super(CustomDQN, self).__init__(*args, **kwargs)
+
+        self.exploration_schedule = EpsilonDecayScheduler(
+            self.exploration_initial_eps,
+            self.exploration_final_eps,
+            self.exploration_fraction,
+            max_episodes
+        )
+
     def _on_step(self):
         self._n_calls += 1
-        # Account for multiple environments
-        # each call to step() corresponds to n_envs transitions
         if self._n_calls % max(self.target_update_interval // self.n_envs, 1) == 0:
             polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)
-            # Copy running stats, see GH issue #996
             polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)
 
+        # overriden to use self._episode_num
+        self.exploration_rate = self.exploration_schedule(self._episode_num)
         self.logger.record("rollout/exploration_rate", self.exploration_rate)
+
 
 
 class EpsilonDecayScheduler:
@@ -59,7 +69,7 @@ class EpsilonDecayScheduler:
         self.final_epsilon = final_epsilon
         self.decay_episodes = int(total_episodes * decay_fraction)
 
-    def get_epsilon(self, current_episode):
+    def __call__(self, current_episode):
         return max(self.initial_epsilon - current_episode * (self.initial_epsilon - self.final_epsilon) / self.decay_episodes,
                      self.final_epsilon)
     
@@ -217,7 +227,6 @@ class DQNCallback(BaseCallback):
 
         self.max_episodes = self.config.DQN.total_episodes
 
-        self.epsilon_scheduler = EpsilonDecayScheduler(config.DQN.epsilon_start, config.DQN.epsilon_min, config.DQN.decay_fraction, self.max_episodes)
 
 
     def _on_training_start(self) -> None:
@@ -247,9 +256,7 @@ class DQNCallback(BaseCallback):
             self.best_model_state_dict = copy.deepcopy(self.model.policy.state_dict())
 
         if done:
-            # manually update epsilon
-            self.model.policy.exploration_rate = self.epsilon_scheduler.get_epsilon(self.episode)
-
+    
             if self.episode % self.config.Statistics.dqn_checkpoint_interval == 0 and self.episode > 0:
                 self.save_current_model(self.episode, self.recent_distance, postfix="_CHECKPOINT")
                 self.save_best_model(self.episode)
@@ -262,7 +269,7 @@ class DQNCallback(BaseCallback):
                 'episode_steps': self.episode_steps,
                 'episode_distance': self.recent_distance,
                 'action_counts': self.action_counts,
-                'epsilon': self.model.exploration_rate,
+                'epsilon': self.model.policy.exploration_rate,
                 'episode_rewards': self.episode_rewards
             }
             self.data_queue.put(data)
@@ -352,6 +359,7 @@ class DQNMario(Mario):
         self.discount_value = self.config.DQN.discount_value
         self.epsilon_start = self.config.DQN.epsilon_start
         self.epsilon_min = self.config.DQN.epsilon_min
+        self.max_episodes = self.config.DQN.total_episodes
         self.decay_fraction = self.config.DQN.decay_fraction
         self.train_freq = self.config.DQN.train_freq
 
@@ -375,6 +383,7 @@ class DQNMario(Mario):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         model = CustomDQN(DQNPolicy, 
+                    max_episodes=self.max_episodes,
                     env=env, 
                     learning_starts=100,
                     gamma=self.discount_value, 
