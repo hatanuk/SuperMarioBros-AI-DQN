@@ -18,6 +18,8 @@ import torch.nn as nn
 import torch
 import os
 import shutil
+from stable_baselines3.common.utils import polyak_update
+
 
 from gym.spaces import Space
 import numpy as np
@@ -35,6 +37,20 @@ def clear_dir(target):
         shutil.rmtree(target) 
     os.makedirs(target, exist_ok=True)
 
+class CustomDQN(DQN):
+    # just removes one line of code from the implementation in order to ensure
+    # That epsilon is logged from the custom scheduler rather than the default one
+    # DQNCallback handles exploration rate
+    def _on_step(self):
+        self._n_calls += 1
+        # Account for multiple environments
+        # each call to step() corresponds to n_envs transitions
+        if self._n_calls % max(self.target_update_interval // self.n_envs, 1) == 0:
+            polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)
+            # Copy running stats, see GH issue #996
+            polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)
+
+        self.logger.record("rollout/exploration_rate", self.exploration_rate)
 
 
 class EpsilonDecayScheduler:
@@ -232,7 +248,7 @@ class DQNCallback(BaseCallback):
 
         if done:
             # manually update epsilon
-            self.model.exploration_rate = self.epsilon_scheduler.get_epsilon(self.episode)
+            self.model.policy.exploration_rate = self.epsilon_scheduler.get_epsilon(self.episode)
 
             if self.episode % self.config.Statistics.dqn_checkpoint_interval == 0 and self.episode > 0:
                 self.save_current_model(self.episode, self.recent_distance, postfix="_CHECKPOINT")
@@ -358,7 +374,7 @@ class DQNMario(Mario):
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        model = DQN(DQNPolicy, 
+        model = CustomDQN(DQNPolicy, 
                     env=env, 
                     learning_starts=100,
                     gamma=self.discount_value, 
