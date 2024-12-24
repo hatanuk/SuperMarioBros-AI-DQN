@@ -388,7 +388,7 @@ class DQNMario(Mario):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         model = DQN(DQNPolicy, 
-                    max_episodes=self.max_episodes,
+                    #max_episodes=self.max_episodes,
                     env=env, 
                     learning_starts=self.buffer_size,
                     gamma=self.discount_value, 
