@@ -390,7 +390,7 @@ class DQNMario(Mario):
         model = DQN(DQNPolicy, 
                     max_episodes=self.max_episodes,
                     env=env, 
-                    learning_starts=100,
+                    learning_starts=self.buffer_size,
                     gamma=self.discount_value, 
                     learning_rate=self.learning_rate,  
                     buffer_size=self.buffer_size,
