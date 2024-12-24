@@ -279,9 +279,9 @@ class DQNCallback(BaseCallback):
             }
             self.data_queue.put(data)
 
-            print(f"{self.episode} / {self.max_episodes} Episodes")
-            if self.episode >= self.max_episodes:
-                return False  # Stops training
+            #print(f"{self.episode} / {self.max_episodes} Episodes")
+            #if self.episode >= self.max_episodes:
+                #return False  # Stops training
         
             self.episode += 1
             self.episode_steps = 0 
@@ -387,7 +387,7 @@ class DQNMario(Mario):
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        model = CustomDQN(DQNPolicy, 
+        model = DQN(DQNPolicy, 
                     max_episodes=self.max_episodes,
                     env=env, 
                     learning_starts=100,
@@ -401,7 +401,7 @@ class DQNMario(Mario):
                     batch_size=self.batch_size,
                     target_update_interval= self.sync_network_rate,
                     verbose=1,
-                    tensorboard_log= "./logs/DQNsb3",
+                    tensorboard_log= "./logs/DQN/tb",
                     policy_kwargs = policy_kwargs,
                     device=device
                     )
