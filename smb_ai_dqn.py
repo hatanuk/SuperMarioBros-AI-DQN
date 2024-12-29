@@ -1,24 +1,36 @@
-import retro
-from PyQt5 import QtGui, QtWidgets
-from PyQt5.QtGui import QPainter, QBrush, QPen, QPolygonF, QColor, QImage, QPixmap
-from PyQt5.QtCore import Qt, QPointF, QTimer, QRect
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
+# multiparallel ga test
 
-from PIL import Image
+
+# fix the GA logging
+# make it log every individual's episode stats
+# remove the per-step axis
+
+import argparse
+import re
+
+import torch
+import retro
+# Removed PyQt5 imports
+# from PyQt5 import QtGui, QtWidgets
+# from PyQt5.QtGui import QPainter, QBrush, QPen, QPolygonF, QColor, QImage, QPixmap
+# from PyQt5.QtCore import Qt, QPointF, QTimer, QRect
+# from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel
+# from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
+
 from typing import Tuple, List, Optional
 import random
 import sys
 import math
 import numpy as np
-import argparse
+import shutil
 import os
+from tqdm import tqdm
 
 from utils import SMB, EnemyType, StaticTileType, ColorMap, DynamicTileType
 from config import Config
 from nn_viz import NeuralNetworkViz
-from mario import Mario, save_mario, save_stats, get_num_trainable_parameters, get_num_inputs, load_mario, fitness_func
-from DQN_algorithm.DQN import reward_func
+from mario_torch import MarioTorch as Mario
+from mario_torch import save_mario, save_stats, get_num_trainable_parameters, get_num_inputs, load_mario, state_dict_to_chromosome
 
 from genetic_algorithm.individual import Individual
 from genetic_algorithm.population import Population
@@ -26,356 +38,597 @@ from genetic_algorithm.selection import elitism_selection, tournament_selection,
 from genetic_algorithm.crossover import simulated_binary_crossover as SBX
 from genetic_algorithm.mutation import gaussian_mutation
 
-from DQN_algorithm import DQN, DQNAgent, DQNMario
+from DQN_algorithm.DQNbaseline import DQNCallback, DQNMario, InputSpaceReduction, clear_dir
 
-from smb_ai import next_generation
 
-debug = False
+from stable_baselines3 import DQN
+from stable_baselines3.common.vec_env import DummyVecEnv
 
+import multiprocessing
+import queue
+import time  # Added time module for sleep
 
+import atexit
 
-class MainWindow:
-    def __init__(self, config: Optional[Config] = None):
-        global args
-        self.config = config
-        self.title = 'Super Mario Bros AI'
+from torch.utils.tensorboard import SummaryWriter
 
-        # Keys correspond with B, NULL, SELECT, START, U, D, L, R, A
-        # index                0  1     2       3      4  5  6  7  8
-        self.keys = np.array( [0, 0,    0,      0,     0, 0, 0, 0, 0], np.int8)
 
-        self.ouput_to_keys_map = {
-            0: 4,  # U
-            1: 5,  # D
-            2: 6,  # L
-            3: 7,  # R
-            4: 8,  # A
-            5: 0   # B
-        }
+def parse_args():
+    parser = argparse.ArgumentParser(description='Super Mario Bros AI')
 
-        self._next_gen_size = None
-        if self.config.Selection.selection_type == 'plus':
-            self._next_gen_size = self.config.Selection.num_parents + self.config.Selection.num_offspring
-        elif self.config.Selection.selection_type == 'comma':
-            self._next_gen_size = self.config.Selection.num_offspring
+    # Config
+    parser.add_argument('-c', '--config', dest='config', required=False, help='config file to use')
 
-        self.init_ui()
+    parser.add_argument('--load_dqn_model', dest='load_dqn_model', default=None, help='/path/to/model.pt to load DQN model to continue training')
+    parser.add_argument('--load_ga_model', dest='load_ga_model', default=None, help='/path/to/model.pt to load a GA model which will be used to populate the a population and continue training')
 
+    parser.add_argument('--no_dqn', dest='no_dqn',  action='store_true', required=False, help='do not train a dqn model')
+    parser.add_argument('--no_ga', dest='no_ga',  action='store_true', required=False, help='do not train a ga model')
 
-        self.benchmark_stats = {'DQN': [], 'GA': []}
 
-        # GA init
-        individuals = self._initialize_population()
-        self.population = Population(individuals)
-        self.mario_GA = self.population.individuals[0]
-        self.best_fitness_GA= 0.0
-        self.max_distance_GA = 0
-        self._true_zero_gen = 0
-        self.current_generation = 0
-        self.env_GA = self._make_env()
-        self._current_individual = 0
+    args = parser.parse_args()
 
-        # DQN init
-        self.mario_DQN = DQNMario(self.config)
-        self.best_fitness_DQN = 0.0
-        self.max_distance_DQN = 0
-        self.env_DQN = self._make_env()
-        self.step_counter_GA = 0
+    return args
 
-
-        self._timer = QTimer()
-        self._timer.timeout.connect(self._update)
-        self._timer.start(1000 // 60) # 60 fps
-
-    def init_ui(self):
-        central_widget = QWidget()
-        layout = QVBoxLayout()
-
-        self.dqn_fitness_label = QLabel('DQN Fitness: 0')
-        self.ga_fitness_label = QLabel('GA Fitness: 0')
-        self.ga_generation_label = QLabel('Generation: 0')
-        self.ga_distance_label = QLabel('Max Distance GA: 0')
-        self.dqn_distance_label = QLabel('Max Distance DQN: 0')
-
-        layout.addWidget(self.dqn_fitness_label)
-        layout.addWidget(self.dqn_distance_label)
-        layout.addWidget(self.ga_fitness_label)
-        layout.addWidget(self.ga_generation_label)
-        layout.addWidget(self.ga_distance_label)
-
-        central_widget.setLayout(layout)
-        self.setCentralWidget(central_widget)
-
-
-    def _update_gui(self):
-        self.dqn_fitness_label.setText(f'DQN Fitness: {self.mario_DQN.fitness}')
-        self.dqn_distance_label.setText(f'Max Distance DQN: {self.max_distance_DQN}')
-        self.ga_fitness_label.setText(f'GA Fitness: {self.mario_GA.fitness}')
-        self.ga_generation_label.setText(f'Generation: {self.current_generation}')
-        self.ga_distance_label.setText(f'Max Distance GA: {self.max_distance_GA}')
-
-
-    def _make_env(self):
-        return retro.make(game='SuperMarioBros-Nes', state=f'Level{self.config.Misc.level}')
-
-    def _update_gui(self):
-        pass
-
-    def _initialize_population(self):
-        individuals: List[Individual] = []
-        num_parents = self.config.Selection.num_parents
-        for _ in range(num_parents):
-            individual = Mario(config=self.config)
-            individuals.append(individual)
-        return individuals
-
-
-    def _update(self) -> None:
-        self._update_dqn()
-        self._update_ga()
-        self._update_gui()
-    
-    def _get_state(self, env, mario):
-        ram = env.get_ram()
-        tiles = SMB.get_tiles(ram)
-        mario.set_input_as_array(ram, tiles)
-        return mario.input_as_array
-    
-    def _get_stats(self, mario):
-        frames = mario._frames
-        distance = mario.x_dist
-        score = mario.game_score
-
-        return {
-            "frames" : frames,
-            "distance" : distance,
-            "score" : score
-        }
-
-    def _update_dqn(self):
-
-        # stats are a dict of frames, distance and score
-        curr_state = self._get_state(self.env_DQN, self.mario_DQN)
-        curr_stats = self._get_stats(self.mario_DQN)
-        action = self.mario_DQN.buttons_to_press
-        self._take_action(self.mario_DQN, self.env_DQN, action)
-        next_stats = self._get_stats(self.mario_DQN)
-        next_state = self._get_state(self.env_DQN, self.mario_DQN)
-        done = not self.mario_DQN.is_alive
-
-        # Calculate reward using DQNMario's calculate_reward method
-        reward = self.mario_DQN.calculate_reward(curr_stats, next_stats)
-
-        self.mario_DQN.replay_buffer.add(curr_state, action, next_state, reward, done)
-        self.mario_DQN.learn()
-
-        # Fitness = total reward
-        self.mario_DQN.fitness += reward
-
-        if not done:
-            if self.mario_DQN.farthest_x > self.max_distance_DQN:
-                self.max_distance_DQN = self.mario_DQN.farthest_x
-        else:
-            self.benchmark_stats['DQN'].append({
-                'reward': reward,
-                'distance': self.mario_DQN.farthest_x,
-                'fitness': self.mario_DQN.fitness,
-                'epsilon': self.mario_DQN.epsilon,
-                'steps': self.mario_DQN.step_counter
-            })
-            self.env_DQN.reset()
-            self.mario_DQN.fitness = 0
-
-    def _take_action(self, mario, env, action):
-        ram = env.get_ram()
-        tiles = SMB.get_tiles(ram)
-        env.step(action)
-        mario.update(ram, tiles, self.keys, self.ouput_to_keys_map)
-
-    def _update_ga(self):
-
-        self.step_counter_GA += 1 
-
-        curr_stats = self._get_stats(self.mario_GA)
-        action = self.mario_GA.buttons_to_press
-        self._take_action(self.mario_GA, self.env_GA, action)
-        next_stats = self._get_stats(self.mario_GA)
-
-
-        if self.mario_GA.is_alive:
-            if self.mario_GA.farthest_x > self.max_distance_GA:
-                self.max_distance_GA = self.mario_GA.farthest_x
-            self.mario_GA.fitness+= self.calculate_reward(curr_stats, next_stats)
-            
-        else:
-            fitness = self.mario_GA.fitness
-            self.benchmark_stats['GA'].append({
-                'fitness': fitness,
-                'distance': self.mario_GA.farthest_x,
-                'generation': self.current_generation,
-                'steps': self.step_counter_GA
-            })
-
-            self._next_individual_or_generation()
-
-    def _next_individual_or_generation(self):
-        self._current_individual += 1
-        if self._current_individual >= len(self.population.individuals):
-  
-            self.next_generation()
-        else:
-            self.mario_GA = self.population.individuals[self._current_individual]
-            self.env_GA.reset()
-
-  
-
-    def _next_generation(self) -> None:
-        self._current_individual = 0
-        self.current_generation += 1
-
-        if debug == True:
-            print(f'----Current Gen: {self.current_generation}, True Zero: {self._true_zero_gen}')
-            fittest = self.population.fittest_individual
-            print(f'Best fitness of gen: {fittest.fitness}, Max dist of gen: {fittest.farthest_x}')
-            num_wins = sum(individual.did_win for individual in self.population.individuals)
-            pop_size = len(self.population.individuals)
-            print(f'Wins: {num_wins}/{pop_size} (~{(float(num_wins)/pop_size*100):.2f}%)')
-
-        if self.config.Statistics.save_best_individual_from_generation:
-            folder = self.config.Statistics.save_best_individual_from_generation
-            best_ind_name = 'best_ind_gen{}'.format(self.current_generation - 1)
-            best_ind = self.population.fittest_individual
-            save_mario(folder, best_ind_name, best_ind)
-
-        if self.config.Statistics.save_population_stats:
-            fname = self.config.Statistics.save_population_stats
-            save_stats(self.population, fname)
-
-        self.population.individuals = elitism_selection(self.population, self.config.Selection.num_parents)
-
-        random.shuffle(self.population.individuals)
-        next_pop = []
-
-        # Parents + offspring
-        if self.config.Selection.selection_type == 'plus':
-            # Decrement lifespan
-            for individual in self.population.individuals:
-                individual.lifespan -= 1
-
-            for individual in self.population.individuals:
-                config = individual.config
-                chromosome = individual.network.params
-                hidden_layer_architecture = individual.hidden_layer_architecture
-                hidden_activation = individual.hidden_activation
-                output_activation = individual.output_activation
-                lifespan = individual.lifespan
-                name = individual.name
-
-                # If the indivdual would be alve, add it to the next pop
-                if lifespan > 0:
-                    m = Mario(config, chromosome, hidden_layer_architecture, hidden_activation, output_activation, lifespan)
-                    # Set debug if needed
-                    if debug:
-                        m.name = f'{name}_life{lifespan}'
-                        m.debug = True
-                    next_pop.append(m)
-
-        num_loaded = 0
-
-        while len(next_pop) < self._next_gen_size:
-            selection = self.config.Crossover.crossover_selection
-            if selection == 'tournament':
-                p1, p2 = tournament_selection(self.population, 2, self.config.Crossover.tournament_size)
-            elif selection == 'roulette':
-                p1, p2 = roulette_wheel_selection(self.population, 2)
-            else:
-                raise Exception('crossover_selection "{}" is not supported'.format(selection))
-
-            L = len(p1.network.layer_nodes)
-            c1_params = {}
-            c2_params = {}
-
-            # Each W_l and b_l are treated as their own chromosome.
-            # Because of this I need to perform crossover/mutation on each chromosome between parents
-            for l in range(1, L):
-                p1_W_l = p1.network.params['W' + str(l)]
-                p2_W_l = p2.network.params['W' + str(l)]  
-                p1_b_l = p1.network.params['b' + str(l)]
-                p2_b_l = p2.network.params['b' + str(l)]
-
-                # Crossover
-                # @NOTE: I am choosing to perform the same type of crossover on the weights and the bias.
-                c1_W_l, c2_W_l, c1_b_l, c2_b_l = self._crossover(p1_W_l, p2_W_l, p1_b_l, p2_b_l)
-
-                # Mutation
-                # @NOTE: I am choosing to perform the same type of mutation on the weights and the bias.
-                self._mutation(c1_W_l, c2_W_l, c1_b_l, c2_b_l)
-
-                # Assign children from crossover/mutation
-                c1_params['W' + str(l)] = c1_W_l
-                c2_params['W' + str(l)] = c2_W_l
-                c1_params['b' + str(l)] = c1_b_l
-                c2_params['b' + str(l)] = c2_b_l
-
-                #  Clip to [-1, 1]
-                np.clip(c1_params['W' + str(l)], -1, 1, out=c1_params['W' + str(l)])
-                np.clip(c2_params['W' + str(l)], -1, 1, out=c2_params['W' + str(l)])
-                np.clip(c1_params['b' + str(l)], -1, 1, out=c1_params['b' + str(l)])
-                np.clip(c2_params['b' + str(l)], -1, 1, out=c2_params['b' + str(l)])
-
-
-            c1 = Mario(self.config, c1_params, p1.hidden_layer_architecture, p1.hidden_activation, p1.output_activation, p1.lifespan)
-            c2 = Mario(self.config, c2_params, p2.hidden_layer_architecture, p2.hidden_activation, p2.output_activation, p2.lifespan)
-
-            # Set debug if needed
-            if debug:
-                c1_name = f'm{num_loaded}_new'
-                c1.name = c1_name
-                c1.debug = True
-                num_loaded += 1
-
-                c2_name = f'm{num_loaded}_new'
-                c2.name = c2_name
-                c2.debug = True
-                num_loaded += 1
-
-            next_pop.extend([c1, c2])
-
-        # Set next generation
-        random.shuffle(next_pop)
-        self.population.individuals = next_pop
-
-    def _crossover(self, parent1_weights: np.ndarray, parent2_weights: np.ndarray,
-                   parent1_bias: np.ndarray, parent2_bias: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        eta = self.config.Crossover.sbx_eta
-
-        # SBX weights and bias
-        child1_weights, child2_weights = SBX(parent1_weights, parent2_weights, eta)
-        child1_bias, child2_bias =  SBX(parent1_bias, parent2_bias, eta)
-
-        return child1_weights, child2_weights, child1_bias, child2_bias
-
-    def _mutation(self, child1_weights: np.ndarray, child2_weights: np.ndarray,
-                  child1_bias: np.ndarray, child2_bias: np.ndarray) -> None:
-        mutation_rate = self.config.Mutation.mutation_rate
-        scale = self.config.Mutation.gaussian_mutation_scale
-
-        if self.config.Mutation.mutation_rate_type == 'dynamic':
-            mutation_rate = mutation_rate / math.sqrt(self.current_generation + 1)
+def validate_model(model_path):
+    try:
+        details = torch.load(model_path)
+    except FileNotFoundError:
+        raise Exception(f'Failed to find model at {model_path}')
+    except Exception as e:
+        raise Exception(f'Failed to load model at {model_path}: {e}')
+    required_keys = ['state_dict', 'layer_sizes', 'hidden_activation', 'output_activation', 'encode_row', 'input_dims', 'algorithm', 'iterations', 'distance']
+    for key in required_keys:
+        if key not in details:
+            raise KeyError(f"Missing key in the model file: {key}")
         
-        # Mutate weights
-        gaussian_mutation(child1_weights, mutation_rate, scale=scale)
-        gaussian_mutation(child2_weights, mutation_rate, scale=scale)
+    print(f"Loaded {details['algorithm']} model at {model_path} with {details['iterations']} iterations and {details['distance']} distance")
 
-        # Mutate bias
-        gaussian_mutation(child1_bias, mutation_rate, scale=scale)
-        gaussian_mutation(child2_bias, mutation_rate, scale=scale)
+class Logger:
+    def __init__(self, writer, config):
+        self.writer = writer
+        self.config = config
+
+        self.actions_to_keys_map = {
+            0: "None", 
+            1: "Right", 
+            2: "Right + A",  
+            3: "Right + B", 
+            4: "Right + A + B", 
+            5: "A",
+            6: "Left"
+        }
+
+    def log_ga_generation(self, total_steps, total_fitness, total_distance, num_individuals, max_fitness, max_distance, generation, action_counts):
+
+        print(f"avg distance GA: {round(total_distance/num_individuals, 2)}")
+        self.writer.add_scalar('GA/max_fitness/generation', max_fitness, generation)
+        self.writer.add_scalar('GA/avg_fitness/generation', round(total_fitness/num_individuals, 2), generation)
+        self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
+        self.writer.add_scalar('GA/avg_distance/generation', round(total_distance/num_individuals, 2), generation)
+
+        self.writer.add_scalar('GA/max_fitness/step', max_fitness, total_steps)
+        action_counts = action_counts[:len(self.actions_to_keys_map)]
+        action_total = sum(action_counts)
+        action_dict = {f'{self.actions_to_keys_map[i]}': round(count/action_total, 2) for i, count in enumerate(action_counts)}
+        self.writer.add_scalars('GA/action_counts/generation', action_dict, generation)
+
+        values = [action_id for action_id, count in enumerate(action_counts) for _ in range(count)]
+        if generation % 500 == 0 and values:
+            self.writer.add_histogram('GA/action_distribution/generation', np.array(values), generation)
+
+
+    def log_dqn_episode(self, total_steps, fitness, episode_steps, episode_rewards, episode_distance, episode_num, max_fitness, max_distance, action_counts, epsilon):
+        print(f"max distance DQN: {max_distance}")
+        self.writer.add_scalar('DQN/fitness/episode', fitness, episode_num)
+        self.writer.add_scalar('DQN/distance/episode', episode_distance, episode_num)
+        self.writer.add_scalar('DQN/max_fitness/episode', max_fitness, episode_num)
+        self.writer.add_scalar('DQN/max_distance/episode', max_distance, episode_num)
+
+        self.writer.add_scalar('DQN/avg_delta_reward/episode', round(episode_rewards/episode_steps, 2), episode_num)
+
+        self.writer.add_scalar('DQN/max_fitness/step', max_fitness, total_steps)
+
+        self.writer.add_scalar('DQN/epsilon/episode', round(epsilon, 3), episode_num)
+
+        action_counts = action_counts[:len(self.actions_to_keys_map)] 
+        action_total = sum(action_counts)
+        action_dict = {f'{self.actions_to_keys_map[i]}_key': round(count/action_total, 2) for i, count in enumerate(action_counts)}
+        self.writer.add_scalars('DQN/action_counts/episode', action_dict, episode_num)
+
+        values = [action_id for action_id, count in enumerate(action_counts) for _ in range(count)]
+        if episode_num % 500 == 0 and values:
+            self.writer.add_histogram('DQN/action_distribution/episode', np.array(values), episode_num)
+
+
+
+
+def evaluate_individual_in_separate_process(args):
+
+    individual, config = args
+
+    start = time.time()
+
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Environment.level}', render_mode='rgb_array')
+    env = InputSpaceReduction(env, input_dims=config.NeuralNetworkGA.input_dims, encode_row=config.NeuralNetworkGA.encode_row, skip=config.Environment.frame_skip)
+    env.mario = individual
+  
+    obs = env.reset()
+
+    best_fitness = 0
+    max_distance = 0
+
+    action_counts = [0] * env.action_space.n
+
+    done = False
+
+    # We run until the individual is no longer alive (done)
+    while not done:
+
+        # inferencing
+        action = individual.get_action(obs)
+        action_counts[action] += 1
+
+        # Take a step in the environment (mario is updated in wrapper)
+        obs, rewards, done, _ = env.step(action)
+        
+        if individual.farthest_x > max_distance:
+            max_distance = individual.farthest_x
+
+        if done:
+            individual.calculate_fitness()
+            if individual.fitness > best_fitness:
+                best_fitness = individual.fitness
+            break
+
+    end = time.time()
+
+    data = {
+        'current_fitness': individual.fitness,
+        'current_distance': individual.farthest_x,
+        'action_counts': action_counts,
+        'wall_clock_time': float(f"{(end - start):.5f}"),
+        'episode_steps': env.episode_steps,
+    }
+
+    return data
+
+
+def run_ga_agent(config, data_queue, model_save_path):
+
+    if model_save_path:
+        details = torch.load(model_save_path, weights_only=False)
+    else:
+        details = None
+        
+    individuals = _initialize_population(config, details)
+    population = Population(individuals)
+
+    if model_save_path:
+        max_distance_GA = details['distance']
+        best_fitness_GA = individuals[0].fitness_func(max_distance_GA)
+        current_generation = details['iterations']
+    else:
+        current_generation = 0
+        best_fitness_GA = 0.0
+        max_distance_GA = 0
+
+    _current_individual = 0
+
+    best_individual = None
+
+    # Determine the size of the next generation
+    if config.Selection.selection_type == 'plus':
+        _next_gen_size = config.Selection.num_parents + config.Selection.num_offspring
+    elif config.Selection.selection_type == 'comma':
+        _next_gen_size = config.Selection.num_offspring
+    else:
+        raise Exception(f'Unknown selection type: {config.Selection.selection_type}')
+
+    # Create a pool for parallel evaluation
+    with multiprocessing.Pool(processes=config.GA.parallel_processes) as pool:
+        while current_generation <= config.GA.total_generations:
+
+            # Evaluate all individuals in parallel
+            args = [(ind, config) for ind in population.individuals]
+            results = []
+            for res in tqdm(pool.imap(evaluate_individual_in_separate_process, args), desc=f"GENERATION: {current_generation}", total=len(args)):
+                results.append(res)
+
+            # Process results for logging and stats
+            total_fitness = 0
+            total_distance = 0
+            average_time = 0
+            for i, res in enumerate(results):
+
+                average_time += res['wall_clock_time']
+
+                population.individuals[i]._fitness = res['current_fitness']
+                population.individuals[i].farthest_x = res['current_distance']
+
+                total_fitness += res['current_fitness']
+                total_distance += res['current_distance']
+
+                # Update global best fitness and distance (and save the best individual)
+                if res['current_fitness'] > best_fitness_GA:
+                    best_fitness_GA = res['current_fitness']
+                    best_individual = population.individuals[i]
+
+                if res['current_distance'] > max_distance_GA:
+                    max_distance_GA = res['current_distance']
+
+            
+
+                # Send data to main process queue for logging steps
+                data = {
+                    # Global
+                    'max_fitness': best_fitness_GA,
+                    'max_distance': max_distance_GA,
+                    'current_generation': current_generation,
+
+                    # Per Individual
+                    'episode_steps': res['episode_steps'],
+                    'current_individual': i,
+                    'current_fitness': res['current_fitness'],
+                    'current_distance': res['current_distance'],
+                    'action_counts': res['action_counts']
+                }
+                data_queue.put(data)
+            
+            #print(f"average time for a generational episode: {average_time / len(results):.5f}")
+            
+            if current_generation == config.GA.total_generations:
+                save_mario_pop(population, config, config.GA.total_generations, "_FINAL")
+                if best_individual:
+                    save_overall_best_individual(best_individual, config, config.GA.total_generations)
+
+            elif current_generation % config.Statistics.ga_checkpoint_interval == 0 and current_generation > 0:
+                save_mario_pop(population, config, current_generation, "_CHECKPOINT")
+                if best_individual:
+                    save_overall_best_individual(best_individual, config, current_generation)
+
+            # Selection for next generation
+            population.individuals = elitism_selection(population, config.Selection.num_parents)
+            random.shuffle(population.individuals)
+
+            next_pop = []
+
+            # Decrement lifespan and carry over individuals if plus-selection
+            if config.Selection.selection_type == 'plus':
+                for individual in population.individuals:
+                    individual.lifespan -= 1
+                next_pop = individual_to_agent(population.individuals, config)
+
+            while len(next_pop) < _next_gen_size:
+                # Perform crossover and mutation to generate new offspring
+                selection = config.Crossover.crossover_selection
+                if selection == 'tournament':
+                    p1, p2 = tournament_selection(population, 2, config.Crossover.tournament_size)
+                elif selection == 'roulette':
+                    p1, p2 = roulette_wheel_selection(population, 2)
+                else:
+                    raise Exception(f'Unknown crossover selection: {selection}')
+
+                c1_params, c2_params = _crossover_and_mutate(p1, p2, config, current_generation)
+
+                
+                c1 = Mario(c1_params, p1.hidden_layer_architecture, p1.hidden_activation, p1.output_activation, p1.encode_row, p1.lifespan, p1.frame_skip, p1.input_dims, p1.allow_additional_time)
+                c2 = Mario(c2_params, p2.hidden_layer_architecture, p2.hidden_activation, p2.output_activation, p2.encode_row, p2.lifespan, p2.frame_skip, p2.input_dims, p2.allow_additional_time)
+
+                next_pop.extend([c1, c2])
+
+            population.individuals = next_pop
+
+            current_generation += 1
+
+def save_mario_pop(population, config, generation, postfix=""):
+    best_individuals = sorted(population.individuals, key=lambda ind: ind.fitness, reverse=True)[:config.Statistics.top_x_individuals:]
+    for i, ind in enumerate(best_individuals):
+        fitness = int(max(0, min(ind.fitness, 99999999)))
+        save_mario(f'{config.Statistics.model_save_dir}/GA/GEN{generation}{postfix}', f'{config.Statistics.ga_model_name}_ind{i+1}_fitness{fitness}', ind, generation, ind.farthest_x)
+   
+def save_overall_best_individual(individual, config, generation):
+    clear_dir(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST')
+    fitness = int(max(0, min(individual.fitness, 99999999)))
+    save_mario(f'{config.Statistics.model_save_dir}/GA/OVERALL_BEST', f'{config.Statistics.ga_model_name}_best_fitness{fitness}', individual, generation, individual.farthest_x)
+
+
+def run_dqn_agent(config, data_queue, model_save_path):
+
+    # Initialize environment
+    env = retro.make(game='SuperMarioBros-Nes', state=f'Level{config.Environment.level}', render_mode='rgb_array')
+    env = InputSpaceReduction(env, input_dims=config.NeuralNetworkDQN.input_dims, encode_row=config.NeuralNetworkDQN.encode_row, skip=config.Environment.frame_skip)
+
+    # Initialize DQN agent
+    mario_DQN = DQNMario(config, env)
+    env.mario = mario_DQN
+
+    env = DummyVecEnv([lambda: env])
+
+    episode_start = 0
+
+    if model_save_path:
+        iterations, _ = mario_DQN.load_saved_model(model_save_path, env)
+        episode_start = iterations
+   
+    callback = DQNCallback(data_queue, mario_DQN, config, verbose=1, episode_start=episode_start)
+
+    # total_timesteps and log_interval should be unreachably high - the callback will stop the training
+    mario_DQN.model.learn(total_timesteps=int(1_000_000), callback=callback, log_interval=100)
+
+
+def _initialize_population(config, details=None):
+    individuals: List[Individual] = []
+    num_parents = config.Selection.num_parents
+    num_offspring = config.Selection.num_offspring
+
+    hidden_layer_architecture = config.NeuralNetworkGA.hidden_layer_architecture
+    hidden_activation = config.NeuralNetworkGA.hidden_node_activation
+    output_activation = config.NeuralNetworkGA.output_node_activation
+    encode_row = config.NeuralNetworkGA.encode_row
+    lifespan = config.Selection.lifespan
+    frame_skip = config.Environment.frame_skip
+    input_dims = config.NeuralNetworkGA.input_dims
+    allow_additional_time= config.Misc.allow_additional_time_for_flagpole
+
+    if details:
+        # Populate parent population with copies of the saved model
+       
+        model_chromosome = state_dict_to_chromosome(details['state_dict'])
+
+        # Include the loaded model in the initial population
+        individuals.append(Mario(model_chromosome, details['layer_sizes'][1:-1], details["hidden_activation"], details["output_activation"], details["encode_row"], lifespan, frame_skip, details["input_dims"], allow_additional_time))
+
+        while len(individuals) < num_offspring:
+            # Populate the initial population with mutated copies of the loaded model
+            children = _crossover_and_mutate(model_chromosome, model_chromosome, config, details['iterations'])
+
+            for child in children:
+                if len(individuals) < num_offspring:
+                    individuals.append(Mario(child, details['layer_sizes'][1:-1], details["hidden_activation"], details["output_activation"], details["encode_row"], lifespan, frame_skip, details["input_dims"], allow_additional_time))
+         
+    else:
+        for _ in range(num_parents):
+            individual = Mario(None, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan, frame_skip, input_dims, allow_additional_time)
+            individuals.append(individual)
+
+    return individuals
+
+
+
+def individual_to_agent(population, config):
+    agents = []
+    for individual in population:
+        chromosome = individual.chromosome
+        hidden_layer_architecture = individual.hidden_layer_architecture
+        hidden_activation = individual.hidden_activation
+        output_activation = individual.output_activation
+        encode_row = individual.encode_row
+        lifespan = individual.lifespan
+        frame_skip = individual.frame_skip
+        input_dims = individual.input_dims
+        allow_additional_time = individual.allow_additional_time
+
+        if lifespan > 0:
+            agent = Mario(chromosome, hidden_layer_architecture, hidden_activation, output_activation, encode_row, lifespan, frame_skip, input_dims, allow_additional_time)
+            agents.append(agent)
+
+    return agents
+
+def _crossover_and_mutate(p1, p2, config, current_generation):
+    L = len(p1.model.layers)  # number of layers
+    c1_params = {}
+    c2_params = {}
+
+    # Extract parameters from PyTorch layers into NumPy arrays
+    for l in range(L):
+        # Parents
+        p1_W_l = p1.model.layers[l].weight.data.cpu().numpy()
+        p2_W_l = p2.model.layers[l].weight.data.cpu().numpy()
+        p1_b_l = p1.model.layers[l].bias.data.cpu().numpy()
+        p2_b_l = p2.model.layers[l].bias.data.cpu().numpy()
+
+        # Crossover
+        eta = config.Crossover.sbx_eta
+        c1_W_l, c2_W_l = SBX(p1_W_l, p2_W_l, eta)
+        c1_b_l, c2_b_l = SBX(p1_b_l, p2_b_l, eta)
+
+        # Mutation rate
+        mutation_rate = config.Mutation.mutation_rate
+        if config.Mutation.mutation_rate_type == 'dynamic':
+            mutation_rate = mutation_rate / math.sqrt(current_generation + 1)
+
+        scale = config.Mutation.gaussian_mutation_scale
+
+        # Mutate weights and biases
+        gaussian_mutation(c1_W_l, mutation_rate, scale=scale)
+        gaussian_mutation(c2_W_l, mutation_rate, scale=scale)
+        gaussian_mutation(c1_b_l, mutation_rate, scale=scale)
+        gaussian_mutation(c2_b_l, mutation_rate, scale=scale)
+
+        # Clip to [-1, 1]
+        np.clip(c1_W_l, -1, 1, out=c1_W_l)
+        np.clip(c2_W_l, -1, 1, out=c2_W_l)
+        np.clip(c1_b_l, -1, 1, out=c1_b_l)
+        np.clip(c2_b_l, -1, 1, out=c2_b_l)
+
+        # Store parameters for child 1 and child 2
+        c1_params['W' + str(l+1)] = c1_W_l
+        c2_params['W' + str(l+1)] = c2_W_l
+        c1_params['b' + str(l+1)] = c1_b_l
+        c2_params['b' + str(l+1)] = c2_b_l
+
+    return c1_params, c2_params
+
+def get_stats(mario):
+    # Returns the game's stats for reward calculation
+    frames = mario._frames if mario._frames is not None else 0
+    distance = mario.x_dist if mario.x_dist is not None else 0
+    game_score = mario.game_score if mario.game_score is not None else 0
+    return [frames, distance, game_score]
 
 
 if __name__ == "__main__":
-    config = "/settings.config"
-    config = Config(config)
+    multiprocessing.set_start_method("spawn", force=True)
+    sys.stdout = sys.stderr
 
-    app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow(config)
-    sys.exit(app.exec_())
+    print("cores at disposal: ", multiprocessing.cpu_count())
+
+    args = parse_args()
+    config = None
+    if args.config:
+        config = Config(args.config)
+
+    if not args.load_ga_model and not args.load_dqn_model:
+
+        # clear prior tensorboard logs
+        clear_dir(config.Statistics.tensorboard_dir)
+
+        # clear prior model saves
+        clear_dir(config.Statistics.model_save_dir)
+
+    if not os.path.exists(config.Statistics.model_save_dir):
+        os.makedirs(config.Statistics.model_save_dir)
+    if not os.path.exists(f'{config.Statistics.model_save_dir}/GA'):
+        os.makedirs(f'{config.Statistics.model_save_dir}/GA')
+    if not os.path.exists(f'{config.Statistics.model_save_dir}/DQN'):
+        os.makedirs(f'{config.Statistics.model_save_dir}/DQN')
+
+    # Add copy of the config file
+    shutil.copy(args.config, f'{config.Statistics.model_save_dir}/settings.config')
+
+    # Initialize Logger
+    writer = SummaryWriter(log_dir=config.Statistics.tensorboard_dir)
+
+    logger = Logger(writer, config)
+
+    if args.load_ga_model:
+        validate_model(args.load_ga_model)
+    if args.load_dqn_model:
+        validate_model(args.load_dqn_model)
+
+    # Start processes
+    if not args.no_ga:
+        ga_data_queue = multiprocessing.Queue()
+        ga_process = multiprocessing.Process(target=run_ga_agent, args=(config, ga_data_queue, args.load_ga_model))
+        ga_process.start()
+
+    if not args.no_dqn:
+        dqn_data_queue = multiprocessing.Queue()
+        dqn_process = multiprocessing.Process(target=run_dqn_agent, args=(config, dqn_data_queue, args.load_dqn_model))
+        dqn_process.start()
+
+    # Function to clean up processes
+    def cleanup():
+        if not args.no_ga:
+            ga_process.terminate()
+            ga_process.join()
+            ga_data_queue.close()
+        if not args.no_dqn:
+            dqn_process.terminate()
+            dqn_process.join()
+            dqn_data_queue.close()
+        logger.writer.close()
+
+    atexit.register(cleanup)
+
+    try:
+      
+        total_steps_dqn = 0 
+
+        # stats specific to a generation
+        gen_stats = {
+            "current_gen": 0,
+            "total_fitness": 0,
+            "total_distance": 0,
+            "total_steps": 0,
+            "max_fitness": 0,
+            "max_distance": 0,
+            "current_ind": 0,
+            "action_counts": [0] * 9
+
+        }
+
+        def reset_generation_stats(stats):
+            stats["total_fitness"] = 0
+            stats["total_distance"] = 0
+            stats['total_steps'] = 0
+            stats["max_fitness"] = 0
+            stats["max_distance"] = 0
+            stats["current_ind"] = 0
+            stats["action_counts"] = [0] * 9
+
+
+        while True:
+            # Process data from GA agent
+            if args.no_ga:
+                pass
+            else:
+                try:
+                    while True:
+                        ga_data = ga_data_queue.get_nowait()
+
+                        if gen_stats['current_gen'] != ga_data['current_generation']:
+                            # Generation changed, log the old generation's stats
+                            if ga_data['current_generation'] % config.Statistics.log_interval == 0:
+                         
+                                logger.log_ga_generation(
+                                    total_steps=gen_stats['total_steps'],
+                                    total_fitness=gen_stats['total_fitness'],
+                                    total_distance=gen_stats['total_distance'],
+                                    num_individuals=gen_stats['current_ind'] + 1, # needed to get num. of individuals in generation
+                                    max_fitness=gen_stats['max_fitness'],
+                                    max_distance=gen_stats['max_distance'],
+                                    generation=gen_stats['current_gen'] + 1,
+                                    action_counts=gen_stats['action_counts']
+                                )
+
+                            gen_stats['current_gen'] = ga_data['current_generation']
+                            reset_generation_stats(gen_stats)
+
+                        gen_stats['total_fitness'] += ga_data['current_fitness']
+                        gen_stats['total_steps'] += ga_data['episode_steps']
+                        gen_stats['total_distance'] += ga_data['current_distance']
+                        gen_stats['max_fitness'] = max(gen_stats['max_fitness'], ga_data['max_fitness'])
+                        gen_stats['max_distance'] = max(gen_stats['max_distance'], ga_data['max_distance'])
+                        gen_stats['current_ind'] = ga_data['current_individual']
+
+                        for i, action_count in enumerate(ga_data['action_counts']):
+                            gen_stats['action_counts'][i] += action_count
+
+                except queue.Empty:
+                    pass
+            if args.no_dqn:
+                pass
+            else:               
+                # Process data from DQN agent
+                try:
+         
+                    while True:
+                        dqn_data = dqn_data_queue.get_nowait()
+
+                        total_steps_dqn += dqn_data['episode_steps']
+
+                        if dqn_data['episode_num'] % config.Statistics.log_interval == 0:
+                            logger.log_dqn_episode(
+                                total_steps = total_steps_dqn,
+                                fitness=dqn_data['fitness'],
+                                episode_steps=dqn_data['episode_steps'],
+                                episode_rewards=dqn_data['episode_rewards'],
+                                episode_distance=dqn_data['episode_distance'],
+                                episode_num=dqn_data['episode_num'] + 1,
+                                max_fitness=dqn_data['max_fitness'],
+                                max_distance=dqn_data['max_distance'],
+                                action_counts=dqn_data['action_counts'],
+                                epsilon=dqn_data['epsilon']
+                            )  
+
+
+                except queue.Empty:
+                    pass
+
+            # Sleep briefly to prevent tight loop
+            time.sleep(0.001)
+
+    except KeyboardInterrupt:
+        cleanup()
