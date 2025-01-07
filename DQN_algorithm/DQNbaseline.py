@@ -63,7 +63,6 @@ class CustomDQN(DQN):
             # overriden to use self._episode_num
             self.prev_episode = self._episode_num
             self.exploration_rate = self.exploration_schedule(self._episode_num)
-            print("Exploration rate: ", self.exploration_rate)
             self.logger.record("rollout/exploration_rate", self.exploration_rate)
 
 
@@ -387,8 +386,8 @@ class DQNMario(Mario):
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        model = DQN(DQNPolicy, 
-                    #max_episodes=self.max_episodes,
+        model = CustomDQN(DQNPolicy, 
+                    max_episodes=self.max_episodes,
                     env=env, 
                     learning_starts=self.buffer_size,
                     gamma=self.discount_value, 
