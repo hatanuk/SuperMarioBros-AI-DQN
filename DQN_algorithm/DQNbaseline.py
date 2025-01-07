@@ -401,7 +401,7 @@ class DQNMario(Mario):
                     batch_size=self.batch_size,
                     target_update_interval= self.sync_network_rate,
                     verbose=1,
-                    tensorboard_log= "./logs/DQN/tb",
+                    tensorboard_log= "./logs/tb",
                     policy_kwargs = policy_kwargs,
                     device=device
                     )
