@@ -51,5 +51,7 @@ if __name__ == "__main__":
         obs, rewards, done, infos = env.step(action)
         time.sleep(1/60) 
 
+    print(f'distance: {agent.farthest_x}')
+
     env.close()
 
