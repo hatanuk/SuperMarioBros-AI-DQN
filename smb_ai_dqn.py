@@ -1,9 +1,3 @@
-# multiparallel ga test
-
-
-# fix the GA logging
-# make it log every individual's episode stats
-# remove the per-step axis
 
 import argparse
 import re
@@ -40,6 +34,7 @@ from genetic_algorithm.mutation import gaussian_mutation
 
 from DQN_algorithm.DQNbaseline import DQNCallback, DQNMario, InputSpaceReduction, clear_dir
 
+from smb_ai import draw_border
 
 from stable_baselines3 import DQN
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -354,7 +349,7 @@ def run_dqn_agent(config, data_queue, model_save_path):
     callback = DQNCallback(data_queue, mario_DQN, config, verbose=1, episode_start=episode_start)
 
     # total_timesteps and log_interval should be unreachably high - the callback will stop the training
-    mario_DQN.model.learn(total_timesteps=int(1_000_000), callback=callback, log_interval=100)
+    mario_DQN.model.learn(total_timesteps=int(1_000_000**2), callback=callback, log_interval=1)
 
 
 def _initialize_population(config, details=None):
