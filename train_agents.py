@@ -50,7 +50,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Super Mario Bros AI')
 
     # Config
-    parser.add_argument('-c', '--config', dest='config', required=False, help='config file to use')
+    parser.add_argument('-c', '--config', default="config.settings", dest='config', required=False, help='config file to use')
 
     parser.add_argument('--load_dqn_model', dest='load_dqn_model', default=None, help='/path/to/model.pt to load DQN model to continue training')
     parser.add_argument('--load_ga_model', dest='load_ga_model', default=None, help='/path/to/model.pt to load a GA model which will be used to populate the a population and continue training')
