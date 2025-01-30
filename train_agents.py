@@ -20,6 +20,8 @@ import shutil
 import os
 from tqdm import tqdm
 
+from gui import GUI
+
 from utils import SMB, EnemyType, StaticTileType, ColorMap, DynamicTileType
 from config import Config
 from mario_torch import MarioTorch as Mario
