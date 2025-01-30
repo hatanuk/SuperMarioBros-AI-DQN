@@ -139,8 +139,10 @@ class InputSpaceReduction(gym.Env):
         for action_index in action_indices:
             multi_hot_action[action_index] = 1
 
+        ram = []
         for _ in range(self._skip):
             obs, reward, done, _, info = self.env.step(multi_hot_action) 
+            ram.append(obs)
             if done:
                 break
 
@@ -155,6 +157,8 @@ class InputSpaceReduction(gym.Env):
 
         if self.mario and not self.mario.is_alive:
             done = True
+
+        info["ram"] = obs
 
         return self._observation(obs), reward, done, info  
 
@@ -213,6 +217,8 @@ class DQNCallback(BaseCallback):
         self.config = config
         self.is_training = False
 
+        self.episode_ram = [[]]
+
         self.encode_row = config.NeuralNetworkDQN.encode_row
         self.input_dims = config.NeuralNetworkDQN.input_dims
         
@@ -247,6 +253,11 @@ class DQNCallback(BaseCallback):
 
         rewards = self.locals['rewards']
         self.episode_rewards += sum(rewards)
+
+        info = self.locals['infos']
+        ram = info[0].get("ram", None)
+        self.episode_ram.extend(ram)
+
         
 
         self.episode_steps += 1
@@ -274,7 +285,8 @@ class DQNCallback(BaseCallback):
                 'episode_distance': self.recent_distance,
                 'action_counts': self.action_counts,
                 'epsilon': self.model.exploration_rate,
-                'episode_rewards': self.episode_rewards
+                'episode_rewards': self.episode_rewards,
+                'ram': self.episode_ram
             }
             self.data_queue.put(data)
 
@@ -288,6 +300,7 @@ class DQNCallback(BaseCallback):
             self.recent_distance = 0
             self.recent_fitness = 0
             self.action_counts = [0] * len(output_to_keys_map)
+            self.episode_ram = []
 
             print("EPISODE: ", self.episode)
 

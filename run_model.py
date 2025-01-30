@@ -17,7 +17,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('model_path', type=str, help='Path to saved Mario .pt model')
     parser.add_argument('--level', type=str, default="1-1", help='Which level to load')
-    parser.add_argument('--arch', type=str, default='ga', help='Whether to use the DQN or GA NN architecture defined in config. Only matter if they differ.')
     parser.add_argument('--frame_skip', type=int, default=4, help='Specify a custom amount of frames to hold an action for')
 
     args = parser.parse_args()

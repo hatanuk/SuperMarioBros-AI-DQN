@@ -184,11 +184,9 @@ class MarioTorch(Individual):
         return self._extract_chromosome()
 
     def decode_chromosome(self):
-        # Not strictly needed; chromosome is loaded directly into model
         pass
 
     def encode_chromosome(self):
-        # Not strictly needed; chromosome is extracted from model parameters
         pass
 
     def _extract_chromosome(self) -> Dict[str, np.ndarray]:
@@ -237,7 +235,7 @@ class MarioTorch(Individual):
         return self._fitness
 
     def reset(self):
-        # for DQN functionality
+        # For DQN functionality
         pass
 
     def get_action(self, obs):
