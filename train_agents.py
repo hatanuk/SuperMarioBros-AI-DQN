@@ -521,7 +521,7 @@ if __name__ == "__main__":
         dqn_process.start()
 
     if not args.no_display:
-        #GUI = GUI()
+        GUI = GUI()
         pass
 
     # Function to clean up processes
@@ -640,7 +640,7 @@ if __name__ == "__main__":
                         saved_dqn_ram = dqn_data['ram']
                         print("DQN_RAM-----")
                         print(len(dqn_data['ram']))
-                        print(np.array(dqn_data['ram']).shape)
+                        print(np.array(dqn_data['ram'][0]).shape)
                         print("----------")
 
                         dqn_done = True

@@ -158,7 +158,7 @@ class InputSpaceReduction(gym.Env):
         if self.mario and not self.mario.is_alive:
             done = True
 
-        info["ram"] = obs
+        info["ram"] = ram
 
         return self._observation(obs), reward, done, info  
 
@@ -170,37 +170,7 @@ class InputSpaceReduction(gym.Env):
 
         ram = self.env.get_ram()  
 
-        mario_row, mario_col = SMB.get_mario_row_col(ram)
-        tiles = SMB.get_tiles(ram)
-        arr = []
-        
-        for row in range(self._start_row, self._start_row + self._height):
-            for col in range(mario_col, mario_col + self._width):
-                try:
-                    t = tiles[(row, col)]
-                    if isinstance(t, StaticTileType):
-                        if t.value == 0:
-                            arr.append(0)
-                        else:
-                            arr.append(1)
-                    elif isinstance(t, EnemyType):
-                        arr.append(-1)
-                    else:
-                        raise Exception("This should never happen")
-                except:
-                    t = StaticTileType(0x00)
-                    arr.append(0) # Empty  
-        
-        input_array = np.array(arr).reshape((-1, 1))
-        
-        if self._encode_row:
-            row = mario_row - self._start_row
-            one_hot = np.zeros((self._height, 1))
-            if 0 <= row < self._height:
-                one_hot[row, 0] = 1
-            input_array = np.vstack([input_array, one_hot.reshape((-1, 1))])
-
-        return input_array.flatten()
+        return dim_reduction(ram, self._start_row, self._height, self._width, self._encode_row)
 
 
 
@@ -436,3 +406,37 @@ class DQNMario(Mario):
         self.model.policy.load_state_dict(state_dict)
 
         return checkpoint['iterations'], checkpoint['distance']
+
+
+def dim_reduction(ram, start_row, height, width, encode_row):
+    mario_row, mario_col = SMB.get_mario_row_col(ram)
+    tiles = SMB.get_tiles(ram)
+    arr = []
+    
+    for row in range(start_row, start_row + height):
+        for col in range(mario_col, mario_col + width):
+            try:
+                t = tiles[(row, col)]
+                if isinstance(t, StaticTileType):
+                    if t.value == 0:
+                        arr.append(0)
+                    else:
+                        arr.append(1)
+                elif isinstance(t, EnemyType):
+                    arr.append(-1)
+                else:
+                    raise Exception("This should never happen")
+            except:
+                t = StaticTileType(0x00)
+                arr.append(0) # Empty  
+    
+    input_array = np.array(arr).reshape((-1, 1))
+    
+    if encode_row:
+        row = mario_row - start_row
+        one_hot = np.zeros((height, 1))
+        if 0 <= row < height:
+            one_hot[row, 0] = 1
+        input_array = np.vstack([input_array, one_hot.reshape((-1, 1))])
+
+    return input_array.flatten()
