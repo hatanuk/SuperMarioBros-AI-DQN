@@ -22,7 +22,6 @@ from tqdm import tqdm
 
 from utils import SMB, EnemyType, StaticTileType, ColorMap, DynamicTileType
 from config import Config
-from nn_viz import NeuralNetworkViz
 from mario_torch import MarioTorch as Mario
 from mario_torch import save_mario, save_stats, get_num_trainable_parameters, get_num_inputs, load_mario, state_dict_to_chromosome
 
