@@ -33,7 +33,6 @@ from genetic_algorithm.mutation import gaussian_mutation
 
 from DQN_algorithm.DQNbaseline import DQNCallback, DQNMario, InputSpaceReduction, clear_dir
 
-from smb_ai import draw_border
 
 from stable_baselines3 import DQN
 from stable_baselines3.common.vec_env import DummyVecEnv
