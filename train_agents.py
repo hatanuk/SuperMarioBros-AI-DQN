@@ -671,7 +671,7 @@ if __name__ == "__main__":
 
             # Sleep briefly to prevent tight loop
             time.sleep(0.001)
-            if ga_done and dqn_done and False:
+            if ga_done and dqn_done:
                 max_length = max(len(saved_ga_ram), len(saved_dqn_ram))
 
                 for i in range(max_length):
