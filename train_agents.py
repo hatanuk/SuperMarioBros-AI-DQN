@@ -586,7 +586,7 @@ if __name__ == "__main__":
 
                         print("GA_RAM-----")
                         print(len(ga_data['ram']))
-                        print(ga_data['ram'][0].shape)
+                        print(np.array(ga_data['ram'][0]).shape)
                         print("----------")
 
                         if gen_stats['current_gen'] != ga_data['current_generation']:
@@ -640,7 +640,7 @@ if __name__ == "__main__":
                         saved_dqn_ram = dqn_data['ram']
                         print("DQN_RAM-----")
                         print(len(dqn_data['ram']))
-                        print(dqn_data['ram'][0].shape)
+                        print(np.array(dqn_data['ram'][0]).shape)
                         print("----------")
 
                         dqn_done = True
