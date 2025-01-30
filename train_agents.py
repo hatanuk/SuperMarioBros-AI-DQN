@@ -57,7 +57,7 @@ def parse_args():
 
     parser.add_argument('--no_dqn', dest='no_dqn',  action='store_true', required=False, help='do not train a dqn model')
     parser.add_argument('--no_ga', dest='no_ga',  action='store_true', required=False, help='do not train a ga model')
-    
+
     parser.add_argument('--no_display', dest='no_display',  action='store_true', required=False, help='do not show visualization - training will occur much faster')
 
 
@@ -516,7 +516,8 @@ if __name__ == "__main__":
         dqn_process.start()
 
     if not args.no_display:
-        GUI = GUI()
+        #GUI = GUI()
+        pass
 
     # Function to clean up processes
     def cleanup():
