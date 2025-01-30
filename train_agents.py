@@ -640,7 +640,7 @@ if __name__ == "__main__":
                         saved_dqn_ram = dqn_data['ram']
                         print("DQN_RAM-----")
                         print(len(dqn_data['ram']))
-                        print(np.array(dqn_data['ram'][0]).shape)
+                        print(np.array(dqn_data['ram']).shape)
                         print("----------")
 
                         dqn_done = True
