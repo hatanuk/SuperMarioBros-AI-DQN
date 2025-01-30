@@ -158,6 +158,8 @@ def evaluate_individual_in_separate_process(args):
 
     done = False
 
+    ram = []
+
     # We run until the individual is no longer alive (done)
     while not done:
 
@@ -167,6 +169,8 @@ def evaluate_individual_in_separate_process(args):
 
         # Take a step in the environment (mario is updated in wrapper)
         obs, rewards, done, info = env.step(action)
+
+        ram.extend(info['ram'])
         
         if individual.farthest_x > max_distance:
             max_distance = individual.farthest_x
@@ -185,7 +189,7 @@ def evaluate_individual_in_separate_process(args):
         'action_counts': action_counts,
         'wall_clock_time': float(f"{(end - start):.5f}"),
         'episode_steps': env.episode_steps,
-        'ram': info['ram']
+        'ram': ram
     }
 
     return data
@@ -268,7 +272,8 @@ def run_ga_agent(config, data_queue, model_save_path):
                     'current_individual': i,
                     'current_fitness': res['current_fitness'],
                     'current_distance': res['current_distance'],
-                    'action_counts': res['action_counts']
+                    'action_counts': res['action_counts'],
+                    'ram': res['ram']
                 }
                 data_queue.put(data)
             
@@ -578,7 +583,11 @@ if __name__ == "__main__":
                         ga_data = ga_data_queue.get_nowait()
 
                         ga_last_rams.extend(ga_data['ram'])
-                        print(ga_last_rams[-1])
+
+                        print("GA_RAM-----")
+                        print(len(ga_data['ram']))
+                        print(ga_data['ram'][0].shape)
+                        print("----------")
 
                         if gen_stats['current_gen'] != ga_data['current_generation']:
 
@@ -629,7 +638,10 @@ if __name__ == "__main__":
                         dqn_data = dqn_data_queue.get_nowait()
 
                         saved_dqn_ram = dqn_data['ram']
-                        print(saved_dqn_ram[-1])
+                        print("DQN_RAM-----")
+                        print(len(dqn_data['ram']))
+                        print(dqn_data['ram'][0].shape)
+                        print("----------")
 
                         dqn_done = True
 
