@@ -523,7 +523,9 @@ if __name__ == "__main__":
         dqn_process.start()
 
     if not args.no_display:
-        GUI = GUI()
+        print("making gui")
+        gui = GUI()
+        print("made gui")
         pass
 
     # Function to clean up processes
@@ -585,7 +587,6 @@ if __name__ == "__main__":
                         ga_data = ga_data_queue.get_nowait()
 
                         ga_last_rams.extend(ga_data['ram'])
-
                         print("GA_RAM-----")
                         print(len(ga_data['ram']))
                         print(np.array(ga_data['ram'][0]).shape)
@@ -679,7 +680,7 @@ if __name__ == "__main__":
                     dqn_frame = saved_dqn_ram[i] if i < len(saved_dqn_ram) else saved_dqn_ram[-1] 
 
                     if not args.no_display:
-                        GUI.update_gui(ga_frame, dqn_frame, dqn_data, gen_stats)
+                        gui.update_gui(ga_frame, dqn_frame, dqn_data, gen_stats)
                     time.sleep(0.05)  
 
                 # Reset storage & flags
