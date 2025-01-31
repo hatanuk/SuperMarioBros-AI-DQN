@@ -255,8 +255,8 @@ class DQNCallback(BaseCallback):
                 'episode_distance': self.recent_distance,
                 'action_counts': self.action_counts,
                 'epsilon': self.model.exploration_rate,
-                'episode_rewards': self.episode_rewards,
-                'ram': self.episode_ram
+                'episode_rewards': self.episode_rewards
+                #'ram': self.episode_ram
             }
             self.data_queue.put(data)
 

@@ -181,8 +181,8 @@ def evaluate_individual_in_separate_process(args):
         'current_distance': individual.farthest_x,
         'action_counts': action_counts,
         'wall_clock_time': float(f"{(end - start):.5f}"),
-        'episode_steps': env.episode_steps,
-        'ram': info['ram']
+        'episode_steps': env.episode_steps
+        #'ram': info['ram']
     }
 
     return data
@@ -512,8 +512,6 @@ if __name__ == "__main__":
         dqn_process = multiprocessing.Process(target=run_dqn_agent, args=(config, dqn_data_queue, args.load_dqn_model))
         dqn_process.start()
 
-    if not args.no_display:
-        GUI = GUI()
 
     # Function to clean up processes
     def cleanup():
@@ -555,32 +553,19 @@ if __name__ == "__main__":
             stats["current_ind"] = 0
             stats["action_counts"] = [0] * 9
 
-        # RAM storage for replay
-        ga_last_rams = []
-        ga_done = False
-        dqn_done = False
-
-
 
         while True:
             # Process data from GA agent
             if args.no_ga:
                 pass
 
-            
             else:
                 try:
                     while True:
                         ga_data = ga_data_queue.get_nowait()
 
-                        ga_last_rams.extend(ga_data['ram'])
-                        print(ga_last_rams[-1])
 
                         if gen_stats['current_gen'] != ga_data['current_generation']:
-
-                            saved_ga_ram = ga_last_rams
-                            ga_done = True
-                            ga_last_rams = []
 
                             # Generation changed, log the old generation's stats
                             # Also save the RAM of the last individual
@@ -624,10 +609,6 @@ if __name__ == "__main__":
                     while True:
                         dqn_data = dqn_data_queue.get_nowait()
 
-                        saved_dqn_ram = dqn_data['ram']
-                        print(saved_dqn_ram[-1])
-
-                        dqn_done = True
 
                         total_steps_dqn += dqn_data['episode_steps']
 
@@ -645,30 +626,13 @@ if __name__ == "__main__":
                                 epsilon=dqn_data['epsilon']
                             )
 
-                   
-
 
                 except queue.Empty:
                     pass
 
             # Sleep briefly to prevent tight loop
             time.sleep(0.001)
-            if ga_done and dqn_done and False:
-                max_length = max(len(saved_ga_ram), len(saved_dqn_ram))
-
-                for i in range(max_length):
-                    ga_frame = saved_ga_ram[i] if i < len(saved_ga_ram) else saved_ga_ram[-1]  # Repeat last frame if shorter
-                    dqn_frame = saved_dqn_ram[i] if i < len(saved_dqn_ram) else saved_dqn_ram[-1] 
-
-                    if not args.no_display:
-                        GUI.update_gui(ga_frame, dqn_frame, dqn_data, gen_stats)
-                    time.sleep(0.05)  
-
-                # Reset storage & flags
-                saved_ga_ram.clear()
-                saved_dqn_ram.clear()
-                ga_done = False
-                dqn_done = False
+    
 
     except KeyboardInterrupt:
         cleanup()
