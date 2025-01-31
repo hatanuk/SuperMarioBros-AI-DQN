@@ -9,8 +9,3 @@ __pycache__/
 build/
 *.pyd
 *.dll
-
-test_logs/
-__pycache__/config.cpython-310.pyc
-__pycache__/mario.cpython-310.pyc
-DQN_algorithm/__pycache__/DQNbaseline.cpython-310.pyc
