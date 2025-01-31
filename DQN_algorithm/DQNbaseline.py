@@ -272,7 +272,9 @@ class DQNCallback(BaseCallback):
             self.action_counts = [0] * len(output_to_keys_map)
             self.episode_ram = []
 
-            print("EPISODE: ", self.episode)
+            print("DQN EPISODE: ", self.episode)
+            print("DQN MAX_DISTANCE: ", self.max_distance)
+            print("DQN MAX_FITNESS: ", self.max_fitness)
 
         self.recent_distance = self.mario.farthest_x
         self.recent_fitness = self.mario.fitness

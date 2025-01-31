@@ -226,7 +226,7 @@ def run_ga_agent(config, data_queue, model_save_path):
             # Evaluate all individuals in parallel
             args = [(ind, config) for ind in population.individuals]
             results = []
-            for res in tqdm(pool.imap(evaluate_individual_in_separate_process, args), desc=f"GENERATION: {current_generation}", total=len(args)):
+            for res in tqdm(pool.imap(evaluate_individual_in_separate_process, args), desc=f"GA GENERATION: {current_generation}\nGA MAX_DISTANCE: {max_distance_GA}\n GA MAX_FITNESS: {best_fitness_GA}", total=len(args)):
                 results.append(res)
 
             # Process results for logging and stats
@@ -348,7 +348,7 @@ def run_dqn_agent(config, data_queue, model_save_path):
     callback = DQNCallback(data_queue, mario_DQN, config, verbose=1, episode_start=episode_start)
 
     # total_timesteps and log_interval should be unreachably high - the callback will stop the training
-    mario_DQN.model.learn(total_timesteps=int(1_000_000**2), callback=callback, log_interval=1)
+    mario_DQN.model.learn(total_timesteps=int(1_000_000**2), callback=callback, log_interval=1_000_000)
 
 
 def _initialize_population(config, details=None):
