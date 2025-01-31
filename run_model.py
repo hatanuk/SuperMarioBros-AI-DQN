@@ -5,7 +5,6 @@ import argparse
 import time
 from mario_torch import MarioTorch as Mario
 from config import Config
-from smb_ai import parse_args
 from mario_torch import SequentialModel
 from mario_torch import MarioTorch as Mario
 import os
