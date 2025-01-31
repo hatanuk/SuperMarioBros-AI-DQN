@@ -94,7 +94,6 @@ class Logger:
 
     def log_ga_generation(self, total_steps, total_fitness, total_distance, num_individuals, max_fitness, max_distance, generation, action_counts):
 
-        print(f"avg distance GA: {round(total_distance/num_individuals, 2)}")
         self.writer.add_scalar('GA/max_fitness/generation', max_fitness, generation)
         self.writer.add_scalar('GA/avg_fitness/generation', round(total_fitness/num_individuals, 2), generation)
         self.writer.add_scalar('GA/max_distance/generation', max_distance, generation)
