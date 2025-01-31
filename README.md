@@ -1,177 +1,187 @@
-If you want to see a YouTube video describing this at a high level, and showcasing what was learned, take a look [here](https://www.youtube.com/watch?v=CI3FRsSAa_U).<br>
-If you want to see my blog explaining how all of this works in great detail, go [here](https://chrispresso.github.io/AI_Learns_To_Play_SMB_Using_GA_And_NN).
 
-<b>Update</b>:
-The AI has successfully completed 1-1, 2-1, 3-1, 4-1, 5-1, 6-1, and 7-1.
-It was also able to learn: flagpole glitch with an enemy, walljump, and a fast acceleration.
+## Introduction
+This is a heavily modified fork from Chrispresso's original visualisation of a genetic algorithm (GA) learning to beat Super Mario Brothers. Check out his original video [here](https://www.youtube.com/watch?v=CI3FRsSAa_U&t=60s)!
 
-This contains information on the following:
-- [Installation Instructions](#installation-instructions)
-- [Command Line Options](#command-line-options)
-  - [Config](#config)
-  - [Loading Individuals](#loading-individuals)
-  - [Replaying Individuals](#replaying-individuals)
-  - [Disable Displaying](#disable-displaying)
-  - [Debug](#debug)
-- [Running Examples](#running-examples)
-- [Creating a New Population](#creating-a-new-population)
-- [Understanding the Config File](#understanding-the-config-file)
-  - [Neural Network](#neural-network)
-  - [Graphics](#graphics)
-  - [Statistics](#statistics)
-  - [Genetic Algorithm](#genetic-algorithm)
-  - [Mutation](#mutation)
-  - [Crossover](#crossover)
-  - [Selection](#selection)
-  - [Misc](#misc)
-- [Viewing Statistics](#viewing-statistics)
-- [Results](#results)
+This project implements an additional reinforcement learning (RL) agent to train alongside the GA agent. Specifically, a Deep Q-Network (DQN) is implemented, which was used back in [2016 by Deepmind to complete Atari games.](https://arxiv.org/abs/1312.5602)
+
+My aim for this project was to compare the learning dynamics of a gradient-based approach such as RL versus an evolutionary-based approach in finding solutions for a game environment - I thought it would be neat to see whether a simple process like genetic algorithms can stay competitive against more modern ML techniques.
+
+In practice, the GA agents seem to converge to a solution much more reliably than the DQN agents, but do take longer to train as each individual requires their own environment instance.
+
+Demo video can be seen [here](https://youtu.be/80GpsGpEq70)!
+
+## Data Visualization
+The project includes Tensorboard logs for both agents which provide more details on the learning dynamics of the agents such as fitness, distance, loss, etc. The log rate and directory can be specified in the configs under `[Statistics]`.
+
+![graph 1](https://media.discordapp.net/attachments/831589316820074557/1335032755376885760/Screenshot202025-02-0120at2012.png?ex=679eb1a4&is=679d6024&hm=6e066a6decd79000fee22f5d83c280b4095a624df60778267f8f7ff8405f9fd2&=&format=webp&quality=lossless&width=2210&height=786)
+![graph 2](https://media.discordapp.net/attachments/831589316820074557/1335032522853056534/Screenshot202025-02-0120at2012.png?ex=679eb16d&is=679d5fed&hm=82a44975261734bc8805f1509e9f3dec095e806ee8b19b1174e6abbe1a70999d&=&format=webp&quality=lossless&width=1340&height=1228)
+
 
 ## Installation Instructions
+
+[](https://github.com/hatanuk/SuperMarioBros-AI-DQN?tab=readme-ov-file#installation-instructions)
+
+**Disclaimer:** This has only been tested to work on a Windows Linux Subsystem virtual machine running on Windows 11. Gym-retro is considered an outdated library, and compatability can be finicky. This repo uses retro-stable which is slightly more compatible.
+
 You will need Python 3.6 or newer.
 
-1. `cd /path/to/SuperMarioBros-AI`
-2. Run `pip install -r requirements.txt`
-3. Install the ROM
-   - Go read the [disclaimer](https://wowroms.com/en/disclaimer)
-   - Head on over to the ROM for [Super Mario Bros.](https://wowroms.com/en/roms/nintendo-entertainment-system/super-mario-bros./23755.html) and click `download`.
-4. Unzip `Super Mario Bros. (World).zip` to some location
-5. Run `python -m retro.import "/path/to/unzipped/super mario bros. (world)"`
-    - Make sure you run this on the folder, i.e. `python -m retro.import "c:\Users\chris\Downloads\Super Mario Bros. (World)"`
-    - You should see output text:
-      ```
-      Importing SuperMarioBros-Nes
-      Imported 1 games
-      ```
-## Command Line Options
-If you want to see all command line options, the easiest way is to run `python smb_ai.py -h`.
+1.  `cd /path/to/SuperMarioBros-AI`
+2.  Run  `pip install -r requirements.txt`
+3.  Install the ROM
+    -   Go read the  [disclaimer](https://wowroms.com/en/disclaimer)
+    -   Head on over to the ROM for  [Super Mario Bros.](https://wowroms.com/en/roms/nintendo-entertainment-system/super-mario-bros./23755.html)  and click  `download`.
+4.  Unzip  `Super Mario Bros. (World).zip`  to some location
+5.  Run  `python -m retro.import "/path/to/unzipped/super mario bros. (world)"`
+    -   Make sure you run this on the folder, i.e.  `python -m retro.import "c:\Users\chris\Downloads\Super Mario Bros. (World)"`
+    -   You should see output text:
+        
+        ```
+        Importing SuperMarioBros-Nces
+        Imported 1 games
+        ```
 
-### Config
-- `'-c', '--config' FILE`. This sets the config file for all AI in that population. Normally if you load/replay an individual, the config file is taken from whatever folder you are loading/replaying. If you want to specifically set it, you can do so. This is also necessary to specify when creating a new population.
+## Training Agents
+Specify experiment configurations in the config file (default is `settings.config`)
+A custom fitness function used by both algorithms can be specified in `config.py`
+Run `python train_agents.py"` to obtain model weights for both GA and DQN agents (`.pt files`)
 
-### Loading Individuals
-You may want to load individuals. This could be due to your computer crashing and you wanting to load part of an old population. You may want to run experiments by combining individuals from different populations. Whatever the case, you can do so by specify *both* of the below arguments:
-- `--load-file FOLDER`. Indicate the `/path/to/population/folder` that you want to load from.
-- `--load-inds INDS`. This dictates which individuals from the folder to actually load. If you want a range, you can do `[2,100]`, where it will load individuals `best_ind_gen2, best_ind_gen3, ..., best_ind_gen100`. If you want to specify certain ones you can do `5,10,15,12,901` where they are seperated by a comma and no space.
+## Running Trained Agents
 
-Note that loading individuals only supports loading the best performing one from generations.
+[](https://github.com/hatanuk/SuperMarioBros-AI-DQN?tab=readme-ov-file#running-examples)
 
-### Replaying Individuals
-This is helpful if you want to watch particular individuals replay their run. You must specify *both* of the below arguments:
-- `--replay-file FOLDER`. Indicate the `/path/to/population/folder` that you want to replay from.
-- `--replay-inds INDS`. This accepts the same syntax as `--load-inds` with one additional syntax. If you want to replay starting at a certain individual through the end of the folder, you can do `[12,]` and this will begin at `best_ind_gen12` and run through the entire folder. *NOTE*: this is not supported in `--load-inds` since when you load it will be treated as an initially population and those individuals will be treated as parents. Because of that, you may accidentally have many more parents in your population gene pool than intended. 
+Once an agent has been trained, you can see them play out a level of SMB using the following command:
 
-### Disable Displaying
-You are unfortunately limited by the refresh rate of your monitor for certain things in `PyQt`. Because of this, when the display is open (whether it's hidden or not) you can only run at the refresh rate of your monitor. The emulator supports faster updates and because of that an option has been created to run this through only command line. This can help speed up training.
-- `--no-display`. When this option is present, nothing will be drawn to the screen.
+-   `python run_model.py /path/to/model.pt --level="1-1" --frame_skip=4`
 
-### Debug
-If you wish to know when populations are improving or when individuals have won, you can set a debug flag. This is helpul if you have disabled the display but wish to know how your population is doing.
-- `--debug`. When this option is present, certain information regarding generation, individuals who have won, new max distance, etc. will print to the command line.
+You can set level with `--level`  (eg. "1-1") and the amount of frames an input should be held for with  `--frameskip`
 
-## Running Examples
-I have several folders for examples. If you want to run any them to see how they perform, do:
-  - `python smb_ai.py --replay-file "Example world1-1" --replay-inds 1213,1214`. This will load `settings.config` from the `Example world1-1` folder and replay the best individual from generation 1213 and 1214. 
-  - `python smb_ai.py --replay-file "Example world4-1" --replay-inds 2259`. This will load `settings.config` from the `Example world4-1` folder and replay the best individual from generation 2259.
+## Configurations
 
-## Creating a New Population
-If you want to create a new population, it's pretty easy. Make sure that if you are using the default `settings.config` that you change `save_best_individual_from_generation` and `save_population_stats` to reflect where you want that information saved. Once you have the config file how you want, simply run `python smb_ai.py -c settings.config` with any additional command line options.
+Configurations to the experiment set-up, including the architecture of the neural networks for both agents, can be altered in the `settings.config` file.
 
-## Understanding the Config File
-The config file is what controls the initialization, graphics, save locations, genetic algorithm parameters and more. It's important to know what the options are and what you can change them to.
+## Neural Network (GA)
 
-### Neural Network
-Specified by `[NeuralNetwork]`
-- `input_dims :Tuple[int, int, int]`. This defines the "pink box". The parameters are `(start_row, width, height)` where `start_row` begins at `0` at the top of the screen and increases going toward the bottom of the screen. `width` defines how wide the box is, beginning at `start_row`. `height` defines how tall the box is. Currently I do not support a `start_col`. This is set to be wherever Mario is at.
-- `hidden_layer_architecture :Tuple[int, ...]`. Describes how many hidden nodes are in each hidden layer. `(12, 9)` would create two hidden layers. The first with `12` nodes and the second with `9`. This can be any length of 1 or more.
-- `hidden_node_activation :str`. Options are `(relu, sigmoid, linear, leaky_relu, tanh)`. Defines what activation to use on hidden layers.
-- `hidden_node_activation :str`. Options are `(relu, sigmoid, linear, leaky_relu, tanh)`. Defines what activation to use on hidden layers.
-- `encode_row :bool`. Whether or not to have one-hot encoding to describe Mario's row location.
+Specified by `[NeuralNetworkGA]`.
 
-### Graphics
+-   **input_dims :Tuple.** This defines the "pink box." The parameters are `(start_row, width, height)` where `start_row` begins at 0 at the top of the screen and increases going toward the bottom. `width` defines how wide the box is, beginning at `start_row`. `height` defines how tall the box is. Currently, start_col is not supported and is set to wherever Mario is at.
+-   **hidden_layer_architecture :Tuple.** Describes how many hidden nodes are in each hidden layer. `(12, 9)` would create two hidden layers, the first with 12 nodes and the second with 9. This can be any length of 1 or more.
+-   **hidden_node_activation :str.** Options are `(relu, sigmoid, linear, leaky_relu, tanh)`. Defines what activation to use on hidden layers.
+-   **output_node_activation :str.** Options are `(relu, sigmoid, linear, leaky_relu, tanh)`. Defines what activation to use on the output layer.
+-   **encode_row :bool.** Whether or not to have one-hot encoding to describe Mario's row location.
+
+## Neural Network (DQN)
+
+Specified by `[NeuralNetworkDQN]`.
+
+The same parameters apply here as above (`input_dims`, `hidden_layer_architecture`, `hidden_node_activation`, `encode_row`), with the difference that:
+
+-   **output_node_activation :str.** For DQN, this is set to `linear` to preserve Q-values during training.
+
+## Graphics
+
 Specified by `[Graphics]`.
-- `tile_size :Tuple[int, int]`. The size in pixels in (X, Y) direction to draw the tiles on the screen.
-- `neuron_radius :float`. Radius to draw nodes on the screen.
 
-### Statistics
+-   **tile_size :Tuple.** The size in pixels in the `(X, Y)` direction to draw the tiles on the screen.
+-   **neuron_radius :float.** Radius to draw nodes on the screen.
+
+## Environment
+
+Specified by `[Environment]`.
+
+-   **level :str.** The current options are `(1-1, 2-1, 3-1, 4-1, 5-1, 6-1, 7-1, 8-1)`. More can be supported by adding state information for the gym environment.
+-   **frame_skip :int.** Each action is repeated for `frame_skip` frames.
+
+## Statistics
+
 Specified by `[Statistics]`.
-- `save_best_individual_from_generation :str`. A folder location `/path/to/save/generation` to save best individuals.
-- `save_population_stats :str`. `/file/location/of/stats.csv` where you wish to save statistics.
 
-### Genetic Algorithm
-Specified by `[GeneticAlgorithm]`.
-- `fitness_func :lambda`. This is a function which will receive:
-~~~python
-def fitness_func(frames, distance, game_score, did_win):
-  """
-frames :int : Number of frames that Mario has been alive for
-distance :int : Total horizontal distance gone through the level
-game_score :int : Actual score Mario has received in the level through power-ups, coins, etc.
-did_win :bool : True/False if Mario beat the level
-"""
-~~~
-Because it is passed as a `lambda function`, there is only a return. This means no `if-statements`. This is why I use things like `max` and `min`. Whatever you choose, it is best to have something like `max(<your logic>, 0.00001)`. This will prevent certain problems if you choose `roulette selection` involving negative numbers.
+-   **save_best_individual_from_generation :str.** A folder location `/path/to/save/generation` to save best individuals.
+-   **save_population_stats :str.** A file location `/file/location/of/stats.csv` where you wish to save statistics.
+-   **model_save_dir :str.** Directory (`./models` by default) for saving `.pt` model files.
+-   **ga_model_name :str.** Base name for GA model files (e.g., `GAbest`).
+-   **top_x_individuals :int.** How many of the highest-fitness individuals to save from a generation.
+-   **ga_checkpoint_interval :int.** How often (in generations) to save a GA checkpoint.
+-   **dqn_model_name :str.** Base name for DQN model files (e.g., `DQNbest`).
+-   **dqn_checkpoint_interval :int.** How often (in episodes) to save a DQN checkpoint.
+-   **tensorboard_dir :str.** Where to log TensorBoard info.
+-   **log_interval :int.** Every how many steps to log progress in TensorBoard.
 
-### Mutation
+
+A model `.pt` file contains: - 
+**'iterations'**: Number of episodes/generations  
+**'distance'**: Level distance covered by the agent 
+**'encode_row'**: Taken from the config 
+**'input_dims'**: Taken from the config 
+**'state_dict'**: PyTorch weights and biases 
+ **'layer_sizes'**: Tuple of input, hidden, and output layer node sizes  **'hidden_activation'**: String of the chosen activation function **'output_activation'**: String of the chosen activation function
+
+Files will be saved at `model_save_dir/DQN` or `model_save_dir/GA` respectively. **WARNING**: This will clear all existing files in those directories.
+
+## Genetic Algorithm
+
+Specified by `[GA]`.
+
+    
+-   **total_generations :int.** Total number of generations to run.
+    
+-   **parallel_processes :int.** How many processes to run in parallel.
+    
+
+## DQN
+
+Specified by `[DQN]`.
+
+-   **learning_rate :float.** The learning rate for the DQN network.
+-   **discount_value :float.** The discount factor (gamma) for Q-learning.
+-   **train_freq :int.** How often (in steps) the DQN is trained.
+-   **total_episodes :int.** Total number of episodes to run for training.
+-   **sync_network_rate :int.** How often (in steps) to sync the target network.
+-   **batch_size :int.** Mini-batch size used for experience replay.
+-   **buffer_size :int.** Maximum size of the replay buffer.
+-   **epsilon_start :float.** Starting epsilon value for exploration.
+-   **epsilon_min :float.** Minimum epsilon value for exploration.
+-   **decay_fraction :float.** Fraction of total episodes over which epsilon is decayed linearly.
+
+## Mutation
+
 Specified by `[Mutation]`.
-- `mutation_rate :float`. Value must be between `[0.00, 1.00)`. Specifies the probability that *each* gene will mutate. In this case every trainable parameter is a gene.
-- `mutation_rate_type :str`. Options are `(static, dynamic)`. `static` mutation will always be the same, while `dynamic` will decrease as the number of generations increase
-- `gaussian_mutation_scale :float`. When a mutation occurs it is a normal gaussian mutation `N(0, 1)`. Because the parameters are capped between `[0.00, 1.00)`, a scale is provided to narrow this. The mutation would then be `N(0, 1) * scale`.
 
-### Crossover
+-   **mutation_rate :float.** Must be between `[0.00, 1.00)`. Specifies the probability that each gene (trainable parameter) will mutate.
+-   **mutation_rate_type :str.** Options are `(static, dynamic)`.
+    -   **static** mutation will remain the same throughout.
+    -   **dynamic** will decrease mutation_rate as the number of generations increases.
+-   **gaussian_mutation_scale :float.** When a mutation occurs it is a normal Gaussian mutation `N(0, 1)`. Because the parameters are capped between `[0.00, 1.00)`, a scale is provided to narrow this. The mutation would then be `N(0, 1) * scale`.
+
+## Crossover
+
 Specified by `[Crossover]`.
-- `probability_sbx :float`. This is the probability to perform Simulated Binary Crossover (SBX). This is always `1.0` as of now because I do not support other types for this problem.
-- `sbx_eta :int`. A bit of a complicated parameter, but the smaller the value, the more variance when creating offspring. As the parameter increases, the variance decreases and offspring are more centered around parent values. `100` still has variance but centers more around the parents. This helps a gene be able to change gradually rather than abruptly.
-- `crossover_selection :str`. Options are `(roulette, tournament)`. `roulette` sums all individual fitness and gives each individual a probability to be selected for reproduction based on their fitness divided by total fitness of the population. `tournament` selection will randomly pick `n` individuals from the population and then select the one with the highest fitness from that subset.
-- `tournament_size :int`. If you are using `crossover_selection = tournament`, then this value is used, otherwise it is ignored. Controls the number of individuals to pick from the population to form a subset to be selected from.
 
-### Selection
+-   **probability_sbx :float.** The probability to perform Simulated Binary Crossover (SBX). Currently always `1.0`.
+-   **sbx_eta :int.** The smaller the value, the more variance when creating offspring. As the parameter increases, variance decreases and offspring are more centered around parent values. `100` still has variance but centers more around the parents, helping genes change gradually rather than abruptly.
+-   **crossover_selection :str.** Options are `(roulette, tournament)`.
+    -   **roulette** sums all individual fitnesses and assigns each individual a probability proportional to its fitness relative to total fitness.
+    -   **tournament** will randomly pick `n` individuals from the population and then select the highest fitness individual from that subset.
+-   **tournament_size :int.** Used only if `crossover_selection = tournament`. Controls how many individuals form the subset from which a winner is chosen.
+
+## Selection
+
 Specified by `[Selection]`.
-- `num_parents :int`. The number of individuals to begin with.
-- `num_offspring :int`. The number of offspring that will be produced at the end of each generation.
-- `selection_type :str`. Options are `(comma, plus)`. Let's say we define `<num_parents> <selection_type> <num_offspring>` and compare `(50, 100)` and `(50 + 100)`:
-  - `(50, 100)` will begin generation 0 with 50 parents and then at the end of each generation produce 100 offspring from the parents. At generation 1, then, you will have 100 parents. No best individuals get carried over since all individuals for the next generation are simply offspring.
-  - `(50 + 100)` will begin generation 0 with 50 parents and then at the end of each generation carry over the best 50 individuals from that generation *and* produce 100 offspring. At generation 1, then, you will have 150 parents. In this case 50 individuals get carried over to the next generation.
-- `lifespan :float`. Really an int but considered a float to allow for `inf`. This dictates how long a certain individual is allowed to be in the population before dying off. In ths case of `selection_type = plus`, this would mean that an individual can only reproduce for a given number of generations before it dies off. For `selection_type = comma`, this value doesn't matter as no best performing individuals get carried over to the next generation.
 
-### Misc
+-   **num_parents :int.** Number of individuals in the initial population.
+    
+-   **num_offspring :int.** Number of offspring produced at the end of each generation.
+    
+-   **selection_type :str.** Options are `(comma, plus)`.
+    
+    Let’s say we define `<num_parents> <selection_type> <num_offspring>` and compare `(50, 100)` and `(50 + 100)`:
+    
+    -   `(50, 100)` will begin generation 0 with 50 parents and then produce 100 offspring from those parents at the end of the generation. At generation 1, there will be 100 parents. No best individuals are carried over.
+    -   `(50 + 100)` will begin generation 0 with 50 parents, produce 100 offspring, then carry over the best 50 individuals to the next generation. At generation 1, you have 150 parents. In this case, 50 individuals get carried over.
+-   **lifespan :float.** Essentially an int but can be `inf`. This dictates how long a certain individual can remain in the population before dying off. For `selection_type = plus`, this means an individual only reproduces for a given number of generations before it dies. For `comma`, it doesn’t matter since no best individuals get carried over.
+    
+
+## Misc
+
 Specified by `[Misc]`.
-- `level :str`. The current options are `(1-1, 2-1, 3-1, 4-1, 5-1, 6-1, 7-1, 8-1)` More can be supported by adding `state` information for the `gym environment`.
-- `allow_additional_time_for_flagpole :bool`. Generally as soon as Mario touches the flag, he dies. This is just because he wins and there's no point in continuing the animation from there. You may wish to allow some additional time just to see it happen. I use this so I can record him completing the level.
 
-## Viewing Statistics
-The .csv file contains information on the `mean, median, std, min, max` for `frames, distance, fitness, wins`. If you want to view the max distance for a .csv you could do:
-~~~python
-stats = load_stats('/path/to/stats.csv')
-stats['distance']['max']
-~~~
-
-Here is an example on how to plot stats using `matplotlib.pyplot`:
-~~~python
-from mario import load_stats
-import matplotlib.pyplot as plt
-
-stats = load_stats('/path/to/stats.csv')
-tracker = 'distance'
-stat_type = 'max'
-values = stats[tracker][stat_type]
-
-plt.plot(range(len(values)), values)
-ylabel = f'{stat_type.capitalize()} {tracker.capitalize()}' 
-plt.title(f'{ylabel} vs. Generation')
-plt.ylabel(ylabel)
-plt.xlabel('Generation')
-plt.show()
-~~~
-
-## Results
-Different populations of Mario learned in different way and for different environments. Here are some of the things the AI was able to learn:
-
-Mario beating 1-1:
-![Mario Beating 1-1](/SMB_level1-1_gen_258_win.gif)
-
-Mario beating 4-1:
-![Mario Beating 4-1](/SMB_level4-1_gen_1378_win.gif)
-
-Mario learning to walljump:
-![Mario Learning to Walljump](/SMB_level4-1_walljump.gif)
+-   **allow_additional_time_for_flagpole :bool.** Generally as soon as Mario touches the flag, he “dies” because he wins. This allows some extra time just to see the ending animation.
