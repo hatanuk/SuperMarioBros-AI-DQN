@@ -20,8 +20,6 @@ import shutil
 import os
 from tqdm import tqdm
 
-from gui import GUI
-
 from utils import SMB, EnemyType, StaticTileType, ColorMap, DynamicTileType
 from config import Config
 from mario_torch import MarioTorch as Mario
@@ -59,9 +57,6 @@ def parse_args():
 
     parser.add_argument('--no_dqn', dest='no_dqn',  action='store_true', required=False, help='do not train a dqn model')
     parser.add_argument('--no_ga', dest='no_ga',  action='store_true', required=False, help='do not train a ga model')
-
-    parser.add_argument('--no_display', dest='no_display',  action='store_true', required=False, help='do not show visualization - training will occur much faster')
-
 
 
     args = parser.parse_args()
@@ -160,8 +155,6 @@ def evaluate_individual_in_separate_process(args):
 
     done = False
 
-    ram = []
-
     # We run until the individual is no longer alive (done)
     while not done:
 
@@ -171,8 +164,6 @@ def evaluate_individual_in_separate_process(args):
 
         # Take a step in the environment (mario is updated in wrapper)
         obs, rewards, done, info = env.step(action)
-
-        ram.extend(info['ram'])
         
         if individual.farthest_x > max_distance:
             max_distance = individual.farthest_x
@@ -191,7 +182,7 @@ def evaluate_individual_in_separate_process(args):
         'action_counts': action_counts,
         'wall_clock_time': float(f"{(end - start):.5f}"),
         'episode_steps': env.episode_steps,
-        'ram': ram
+        'ram': info['ram']
     }
 
     return data
@@ -274,8 +265,7 @@ def run_ga_agent(config, data_queue, model_save_path):
                     'current_individual': i,
                     'current_fitness': res['current_fitness'],
                     'current_distance': res['current_distance'],
-                    'action_counts': res['action_counts'],
-                    'ram': res['ram']
+                    'action_counts': res['action_counts']
                 }
                 data_queue.put(data)
             
@@ -523,10 +513,7 @@ if __name__ == "__main__":
         dqn_process.start()
 
     if not args.no_display:
-        print("making gui")
-        gui = GUI()
-        print("made gui")
-        pass
+        GUI = GUI()
 
     # Function to clean up processes
     def cleanup():
@@ -587,10 +574,7 @@ if __name__ == "__main__":
                         ga_data = ga_data_queue.get_nowait()
 
                         ga_last_rams.extend(ga_data['ram'])
-                        print("GA_RAM-----")
-                        print(len(ga_data['ram']))
-                        print(np.array(ga_data['ram'][0]).shape)
-                        print("----------")
+                        print(ga_last_rams[-1])
 
                         if gen_stats['current_gen'] != ga_data['current_generation']:
 
@@ -641,10 +625,7 @@ if __name__ == "__main__":
                         dqn_data = dqn_data_queue.get_nowait()
 
                         saved_dqn_ram = dqn_data['ram']
-                        print("DQN_RAM-----")
-                        print(len(dqn_data['ram']))
-                        print(np.array(dqn_data['ram'][0]).shape)
-                        print("----------")
+                        print(saved_dqn_ram[-1])
 
                         dqn_done = True
 
@@ -672,7 +653,7 @@ if __name__ == "__main__":
 
             # Sleep briefly to prevent tight loop
             time.sleep(0.001)
-            if ga_done and dqn_done:
+            if ga_done and dqn_done and False:
                 max_length = max(len(saved_ga_ram), len(saved_dqn_ram))
 
                 for i in range(max_length):
@@ -680,7 +661,7 @@ if __name__ == "__main__":
                     dqn_frame = saved_dqn_ram[i] if i < len(saved_dqn_ram) else saved_dqn_ram[-1] 
 
                     if not args.no_display:
-                        gui.update_gui(ga_frame, dqn_frame, dqn_data, gen_stats)
+                        GUI.update_gui(ga_frame, dqn_frame, dqn_data, gen_stats)
                     time.sleep(0.05)  
 
                 # Reset storage & flags
