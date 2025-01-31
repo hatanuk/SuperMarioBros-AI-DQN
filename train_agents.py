@@ -227,10 +227,10 @@ def run_ga_agent(config, data_queue, model_save_path):
             args = [(ind, config) for ind in population.individuals]
             results = []
     
-            for res in tqdm(pool.imap(evaluate_individual_in_separate_process, args), desc=f"GA GENERATION: {current_generation}", total=len(args)):
+            for res in pool.imap(evaluate_individual_in_separate_process, args):
                 results.append(res)
             print("--------------------")
-            print(f"GA MAX_DISTANCE: {int(max_distance_GA)}\nGA MAX_FITNESS: {int(best_fitness_GA)}\n")
+            print(f"GA GENERATION: {current_generation}\nGA MAX_DISTANCE: {int(max_distance_GA)}\nGA MAX_FITNESS: {int(best_fitness_GA)}\n")
 
             # Process results for logging and stats
             total_fitness = 0
