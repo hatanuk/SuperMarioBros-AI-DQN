@@ -111,7 +111,6 @@ class Logger:
 
 
     def log_dqn_episode(self, total_steps, fitness, episode_steps, episode_rewards, episode_distance, episode_num, max_fitness, max_distance, action_counts, epsilon):
-        print(f"max distance DQN: {max_distance}")
         self.writer.add_scalar('DQN/fitness/episode', fitness, episode_num)
         self.writer.add_scalar('DQN/distance/episode', episode_distance, episode_num)
         self.writer.add_scalar('DQN/max_fitness/episode', max_fitness, episode_num)
@@ -229,7 +228,7 @@ def run_ga_agent(config, data_queue, model_save_path):
             for res in pool.imap(evaluate_individual_in_separate_process, args):
                 results.append(res)
             print("--------------------")
-            print(f"GA GENERATION: {current_generation}\nGA MAX_DISTANCE: {int(max_distance_GA)}\nGA MAX_FITNESS: {int(best_fitness_GA)}\n")
+            print(f"GA GENERATION: {current_generation}\nGA MAX_DISTANCE: {int(max_distance_GA)}\nGA MAX_FITNESS: {int(best_fitness_GA)}")
 
             # Process results for logging and stats
             total_fitness = 0
