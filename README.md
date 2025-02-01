@@ -43,7 +43,7 @@ You will need Python 3.6 or newer.
 ## Training Agents
 Specify experiment configurations in the config file (default is `settings.config`)
 A custom fitness function used by both algorithms can be specified in `config.py`
-Run `python train_agents.py"` to obtain model weights for both GA and DQN agents (`.pt files`)
+Run `python train_agents.py` to obtain model weights for both GA and DQN agents (`.pt` files)
 
 ## Running Trained Agents
 
@@ -107,13 +107,14 @@ Specified by `[Statistics]`.
 -   **log_interval :int.** Every how many steps to log progress in TensorBoard.
 
 
-A model `.pt` file contains: - 
-**'iterations'**: Number of episodes/generations  
-**'distance'**: Level distance covered by the agent 
-**'encode_row'**: Taken from the config 
-**'input_dims'**: Taken from the config 
-**'state_dict'**: PyTorch weights and biases 
- **'layer_sizes'**: Tuple of input, hidden, and output layer node sizes  **'hidden_activation'**: String of the chosen activation function **'output_activation'**: String of the chosen activation function
+A model `.pt` file contains: 
+- **'iterations'**: Number of episodes/generations  
+- **'distance'**: Level distance covered by the agent 
+- **'encode_row'**: Taken from the config 
+- **'input_dims'**: Taken from the config 
+- **'state_dict'**: PyTorch weights and biases 
+-  **'layer_sizes'**: Tuple of input, hidden, and output layer node sizes  
+- **'hidden_activation'**: String of the chosen activation function **'output_activation'**: String of the chosen activation function
 
 Files will be saved at `model_save_dir/DQN` or `model_save_dir/GA` respectively. **WARNING**: This will clear all existing files in those directories.
 
